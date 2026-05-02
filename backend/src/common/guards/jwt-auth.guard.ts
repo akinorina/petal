@@ -6,11 +6,18 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CognitoJwtVerifier } from 'aws-jwt-verify';
+import type { CognitoJwtVerifierSingleUserPool } from 'aws-jwt-verify/cognito-verifier';
 import { Request } from 'express';
+
+type VerifierProps = {
+  userPoolId: string;
+  tokenUse: 'access';
+  clientId: string;
+};
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
-  private readonly verifier;
+  private readonly verifier: CognitoJwtVerifierSingleUserPool<VerifierProps>;
   private readonly skipAuth: boolean;
 
   constructor(private readonly config: ConfigService) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ApiError, userApi } from '@/lib/api';
 import type { CreateUserRequest, UpdateUserRequest, User } from '@/types/user';
 
@@ -16,7 +16,8 @@ export default function UsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [modal, setModal] = useState<Modal>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
+    setIsLoading(true);
     try {
       setError(null);
       const data = await userApi.findAll();
@@ -26,9 +27,9 @@ export default function UsersPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { void load(); }, [load]);
 
   async function handleDelete(user: User) {
     try {
