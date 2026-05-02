@@ -106,6 +106,84 @@ Localstack の Cognito は使用しない。Local 環境でも実際の AWS Cogn
 
 ---
 
+## 5.5 認証ガードの役割・仕組み・実装上の位置付け
+
+### 何をしているのか
+
+**認証ガード（Auth Guard）** は、すべての HTTP リクエストをコントローラーに渡す前に「このリクエストは本当に認証済みのユーザーからのものか」を確認する門番である。
+
+具体的には以下を行う：
+
+1. リクエストの `Authorization` ヘッダーから JWT（`Bearer <token>`）を取り出す
+2. Cognito が公開している公開鍵（JWKS）を使って JWT の署名を検証する
+3. トークンの有効期限・発行元（User Pool / Client ID）が正しいか確認する
+4. 検証が通れば `request.user` にデコード済みの情報（`sub`・メールアドレスなど）をセットしてリクエストを通す
+5. 検証に失敗した場合は `401 Unauthorized` を返してリクエストをここで止める
+
+### 全体のどの位置付けか
+
+Onion Architecture において、認証ガードは **コントローラー層の入口** に位置する横断的関心事（Cross-Cutting Concern）である。
+
+```text
+[HTTP リクエスト]
+      ↓
+ ┌────────────────────────────┐
+ │  Auth Guard                │  ← ここ（コントローラーへの入口）
+ │  JWT 検証（Cognito JWKS）  │
+ └────────────────────────────┘
+      ↓（検証OK）
+ ┌────────────────────────────┐
+ │  Controller                │
+ └────────────────────────────┘
+      ↓
+ ┌────────────────────────────┐
+ │  Service（Application）    │
+ └────────────────────────────┘
+      ↓
+ ┌────────────────────────────┐
+ │  Repository（Infra）       │
+ └────────────────────────────┘
+```
+
+実装ファイルは `src/common/guards/jwt-auth.guard.ts` に置く。
+NestJS の `CanActivate` インターフェースを実装したクラスで、`APP_GUARD` としてグローバル登録することで全エンドポイントに自動適用される。
+
+### 最終的にどのような仕組みで認証されるか（エンドツーエンド）
+
+```text
+[フロントエンド]
+  1. ログインフォームで メール＋パスワード を入力
+  2. Cognito の認証エンドポイントに送信
+  3. Cognito から 3種のトークンを受け取る
+       - ID Token（ユーザー情報含む JWT）
+       - Access Token（API 呼び出し用 JWT）  ← これを使用
+       - Refresh Token（アクセストークン再発行用）
+  4. Access Token をメモリ（または HttpOnly Cookie）に保存
+
+[API リクエスト時]
+  5. リクエストヘッダーに付与して送信
+       Authorization: Bearer <Access Token>
+
+[バックエンド]
+  6. Auth Guard が Authorization ヘッダーを取り出す
+  7. Cognito の JWKS エンドポイントから公開鍵を取得（初回のみ・以降キャッシュ）
+       https://cognito-idp.{region}.amazonaws.com/{userPoolId}/.well-known/jwks.json
+  8. 公開鍵で JWT 署名を検証 ＋ 有効期限・User Pool・Client ID を確認
+  9. 検証 OK → request.user に sub・email などをセット → Controller へ
+ 10. 検証 NG → 401 Unauthorized を返す（Controller には届かない）
+```
+
+### テスト時の扱い
+
+環境変数 `SKIP_AUTH=true` のとき認証をスキップするカスタムガードとして実装する（5節参照）。実際の Cognito には接続せず、ダミーの `request.user` をセットして Controller まで通す。
+
+### 使用ライブラリ
+
+JWT の検証には AWS 公式ライブラリ `aws-jwt-verify` を使用する。
+Cognito の JWKS を自動取得・キャッシュし、`CognitoJwtVerifier` で1行で検証できる。
+
+---
+
 ## 6. 初期 Admin ユーザーの作成
 
 専用スクリプトを実装し、実行によって Admin ユーザーを作成する。
