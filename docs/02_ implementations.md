@@ -6,6 +6,7 @@
 | ---- | ---- |
 | バックエンド | TypeScript / Node.js / NestJS |
 | フロントエンド | TypeScript / React / Next.js |
+| CSSフレームワーク | Tailwind CSS |
 | データベース | PostgreSQL |
 | ORM | TypeORM |
 | 型バリデーション | Zod |
@@ -13,6 +14,7 @@
 | ファイルストレージ | AWS S3 |
 | インフラ | AWS |
 | ローカル環境 | Localstack（AWS互換） |
+| パッケージマネージャー | pnpm（npm / yarn 使用禁止） |
 
 ---
 
@@ -44,7 +46,23 @@
 
 ---
 
-## 4. 実行環境
+## 4. プロジェクト構成（モノリポ）
+
+バックエンドとフロントエンドを同一リポジトリで管理するフラット構成とする。
+規模が大きくなった場合は分割する。
+
+```text
+petal/
+  backend/    # NestJS（REST API）
+  frontend/   # Next.js
+  docs/       # 設計・仕様ドキュメント
+  package.json           # pnpm workspace ルート
+  pnpm-workspace.yaml
+```
+
+---
+
+## 5. 実行環境
 
 | 環境 | 説明 |
 | ---- | ---- |
