@@ -7,6 +7,7 @@
 | バックエンド | TypeScript / Node.js / NestJS |
 | フロントエンド | TypeScript / React / Next.js |
 | データベース | PostgreSQL |
+| ORM | TypeORM |
 | 型バリデーション | Zod |
 | 認証 | AWS Cognito（メール＋パスワード、将来はOAuth対応） |
 | ファイルストレージ | AWS S3 |

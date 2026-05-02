@@ -63,7 +63,29 @@ src/
 
 ---
 
-## 4. その他
+## 4. DB ルール
+
+### ORM
+
+TypeORM を使用する。
+
+### 論理削除（ソフトデリート）
+
+DB上のレコードの削除は、すべて **論理削除** とする。物理削除は行わない。
+
+- すべてのテーブルに `deleted_at TIMESTAMPTZ` カラムを設ける。
+- TypeORM の `@DeleteDateColumn()` デコレーターを使用する。
+- `deleted_at` が `NULL` でないレコードは削除済みとみなす。
+- クエリは TypeORM のソフトデリート機能により、削除済みレコードを自動的に除外する。
+
+```ts
+@DeleteDateColumn({ name: 'deleted_at' })
+deletedAt: Date | null;
+```
+
+---
+
+## 5. その他
 
 - 本番・開発・Local の３環境を維持し、環境差分は環境変数で吸収する。
 - ローカル環境では Localstack を使い、AWS リソースへの依存をエミュレートする。
