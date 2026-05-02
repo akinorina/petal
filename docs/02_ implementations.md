@@ -53,9 +53,8 @@
 
 ```text
 petal/
-  backend/    # NestJS（REST API）
+  backend/    # NestJS（REST API）+ docker-compose.yml
   frontend/   # Next.js
-  infra/      # インフラ設定（docker-compose など）
   docs/       # 設計・仕様ドキュメント
   package.json           # pnpm workspace ルート
   pnpm-workspace.yaml
@@ -65,11 +64,11 @@ petal/
 
 ## 5. Local 開発環境のセットアップ
 
-Local 環境の DB は Docker で起動する。設定は `infra/docker-compose.yml` で管理する。
+Local 環境の DB は Docker で起動する。設定は `backend/docker-compose.yml` で管理し、`backend/.env` の環境変数を参照する。
 
 ```bash
-# infra/.env.example をコピーして設定
-cp infra/.env.example infra/.env
+# 初回のみ：backend/.env.example をコピーして設定
+cp backend/.env.example backend/.env
 
 # PostgreSQL 起動
 pnpm db:up
@@ -80,8 +79,6 @@ pnpm db:down
 # ログ確認
 pnpm db:logs
 ```
-
-`infra/.env` の値と `backend/.env` の DB 接続情報（`DB_*`）は一致させること。
 
 ---
 
