@@ -27,10 +27,13 @@ Cognito の `sub`（Cognito 内部の UUID）を PostgreSQL の `cognito_sub` �
 
 ### 2.2 DB スキーマ（`users` テーブル）
 
-```sql
-CREATE TYPE user_role AS ENUM ('admin', 'user');
+- テーブルは `petal` スキーマに置く。
+- TypeORM の migrations テーブルは `public` スキーマに置く。
 
-CREATE TABLE users (
+```sql
+CREATE TYPE "petal"."user_role" AS ENUM ('admin', 'user');
+
+CREATE TABLE "petal"."users" (
     id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
     cognito_sub VARCHAR(255) NOT NULL UNIQUE,
     name        VARCHAR(100) NOT NULL,
