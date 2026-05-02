@@ -22,7 +22,8 @@
     "migration:revert": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:revert",
     "migration:generate": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:generate",
     "migration:create": "typeorm-ts-node-commonjs migration:create",
-    "migration:show": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:show"
+    "migration:show": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:show",
+    "create-admin": "ts-node -r tsconfig-paths/register scripts/create-admin.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -39,6 +40,7 @@
     "zod": "^4.4.2"
   },
   "devDependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.1041.0",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
     "@nestjs/cli": "^11.0.0",
