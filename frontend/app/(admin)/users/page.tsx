@@ -23,13 +23,17 @@ export default function UsersPage() {
       const data = await userApi.findAll();
       setUsers(data);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'データの取得に失敗しました');
+      setError(
+        e instanceof ApiError ? e.message : 'データの取得に失敗しました',
+      );
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   async function handleDelete(user: User) {
     try {
@@ -54,7 +58,9 @@ export default function UsersPage() {
       </div>
 
       {error && (
-        <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+        <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
+          {error}
+        </p>
       )}
 
       {isLoading ? (
@@ -64,18 +70,31 @@ export default function UsersPage() {
           <table className="w-full text-sm">
             <thead className="border-b border-zinc-200 bg-zinc-50">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-zinc-600">氏名</th>
-                <th className="px-4 py-3 text-left font-medium text-zinc-600">ふりがな</th>
-                <th className="px-4 py-3 text-left font-medium text-zinc-600">メールアドレス</th>
-                <th className="px-4 py-3 text-left font-medium text-zinc-600">ロール</th>
-                <th className="px-4 py-3 text-left font-medium text-zinc-600">登録日</th>
+                <th className="px-4 py-3 text-left font-medium text-zinc-600">
+                  氏名
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-zinc-600">
+                  ふりがな
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-zinc-600">
+                  メールアドレス
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-zinc-600">
+                  ロール
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-zinc-600">
+                  登録日
+                </th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-zinc-400">
+                  <td
+                    colSpan={6}
+                    className="px-4 py-8 text-center text-zinc-400"
+                  >
                     ユーザーがいません
                   </td>
                 </tr>
@@ -84,13 +103,17 @@ export default function UsersPage() {
                   <tr key={user.id} className="hover:bg-zinc-50">
                     <td className="px-4 py-3 font-medium">{user.name}</td>
                     <td className="px-4 py-3 text-zinc-500">{user.nameKana}</td>
-                    <td className="px-4 py-3 text-zinc-500">{user.cognitoSub}</td>
+                    <td className="px-4 py-3 text-zinc-500">
+                      {user.cognitoSub}
+                    </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                        user.role === 'admin'
-                          ? 'bg-zinc-900 text-white'
-                          : 'bg-zinc-100 text-zinc-600'
-                      }`}>
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                          user.role === 'admin'
+                            ? 'bg-zinc-900 text-white'
+                            : 'bg-zinc-100 text-zinc-600'
+                        }`}
+                      >
                         {user.role === 'admin' ? '管理者' : 'ユーザー'}
                       </span>
                     </td>
@@ -166,7 +189,12 @@ type UserFormModalProps = {
   onSubmit: (data: CreateUserRequest | UpdateUserRequest) => Promise<void>;
 };
 
-function UserFormModal({ title, initial, onClose, onSubmit }: UserFormModalProps) {
+function UserFormModal({
+  title,
+  initial,
+  onClose,
+  onSubmit,
+}: UserFormModalProps) {
   const isCreate = !initial;
   const [cognitoSub, setCognitoSub] = useState(initial?.cognitoSub ?? '');
   const [name, setName] = useState(initial?.name ?? '');
@@ -236,7 +264,9 @@ function UserFormModal({ title, initial, onClose, onSubmit }: UserFormModalProps
         </Field>
 
         {error && (
-          <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+          <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
+            {error}
+          </p>
         )}
 
         <div className="flex justify-end gap-2 pt-2">
@@ -270,7 +300,10 @@ function ConfirmModal({
         <button onClick={onCancel} className={secondaryBtnClass}>
           キャンセル
         </button>
-        <button onClick={onConfirm} className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">
+        <button
+          onClick={onConfirm}
+          className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+        >
           削除する
         </button>
       </div>
@@ -280,7 +313,13 @@ function ConfirmModal({
 
 // ---- Shared UI ----
 
-function Overlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+function Overlay({
+  children,
+  onClose,
+}: {
+  children: React.ReactNode;
+  onClose: () => void;
+}) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
       <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
@@ -291,10 +330,18 @@ function Overlay({ children, onClose }: { children: React.ReactNode; onClose: ()
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium text-zinc-700">{label}</label>
+      <label className="mb-1 block text-sm font-medium text-zinc-700">
+        {label}
+      </label>
       {children}
     </div>
   );

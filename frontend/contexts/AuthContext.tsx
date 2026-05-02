@@ -1,7 +1,18 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { getCurrentUserEmail, getAccessToken, login as cognitoLogin, logout as cognitoLogout } from '@/lib/cognito';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
+import {
+  getCurrentUserEmail,
+  getAccessToken,
+  login as cognitoLogin,
+  logout as cognitoLogout,
+} from '@/lib/cognito';
 
 type AuthState = {
   isAuthenticated: boolean;

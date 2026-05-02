@@ -18,10 +18,16 @@ function getPool(): CognitoUserPool {
   return _pool;
 }
 
-export function login(email: string, password: string): Promise<CognitoUserSession> {
+export function login(
+  email: string,
+  password: string,
+): Promise<CognitoUserSession> {
   return new Promise((resolve, reject) => {
     const user = new CognitoUser({ Username: email, Pool: getPool() });
-    const authDetails = new AuthenticationDetails({ Username: email, Password: password });
+    const authDetails = new AuthenticationDetails({
+      Username: email,
+      Password: password,
+    });
 
     user.authenticateUser(authDetails, {
       onSuccess: resolve,

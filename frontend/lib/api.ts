@@ -38,6 +38,9 @@ export const userApi = {
   create: (data: CreateUserRequest) =>
     request<User>('/users', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: UpdateUserRequest) =>
-    request<User>(`/users/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    request<User>(`/users/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
   remove: (id: string) => request<void>(`/users/${id}`, { method: 'DELETE' }),
 };

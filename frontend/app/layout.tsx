@@ -7,7 +7,11 @@ export const metadata: Metadata = {
   description: 'Petal 管理画面',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="ja" className="h-full">
       <body className="min-h-full bg-zinc-50 text-zinc-900 antialiased">
