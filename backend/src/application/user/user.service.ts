@@ -6,11 +6,11 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { User } from '../../domain/user/user';
-import { IUserRepository, USER_REPOSITORY } from '../../domain/user/user.repository';
 import {
-  CreateUserInput,
-  UpdateUserInput,
-} from './user.schemas';
+  IUserRepository,
+  USER_REPOSITORY,
+} from '../../domain/user/user.repository';
+import { CreateUserInput, UpdateUserInput } from './user.schemas';
 
 @Injectable()
 export class UserService {
@@ -30,7 +30,9 @@ export class UserService {
   }
 
   async create(input: CreateUserInput): Promise<User> {
-    const existing = await this.userRepository.findByCognitoSub(input.cognitoSub);
+    const existing = await this.userRepository.findByCognitoSub(
+      input.cognitoSub,
+    );
     if (existing) throw new ConflictException('すでに登録済みのユーザーです');
 
     const now = new Date();
