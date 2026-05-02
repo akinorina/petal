@@ -11,7 +11,9 @@
     "frontend": "pnpm --filter frontend dev",
     "db:up": "docker compose -f backend/docker-compose.yml up -d",
     "db:down": "docker compose -f backend/docker-compose.yml down",
-    "db:logs": "docker compose -f backend/docker-compose.yml logs -f postgres"
+    "db:logs": "docker compose -f backend/docker-compose.yml logs -f postgres",
+    "format": "pnpm --filter backend format && pnpm --filter frontend format",
+    "lint": "pnpm --filter backend lint && pnpm --filter frontend lint"
   },
   "packageManager": "pnpm@10.33.0",
   "pnpm": {
