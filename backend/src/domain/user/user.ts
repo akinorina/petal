@@ -1,4 +1,4 @@
-import { UserRole } from './user-role.enum.js';
+import { UserRole } from './user-role.enum';
 
 export class User {
   constructor(

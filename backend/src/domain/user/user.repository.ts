@@ -1,4 +1,4 @@
-import { User } from './user.js';
+import { User } from './user';
 
 export const USER_REPOSITORY = Symbol('IUserRepository');
 
