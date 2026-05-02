@@ -6,7 +6,7 @@
 
 依存の方向は常に **外側 → 内側** とする。内側のレイヤーは外側を参照しない。
 
-```
+```text
 ┌─────────────────────────────┐
 │  Infrastructure（外側）      │ DB, S3, Cognito, HTTP など
 │  ┌───────────────────────┐  │
@@ -53,12 +53,12 @@ type User = z.infer<typeof UserSchema>;
 
 レイヤーごとにディレクトリを分け、ドメインごとにまとめる。
 
-```
+```text
 src/
-  domain/          # エンティティ、値オブジェクト、リポジトリIF
-  application/     # ユースケース（サービス）
-  infrastructure/  # DB, S3, Cognito などの実装
-  presentation/    # コントローラー（NestJS モジュール）
+  domain/      # エンティティ、値オブジェクト、リポジトリIF
+  application/ # ユースケース（サービス）
+  infra/       # DB, S3, Cognito などの実装
+  controller/  # コントローラー・DTO（NestJS モジュール）
 ```
 
 ---
