@@ -5,11 +5,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import { User } from '../../domain/user/user';
+import { User } from '../domain/user';
 import {
   IUserRepository,
   USER_REPOSITORY,
-} from '../../domain/user/user.repository';
+} from '../domain/user.repository';
 import { CreateUserInput, UpdateUserInput } from './user.schemas';
 
 @Injectable()

@@ -51,15 +51,30 @@ type User = z.infer<typeof UserSchema>;
 
 ## 3. ディレクトリ構成方針
 
-レイヤーごとにディレクトリを分け、ドメインごとにまとめる。
+**フィーチャ（機能単位）優先で配置する**。各フィーチャを `src/<feature>/` 配下にまとめ、その内部でオニオンアーキテクチャのレイヤーごとに分割する。
 
 ```text
 src/
-  domain/      # エンティティ、値オブジェクト、リポジトリIF
-  application/ # ユースケース（サービス）
-  infra/       # DB, S3, Cognito などの実装
-  controller/  # コントローラー・DTO（NestJS モジュール）
+  <feature>/                # 例: user, auth, image など
+    domain/                 # エンティティ、値オブジェクト、リポジトリIF
+    application/            # ユースケース（サービス）、入力スキーマ
+    infra/                  # DB エンティティ、リポジトリ実装、外部サービス連携
+    controller/             # コントローラー・DTO
+    <feature>.module.ts     # NestJS モジュール定義
+  common/                   # 横断的関心事（ガード、デコレーター等）
+  database/                 # DataSource、マイグレーション
+  app.module.ts
+  main.ts
 ```
+
+### ルール
+
+- レイヤー（`domain/` 等）を `src/` 直下に置かない。必ずフィーチャ配下に置く。
+- フィーチャ内のファイルはすべていずれかのレイヤー（`domain/` `application/` `infra/` `controller/`）に属する。フィーチャ直下に `<feature>.module.ts` 以外のファイルを置かない。
+- フィーチャに該当レイヤーの実体が存在しない場合（例: `auth` は domain エンティティを持たない）は、そのサブディレクトリを作らなくてよい。
+- 外部サービス（Cognito、S3 等）の SDK 呼び出しは `infra/` に集約する。`application/` のサービスからは infra 層のクライアントを呼ぶ形にし、SDK を直接触らない。
+- 複数フィーチャから参照される真に共通のコードのみ `common/` に置く。フィーチャ固有のものはフィーチャ内に置く。
+- フィーチャ間の依存はモジュールの `exports` を経由する。他フィーチャの内部実装ファイルを直接 import しない。
 
 ---
 

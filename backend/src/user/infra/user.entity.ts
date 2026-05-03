@@ -6,7 +6,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { UserRole } from '../../../domain/user/user-role.enum';
+import { UserRole } from '../domain/user-role.enum';
 
 @Entity({ schema: 'petal', name: 'users' })
 export class UserEntity {

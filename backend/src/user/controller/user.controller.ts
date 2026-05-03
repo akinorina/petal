@@ -9,12 +9,12 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
-import { UserService } from '../../application/user/user.service';
+import { UserService } from '../application/user.service';
 import {
   CreateUserSchema,
   UpdateUserSchema,
-} from '../../application/user/user.schemas';
-import { User } from '../../domain/user/user';
+} from '../application/user.schemas';
+import { User } from '../domain/user';
 import {
   CreateUserRequestDto,
   UpdateUserRequestDto,
