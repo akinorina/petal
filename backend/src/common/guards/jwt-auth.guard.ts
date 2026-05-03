@@ -4,10 +4,12 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { CognitoJwtVerifier } from 'aws-jwt-verify';
 import type { CognitoJwtVerifierSingleUserPool } from 'aws-jwt-verify/cognito-verifier';
 import { Request } from 'express';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
 type VerifierProps = {
   userPoolId: string;
@@ -20,7 +22,10 @@ export class JwtAuthGuard implements CanActivate {
   private readonly verifier: CognitoJwtVerifierSingleUserPool<VerifierProps>;
   private readonly skipAuth: boolean;
 
-  constructor(private readonly config: ConfigService) {
+  constructor(
+    config: ConfigService,
+    private readonly reflector: Reflector,
+  ) {
     this.skipAuth = config.get<string>('SKIP_AUTH') === 'true';
 
     this.verifier = CognitoJwtVerifier.create({
@@ -31,6 +36,12 @@ export class JwtAuthGuard implements CanActivate {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isPublic) return true;
+
     if (this.skipAuth) {
       // テスト用: 認証をスキップしてダミーユーザーをセット
       const req = context.switchToHttp().getRequest<Request>();
