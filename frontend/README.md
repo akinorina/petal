@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# frontend
 
-## Getting Started
+Petal のフロントエンド。Next.js + React + Tailwind CSS。
 
-First, run the development server:
+## ディレクトリ構成
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```text
+frontend/
+  app/                # Next.js App Router
+    login/            # ログイン画面
+    (admin)/          # 認証必須のルートグループ
+      users/          # ユーザー管理画面
+  contexts/           # React Context（認証状態など）
+  lib/                # API クライアント・認証ヘルパー
+  types/              # 型定義
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## セットアップ
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# 環境変数を設定
+cp .env.local.example .env.local
+# .env.local を編集して NEXT_PUBLIC_API_URL を設定
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 開発
 
-## Learn More
+```bash
+# 開発サーバ起動（http://localhost:3001）
+pnpm start:dev
 
-To learn more about Next.js, take a look at the following resources:
+# プロダクションビルド
+pnpm build
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# プロダクション起動
+pnpm start:prod
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Lint
+pnpm lint
+```
 
-## Deploy on Vercel
+## 環境変数
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| 変数 | 用途 |
+| ---- | ---- |
+| `NEXT_PUBLIC_API_URL` | バックエンド API のベース URL |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**注意:** クライアントシークレットなど秘密情報を `NEXT_PUBLIC_*` に含めないこと（ブラウザに露出する）。Cognito の認証はすべてバックエンド経由で行う。
+
+## 認証フロー
+
+1. ログイン画面で email / password を入力
+2. バックエンド `POST /auth/login` を呼ぶ（バックエンドが Cognito に SECRET_HASH 付きで認証）
+3. アクセストークンを `localStorage` に保存
+4. 以降の API 呼び出しに `Authorization: Bearer <token>` を付与
+
+詳細は [../docs/11_user-info_and_authentication.md](../docs/11_user-info_and_authentication.md) を参照。
