@@ -54,18 +54,22 @@ type User = z.infer<typeof UserSchema>;
 **フィーチャ（機能単位）優先で配置する**。各フィーチャを `src/<feature>/` 配下にまとめ、その内部でオニオンアーキテクチャのレイヤーごとに分割する。
 
 ```text
-src/
-  <feature>/                # 例: user, auth, image など
-    domain/                 # エンティティ、値オブジェクト、リポジトリIF
-    application/            # ユースケース（サービス）、入力スキーマ
-    infra/                  # DB エンティティ、リポジトリ実装、外部サービス連携
-    controller/             # コントローラー・DTO
-    <feature>.module.ts     # NestJS モジュール定義
-  common/                   # 横断的関心事（ガード、デコレーター等）
-  database/                 # DataSource、マイグレーション
-  app.module.ts
-  main.ts
+backend/
+  src/                      # ランタイムコード（NestJS アプリ本体）
+    <feature>/              # 例: user, auth, image など
+      domain/               # エンティティ、値オブジェクト、リポジトリIF
+      application/          # ユースケース（サービス）、入力スキーマ
+      infra/                # DB エンティティ、リポジトリ実装、外部サービス連携
+      controller/           # コントローラー・DTO
+      <feature>.module.ts   # NestJS モジュール定義
+    common/                 # 横断的関心事（ガード、デコレーター等）
+    app.module.ts
+    main.ts
+  database/                 # CLI 専用：DataSource、マイグレーション
+  scripts/                  # CLI 専用：管理用スクリプト
 ```
+
+`src/` にはランタイム（HTTP サーバ）として動くコードのみを置く。`database/` `scripts/` は CLI で実行するツール群で、`src/` の外に置く。
 
 ### ルール
 
@@ -88,17 +92,17 @@ TypeORM を使用する。
 
 - `synchronize: false` を必ず設定する。TypeORM の自動スキーマ同期は使用しない。
 - スキーマ変更はすべて migration ファイルで管理する。
-- migration ファイルは `backend/src/database/migrations/` に置く。
-- DB 接続設定は `backend/src/database/data-source.ts` に定義する（CLI 用）。
+- migration ファイルは `backend/database/migrations/` に置く。
+- DB 接続設定は `backend/database/data-source.ts` に定義する（CLI 用）。
 
 主要コマンド（`backend/` で実行）：
 
 ```bash
 # エンティティ差分から migration ファイルを自動生成
-pnpm migration:generate src/database/migrations/<名前>
+pnpm migration:generate database/migrations/<名前>
 
 # 空の migration ファイルを作成（手書き用）
-pnpm migration:create src/database/migrations/<名前>
+pnpm migration:create database/migrations/<名前>
 
 # migration を実行
 pnpm migration:run

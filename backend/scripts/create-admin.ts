@@ -15,7 +15,7 @@ import {
   CognitoIdentityProviderClient,
 } from '@aws-sdk/client-cognito-identity-provider';
 import { randomUUID } from 'crypto';
-import { AppDataSource } from '../src/database/data-source';
+import { AppDataSource } from '../database/data-source';
 
 async function main(): Promise<void> {
   const email = requireEnv('ADMIN_EMAIL');

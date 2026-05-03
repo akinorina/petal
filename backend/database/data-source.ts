@@ -9,6 +9,6 @@ export const AppDataSource = new DataSource({
   password: process.env.DB_PASSWORD ?? 'password',
   database: process.env.DB_DATABASE ?? 'petal',
   entities: ['src/**/*.entity.ts'],
-  migrations: ['src/database/migrations/*.ts'],
+  migrations: ['database/migrations/*.ts'],
   synchronize: false,
 });
