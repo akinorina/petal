@@ -12,6 +12,7 @@
 | [docs/01_requirements.md](docs/01_requirements.md) | プロジェクトの要求仕様（機能要件） |
 | [docs/02_ implementations.md](docs/02_%20implementations.md) | 技術スタック・システム構成 |
 | [docs/11_user-info_and_authentication.md](docs/11_user-info_and_authentication.md) | ユーザー情報・認証機能の設計 |
+| [docs/12_image-management.md](docs/12_image-management.md) | 画像管理機能の設計（TSK-3） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 
@@ -29,25 +30,30 @@
 詳細は [docs/00_rules.md](docs/00_rules.md) を参照。下記は逸脱しやすいポイントの要約。
 
 ### アーキテクチャ
+
 - **DDD + オニオンアーキテクチャ**。依存方向は外側 → 内側。Domain は Infrastructure を参照しない。
 - **フィーチャ優先のディレクトリ構成**。`src/<feature>/{domain,application,infra,controller}/` 配下に置く。レイヤーを `src/` 直下に置かない。
 - 外部 SDK（Cognito, S3 等）の呼び出しは必ず `infra/` に隔離する。`application/` から SDK を直接触らない。
 
 ### コーディング
+
 - TypeScript: `any` 禁止、`strict` 有効。
 - Zod: 外部入力（API リクエスト・環境変数）は必ず Zod でバリデーション。型は `z.infer` で生成し、手書き型と二重定義しない。
 - **ドメインエンティティは Zod スキーマで不変条件を定義し、コンストラクタで `parse()` する**。位置引数ではなくプロパティオブジェクトを 1 つ受け取る形にする。
 
 ### DB
+
 - TypeORM。`synchronize: false`（自動同期しない）。
 - スキーマ変更は migration ファイルで管理。`backend/database/migrations/` に置く。
 - 削除はすべて論理削除（`@DeleteDateColumn` で `deleted_at` を入れる）。物理削除しない。
 
 ### 環境変数
+
 - `.env` はコミットしない。`.env.example` を更新する。
 - クライアントシークレットなど秘密情報を `NEXT_PUBLIC_*` に置かない（ブラウザに露出する）。
 
 ### Git
+
 - **コミットメッセージは日本語**。
 - `git push --force` や `git reset --hard` などの破壊的操作はユーザーの明示的許可なく実行しない。
 
