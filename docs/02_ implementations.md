@@ -64,21 +64,24 @@ petal/
 
 ## 5. Local 開発環境のセットアップ
 
-Local 環境の DB は Docker で起動する。設定は `backend/docker-compose.yml` で管理し、`backend/.env` の環境変数を参照する。
+Local 環境の DB（PostgreSQL）と S3 互換ストレージ（Localstack）は Docker で起動する。設定は `backend/docker-compose.yml` で管理し、`backend/.env` の環境変数を参照する。
 
 ```bash
 # 初回のみ：backend/.env.example をコピーして設定
 cp backend/.env.example backend/.env
 
-# PostgreSQL 起動
+# 全サービス起動（PostgreSQL + Localstack）
 pnpm db:up
 
-# PostgreSQL 停止
+# 全サービス停止
 pnpm db:down
 
 # ログ確認
-pnpm db:logs
+pnpm db:logs   # PostgreSQL
+pnpm s3:logs   # Localstack
 ```
+
+Localstack は起動時に `S3_BUCKET` で指定したバケットを自動作成する（`backend/localstack/init/01-create-bucket.sh`）。
 
 ---
 

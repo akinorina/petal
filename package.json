@@ -12,6 +12,8 @@
     "db:up": "docker compose -f backend/docker-compose.yml up -d",
     "db:down": "docker compose -f backend/docker-compose.yml down",
     "db:logs": "docker compose -f backend/docker-compose.yml logs -f postgres",
+    "s3:logs": "docker compose -f backend/docker-compose.yml logs -f localstack",
+    "s3:setup": "bash backend/scripts/localstack/setup-s3.sh",
     "format": "pnpm --filter backend format && pnpm --filter frontend format",
     "lint": "pnpm --filter backend lint && pnpm --filter frontend lint"
   },
