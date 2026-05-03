@@ -36,16 +36,16 @@ export class UserService {
     if (existing) throw new ConflictException('すでに登録済みのユーザーです');
 
     const now = new Date();
-    const user = new User(
-      randomUUID(),
-      input.cognitoSub,
-      input.name,
-      input.nameKana,
-      input.role,
-      now,
-      now,
-      null,
-    );
+    const user = new User({
+      id: randomUUID(),
+      cognitoSub: input.cognitoSub,
+      name: input.name,
+      nameKana: input.nameKana,
+      role: input.role,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null,
+    });
     return this.userRepository.save(user);
   }
 

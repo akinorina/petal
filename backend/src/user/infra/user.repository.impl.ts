@@ -38,16 +38,16 @@ export class UserRepositoryImpl implements IUserRepository {
   }
 
   private toDomain(entity: UserEntity): User {
-    return new User(
-      entity.id,
-      entity.cognitoSub,
-      entity.name,
-      entity.nameKana,
-      entity.role,
-      entity.createdAt,
-      entity.updatedAt,
-      entity.deletedAt,
-    );
+    return new User({
+      id: entity.id,
+      cognitoSub: entity.cognitoSub,
+      name: entity.name,
+      nameKana: entity.nameKana,
+      role: entity.role,
+      createdAt: entity.createdAt,
+      updatedAt: entity.updatedAt,
+      deletedAt: entity.deletedAt,
+    });
   }
 
   private toEntity(user: User): UserEntity {

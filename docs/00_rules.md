@@ -28,6 +28,48 @@
 - ビジネスルールは Domain レイヤーに集約する。Application や Infrastructure に書かない。
 - リポジトリのインターフェースは Domain に定義し、実装は Infrastructure に置く。
 
+### ドメインエンティティ・値オブジェクトの定義
+
+ドメインの不変条件（フィールドの型・形式・範囲）は Zod スキーマで宣言し、コンストラクタで実行時バリデーションを行う。これにより「不正な状態のインスタンスは存在しない」ことを保証する。
+
+ルール：
+
+- フィールドの制約は Zod スキーマ（`<Name>Schema`）で定義する。
+- TypeScript の型は `z.infer<typeof <Name>Schema>` で生成する。手書きの型と二重定義しない。
+- コンストラクタはプロパティのオブジェクトを 1 つだけ受け取り、先頭で `<Name>Schema.parse(props)` を呼んで検証する。位置引数は使わない。
+- 検証済みの値だけをフィールドに代入する。
+
+例（`backend/src/user/domain/user.ts`）：
+
+```ts
+import { z } from 'zod';
+import { UserRole } from './user-role.enum';
+
+export const UserSchema = z.object({
+  id: z.uuid(),
+  cognitoSub: z.string().min(1),
+  name: z.string().min(1).max(100),
+  nameKana: z.string().min(1).max(100),
+  role: z.enum(UserRole),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  deletedAt: z.date().nullable(),
+});
+
+export type UserProps = z.infer<typeof UserSchema>;
+
+export class User {
+  readonly id: string;
+  // ... 各フィールド宣言 ...
+
+  constructor(props: UserProps) {
+    const validated = UserSchema.parse(props);
+    this.id = validated.id;
+    // ... 各フィールドへ代入 ...
+  }
+}
+```
+
 ---
 
 ## 2. コーディングルール
