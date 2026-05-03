@@ -1,0 +1,117 @@
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { Request } from 'express';
+import { User } from '../../user/domain/user';
+import { UserService } from '../../user/application/user.service';
+import { ImageService } from '../application/image.service';
+import { CreateImageSchema } from '../application/image.schemas';
+import { Image } from '../domain/image';
+import {
+  CreateImageRequestDto,
+  CreateImageResponseDto,
+  DownloadUrlResponseDto,
+  ImageResponseDto,
+} from './image.dto';
+
+@Controller('images')
+export class ImageController {
+  constructor(
+    private readonly imageService: ImageService,
+    private readonly userService: UserService,
+  ) {}
+
+  @Post()
+  async create(
+    @Req() req: Request,
+    @Body() body: CreateImageRequestDto,
+  ): Promise<CreateImageResponseDto> {
+    const result = CreateImageSchema.safeParse(body);
+    if (!result.success) throw new BadRequestException(result.error.flatten());
+    const currentUser = await this.resolveCurrentUser(req);
+    const created = await this.imageService.createWithUploadUrl(
+      currentUser,
+      result.data,
+    );
+    return {
+      image: toResponse(created.image),
+      upload: created.upload,
+    };
+  }
+
+  @Get()
+  async findAll(@Req() req: Request): Promise<ImageResponseDto[]> {
+    const currentUser = await this.resolveCurrentUser(req);
+    const images = await this.imageService.findAllForOwner(currentUser);
+    return images.map(toResponse);
+  }
+
+  @Get(':id')
+  async findOne(
+    @Req() req: Request,
+    @Param('id') id: string,
+  ): Promise<ImageResponseDto> {
+    const currentUser = await this.resolveCurrentUser(req);
+    return toResponse(await this.imageService.findOneForOwner(currentUser, id));
+  }
+
+  @Get(':id/download-url')
+  async getDownloadUrl(
+    @Req() req: Request,
+    @Param('id') id: string,
+  ): Promise<DownloadUrlResponseDto> {
+    const currentUser = await this.resolveCurrentUser(req);
+    return this.imageService.createDownloadUrl(currentUser, id);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  async remove(
+    @Req() req: Request,
+    @Param('id') id: string,
+  ): Promise<void> {
+    const currentUser = await this.resolveCurrentUser(req);
+    await this.imageService.remove(currentUser, id);
+  }
+
+  private async resolveCurrentUser(req: Request): Promise<User> {
+    const sub = extractCognitoSub(req);
+    const user = await this.userService.findByCognitoSub(sub);
+    if (!user) {
+      throw new UnauthorizedException('認証ユーザーに対応するレコードがありません');
+    }
+    return user;
+  }
+}
+
+function extractCognitoSub(req: Request): string {
+  const payload = (req as Request & { user?: { sub?: unknown } }).user;
+  const sub = payload?.sub;
+  if (typeof sub !== 'string' || sub.length === 0) {
+    throw new UnauthorizedException('認証情報が不正です');
+  }
+  return sub;
+}
+
+function toResponse(image: Image): ImageResponseDto {
+  return {
+    id: image.id,
+    ownerUserId: image.ownerUserId,
+    originalFilename: image.originalFilename,
+    mimeType: image.mimeType,
+    sizeBytes: image.sizeBytes,
+    title: image.title,
+    description: image.description,
+    createdAt: image.createdAt,
+    updatedAt: image.updatedAt,
+  };
+}

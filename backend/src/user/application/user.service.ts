@@ -29,6 +29,10 @@ export class UserService {
     return user;
   }
 
+  findByCognitoSub(cognitoSub: string): Promise<User | null> {
+    return this.userRepository.findByCognitoSub(cognitoSub);
+  }
+
   async create(input: CreateUserInput): Promise<User> {
     const existing = await this.userRepository.findByCognitoSub(
       input.cognitoSub,
