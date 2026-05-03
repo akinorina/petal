@@ -1,5 +1,11 @@
 import { getAccessToken } from './cognito';
 import type { CreateUserRequest, UpdateUserRequest, User } from '@/types/user';
+import type {
+  CreateImageRequest,
+  CreateImageResponse,
+  DownloadUrlResponse,
+  ImageItem,
+} from '@/types/image';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
@@ -29,6 +35,35 @@ export class ApiError extends Error {
     message: string,
   ) {
     super(message);
+  }
+}
+
+export const imageApi = {
+  findAll: () => request<ImageItem[]>('/images'),
+  findById: (id: string) => request<ImageItem>(`/images/${id}`),
+  create: (data: CreateImageRequest) =>
+    request<CreateImageResponse>('/images', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  getDownloadUrl: (id: string) =>
+    request<DownloadUrlResponse>(`/images/${id}/download-url`),
+  remove: (id: string) =>
+    request<void>(`/images/${id}`, { method: 'DELETE' }),
+};
+
+export async function uploadToPresignedUrl(
+  url: string,
+  file: File,
+  contentType: string,
+): Promise<void> {
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: { 'Content-Type': contentType },
+    body: file,
+  });
+  if (!res.ok) {
+    throw new ApiError(res.status, `アップロードに失敗しました (${res.status})`);
   }
 }
 
