@@ -57,7 +57,14 @@ export async function uploadToPresignedUrl(
 }
 
 export const userApi = {
-  findAll: () => unwrap(apiClient.GET('/users')),
+  findAll: (params?: { deleted?: boolean }) =>
+    unwrap(
+      apiClient.GET('/users', {
+        params: {
+          query: params?.deleted ? { deleted: 'true' } : {},
+        },
+      }),
+    ),
   findById: (id: string) =>
     unwrap(apiClient.GET('/users/{id}', { params: { path: { id } } })),
   create: (body: Schemas['CreateUserRequestDto']) =>
@@ -69,4 +76,8 @@ export const userApi = {
   remove: async (id: string): Promise<void> => {
     await unwrap(apiClient.DELETE('/users/{id}', { params: { path: { id } } }));
   },
+  restore: (id: string) =>
+    unwrap(
+      apiClient.POST('/users/{id}/restore', { params: { path: { id } } }),
+    ),
 };

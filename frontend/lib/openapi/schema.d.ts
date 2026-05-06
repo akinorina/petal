@@ -284,7 +284,9 @@ export interface operations {
     };
     UserController_findAll: {
         parameters: {
-            query?: never;
+            query?: {
+                deleted?: "true" | "false";
+            };
             header?: never;
             path?: never;
             cookie?: never;

@@ -30,6 +30,10 @@ export class UserService {
     return this.userRepository.findAll();
   }
 
+  findAllDeleted(): Promise<User[]> {
+    return this.userRepository.findAllDeleted();
+  }
+
   async findById(id: string): Promise<User> {
     const user = await this.userRepository.findById(id);
     if (!user) throw new NotFoundException(`ユーザーが見つかりません: ${id}`);

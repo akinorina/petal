@@ -8,6 +8,7 @@ export interface IUserRepository {
   findByCognitoSub(cognitoSub: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
   findAll(): Promise<User[]>;
+  findAllDeleted(): Promise<User[]>;
   save(user: User): Promise<User>;
   softDelete(id: string): Promise<void>;
   restore(id: string): Promise<void>;

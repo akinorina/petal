@@ -12,9 +12,13 @@ type Modal =
   | { type: 'create' }
   | { type: 'edit'; user: User }
   | { type: 'delete'; user: User }
+  | { type: 'restore'; user: User }
   | null;
 
+type Tab = 'active' | 'deleted';
+
 export default function UsersPage() {
+  const [tab, setTab] = useState<Tab>('active');
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +28,7 @@ export default function UsersPage() {
     setIsLoading(true);
     try {
       setError(null);
-      const data = await userApi.findAll();
+      const data = await userApi.findAll({ deleted: tab === 'deleted' });
       setUsers(data);
     } catch (e) {
       setError(
@@ -33,7 +37,7 @@ export default function UsersPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [tab]);
 
   useEffect(() => {
     void load();
@@ -49,16 +53,40 @@ export default function UsersPage() {
     }
   }
 
+  async function handleRestore(user: User) {
+    try {
+      await userApi.restore(user.id);
+      setModal(null);
+      await load();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : '復活に失敗しました');
+    }
+  }
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-semibold">ユーザー管理</h1>
-        <button
-          onClick={() => setModal({ type: 'create' })}
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
+        {tab === 'active' && (
+          <button
+            onClick={() => setModal({ type: 'create' })}
+            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
+          >
+            ユーザーを追加
+          </button>
+        )}
+      </div>
+
+      <div className="mb-4 flex gap-1 border-b border-zinc-200">
+        <TabButton active={tab === 'active'} onClick={() => setTab('active')}>
+          アクティブ
+        </TabButton>
+        <TabButton
+          active={tab === 'deleted'}
+          onClick={() => setTab('deleted')}
         >
-          ユーザーを追加
-        </button>
+          削除済み
+        </TabButton>
       </div>
 
       {error && (
@@ -124,18 +152,29 @@ export default function UsersPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-3">
-                        <button
-                          onClick={() => setModal({ type: 'edit', user })}
-                          className="text-zinc-500 hover:text-zinc-900"
-                        >
-                          編集
-                        </button>
-                        <button
-                          onClick={() => setModal({ type: 'delete', user })}
-                          className="text-red-400 hover:text-red-600"
-                        >
-                          削除
-                        </button>
+                        {tab === 'active' ? (
+                          <>
+                            <button
+                              onClick={() => setModal({ type: 'edit', user })}
+                              className="text-zinc-500 hover:text-zinc-900"
+                            >
+                              編集
+                            </button>
+                            <button
+                              onClick={() => setModal({ type: 'delete', user })}
+                              className="text-red-400 hover:text-red-600"
+                            >
+                              削除
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => setModal({ type: 'restore', user })}
+                            className="text-emerald-600 hover:text-emerald-800"
+                          >
+                            復活
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -178,7 +217,40 @@ export default function UsersPage() {
           onConfirm={() => handleDelete(modal.user)}
         />
       )}
+
+      {modal?.type === 'restore' && (
+        <ConfirmModal
+          message={`「${modal.user.name}」を復活させますか？`}
+          confirmLabel="復活する"
+          confirmColor="emerald"
+          onCancel={() => setModal(null)}
+          onConfirm={() => handleRestore(modal.user)}
+        />
+      )}
     </div>
+  );
+}
+
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
+        active
+          ? 'border-zinc-900 text-zinc-900'
+          : 'border-transparent text-zinc-500 hover:text-zinc-900'
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -290,11 +362,19 @@ function ConfirmModal({
   message,
   onCancel,
   onConfirm,
+  confirmLabel = '削除する',
+  confirmColor = 'red',
 }: {
   message: string;
   onCancel: () => void;
   onConfirm: () => void;
+  confirmLabel?: string;
+  confirmColor?: 'red' | 'emerald';
 }) {
+  const colorClass =
+    confirmColor === 'emerald'
+      ? 'bg-emerald-600 hover:bg-emerald-700'
+      : 'bg-red-600 hover:bg-red-700';
   return (
     <Overlay onClose={onCancel}>
       <p className="mb-6 text-sm">{message}</p>
@@ -304,9 +384,9 @@ function ConfirmModal({
         </button>
         <button
           onClick={onConfirm}
-          className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+          className={`rounded-md px-4 py-2 text-sm font-medium text-white ${colorClass}`}
         >
-          削除する
+          {confirmLabel}
         </button>
       </div>
     </Overlay>

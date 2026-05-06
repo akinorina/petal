@@ -18,6 +18,7 @@
 | [docs/14_cognito-user-pool-setup.md](docs/14_cognito-user-pool-setup.md) | Cognito User Pool の構築手順（AWS コンソール作業） |
 | [docs/15_user-management-enhancement.md](docs/15_user-management-enhancement.md) | ユーザー管理機能の拡張設計（TSK-4：Cognito 登録／無効化／初回ログイン） |
 | [docs/16_user-restore.md](docs/16_user-restore.md) | 削除済みユーザーの再有効化 API 設計（TSK-6） |
+| [docs/17_deleted-users-ui.md](docs/17_deleted-users-ui.md) | 削除済みユーザーの閲覧・復活 UI 設計（TSK-7） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 

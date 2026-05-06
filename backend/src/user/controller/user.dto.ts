@@ -32,3 +32,8 @@ export class UpdateUserRequestDto {
   @ApiProperty({ enum: UserRole, enumName: 'UserRole', required: false })
   role?: UserRole;
 }
+
+export class ListUsersQueryDto {
+  @ApiProperty({ enum: ['true', 'false'], required: false })
+  deleted?: 'true' | 'false';
+}
