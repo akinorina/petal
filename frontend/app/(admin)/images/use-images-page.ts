@@ -1,7 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { ApiError, imageApi } from '@/lib/api';
+import { useState } from 'react';
+import { ApiError } from '@/lib/api';
+import {
+  useImagesApi,
+  type UploadInput,
+} from '@/lib/api-hooks/use-images-api';
 import type { Schemas } from '@/lib/openapi/client';
 
 type ImageItem = Schemas['ImageResponseDto'];
@@ -12,52 +16,30 @@ export type Modal =
   | null;
 
 export function useImagesPage() {
-  const [images, setImages] = useState<ImageItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [modal, setModal] = useState<Modal>(null);
-
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      setError(null);
-      const data = await imageApi.findAll();
-      setImages(data);
-    } catch (e) {
-      setError(
-        e instanceof ApiError ? e.message : 'データの取得に失敗しました',
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const api = useImagesApi();
 
   async function handleDelete(image: ImageItem) {
     try {
-      await imageApi.remove(image.id);
+      await api.remove(image.id);
       setModal(null);
-      await load();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : '削除に失敗しました');
+      api.setError(e instanceof ApiError ? e.message : '削除に失敗しました');
     }
   }
 
-  async function handleUploaded() {
+  async function handleUpload(input: UploadInput) {
+    await api.upload(input);
     setModal(null);
-    await load();
   }
 
   return {
-    images,
-    isLoading,
-    error,
+    images: api.images,
+    isLoading: api.isLoading,
+    error: api.error,
     modal,
     setModal,
     handleDelete,
-    handleUploaded,
+    handleUpload,
   };
 }

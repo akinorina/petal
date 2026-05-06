@@ -7,14 +7,11 @@ import {
   useEffect,
   useState,
 } from 'react';
+import { getCurrentUserEmail, getAccessToken } from '@/lib/cognito';
 import {
-  completeNewPassword as cognitoCompleteNewPassword,
-  getCurrentUserEmail,
-  getAccessToken,
-  login as cognitoLogin,
-  logout as cognitoLogout,
+  useAuthApi,
   type LoginResult,
-} from '@/lib/cognito';
+} from '@/lib/api-hooks/use-auth-api';
 
 type AuthState = {
   isAuthenticated: boolean;
@@ -35,6 +32,7 @@ type AuthContextValue = AuthState & {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const api = useAuthApi();
   const [state, setState] = useState<AuthState>({
     isAuthenticated: false,
     email: null,
@@ -51,26 +49,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const result = await cognitoLogin(email, password);
-    if (result.kind === 'authenticated') {
-      setState({ isAuthenticated: true, email: result.email, isLoading: false });
-    }
-    return result;
-  }, []);
+  const login = useCallback(
+    async (email: string, password: string) => {
+      const result = await api.login(email, password);
+      if (result.kind === 'authenticated') {
+        setState({
+          isAuthenticated: true,
+          email: result.email,
+          isLoading: false,
+        });
+      }
+      return result;
+    },
+    [api],
+  );
 
   const completeNewPassword = useCallback(
     async (email: string, newPassword: string, session: string) => {
-      await cognitoCompleteNewPassword(email, newPassword, session);
+      await api.completeNewPassword(email, newPassword, session);
       setState({ isAuthenticated: true, email, isLoading: false });
     },
-    [],
+    [api],
   );
 
   const logout = useCallback(async () => {
-    await cognitoLogout();
+    await api.logout();
     setState({ isAuthenticated: false, email: null, isLoading: false });
-  }, []);
+  }, [api]);
 
   return (
     <AuthContext.Provider

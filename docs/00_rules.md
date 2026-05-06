@@ -137,7 +137,31 @@ app/login/
 - カスタムフックはページと同じディレクトリに置き、`use-<page>-page.ts` の命名にする。
 - フックは `'use client'` を必要とせず、ページ側のみが `'use client'` を持つ。
 - 1 ページにつき 1 フックを基本とし、無理に細分化しない。
-- 真に汎用的に再利用できるフックのみ `frontend/hooks/` に置く（現状はそうしたものは無い）。
+
+### API アクセスの分離
+
+ページフックの中に直接 `imageApi.xxx` 等の呼び出しを書かず、**API アクセス専用のカスタムフック**に分離して `frontend/lib/api-hooks/` に置く。
+
+```text
+frontend/lib/api-hooks/
+  use-auth-api.ts          # ログイン / ログアウト / パスワードリセット 等
+  use-users-api.ts         # ユーザー一覧 / CRUD / 復活
+  use-images-api.ts        # 画像一覧 / アップロード / 削除
+  use-image-detail-api.ts  # 画像詳細 / ダウンロード URL / 削除
+```
+
+ルール：
+
+- API フックは **取得状態（data / isLoading / error）** と **操作関数（reload / create / update / 等）** を返す。
+- 操作関数は失敗時に例外を `throw` し、呼び出し側（ページフック）で UI 文脈に応じたメッセージを `setError` する形にする（API フック内で UI 文言を決め打ちしない）。
+- フィーチャ単位で 1 ファイル。複数ページから再利用できる API はここに集約する。
+- ページフックは「UI 状態 + API フックの呼び出しのオーケストレーション」だけを行う。`@/lib/api` や `@/lib/cognito` を直接呼び出さない。
+
+### AuthContext と useAuthApi の責務分担
+
+- `AuthContext` は **認証グローバル状態**（`isAuthenticated`, `email`, `isLoading`）の保持に専念。
+- `useAuthApi` は **認証 API 操作**（`login` / `logout` / `completeNewPassword` / `requestPasswordReset` / `confirmPasswordReset`）に専念。
+- `AuthContext` の内部で `useAuthApi` を呼び、API 結果に応じて状態を更新する。アプリ側からは `useAuth()` 経由で従来どおり利用できる。
 
 ---
 

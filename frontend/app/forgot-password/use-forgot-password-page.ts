@@ -2,15 +2,13 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  confirmPasswordReset,
-  requestPasswordReset,
-} from '@/lib/cognito';
+import { useAuthApi } from '@/lib/api-hooks/use-auth-api';
 
 type Step = { kind: 'request' } | { kind: 'confirm'; email: string };
 
 export function useForgotPasswordPage() {
   const router = useRouter();
+  const api = useAuthApi();
   const [step, setStep] = useState<Step>({ kind: 'request' });
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
@@ -24,7 +22,7 @@ export function useForgotPasswordPage() {
     setError(null);
     setIsLoading(true);
     try {
-      await requestPasswordReset(email);
+      await api.requestPasswordReset(email);
       setStep({ kind: 'confirm', email });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'コード送信に失敗しました');
@@ -44,7 +42,7 @@ export function useForgotPasswordPage() {
 
     setIsLoading(true);
     try {
-      await confirmPasswordReset(step.email, code, newPassword);
+      await api.confirmPasswordReset(step.email, code, newPassword);
       router.push('/login');
     } catch (err) {
       setError(
