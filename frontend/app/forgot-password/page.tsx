@@ -1,64 +1,25 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import {
-  confirmPasswordReset,
-  requestPasswordReset,
-} from '@/lib/cognito';
-
-type Step =
-  | { kind: 'request' }
-  | { kind: 'confirm'; email: string };
+import { useForgotPasswordPage } from './use-forgot-password-page';
 
 export default function ForgotPasswordPage() {
-  const router = useRouter();
-  const [step, setStep] = useState<Step>({ kind: 'request' });
-  const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  async function handleRequest(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setIsLoading(true);
-    try {
-      await requestPasswordReset(email);
-      setStep({ kind: 'confirm', email });
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'コード送信に失敗しました',
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function handleConfirm(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    if (newPassword !== confirmPassword) {
-      setError('パスワードが一致しません');
-      return;
-    }
-    if (step.kind !== 'confirm') return;
-
-    setIsLoading(true);
-    try {
-      await confirmPasswordReset(step.email, code, newPassword);
-      router.push('/login');
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'パスワード設定に失敗しました',
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }
+  const {
+    step,
+    email,
+    setEmail,
+    code,
+    setCode,
+    newPassword,
+    setNewPassword,
+    confirmPassword,
+    setConfirmPassword,
+    error,
+    isLoading,
+    handleRequest,
+    handleConfirm,
+    backToRequest,
+  } = useForgotPasswordPage();
 
   return (
     <div className="flex min-h-full items-center justify-center py-12 px-4">
@@ -153,13 +114,7 @@ export default function ForgotPasswordPage() {
             <p className="text-center text-sm">
               <button
                 type="button"
-                onClick={() => {
-                  setStep({ kind: 'request' });
-                  setCode('');
-                  setNewPassword('');
-                  setConfirmPassword('');
-                  setError(null);
-                }}
+                onClick={backToRequest}
                 className="text-zinc-500 hover:text-zinc-900"
               >
                 メールアドレスを入力し直す
