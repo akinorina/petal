@@ -13,6 +13,7 @@
 | [docs/02_ implementations.md](docs/02_%20implementations.md) | 技術スタック・システム構成 |
 | [docs/11_user-info_and_authentication.md](docs/11_user-info_and_authentication.md) | ユーザー情報・認証機能の設計 |
 | [docs/12_image-management.md](docs/12_image-management.md) | 画像管理機能の設計（TSK-3） |
+| [docs/13_openapi.md](docs/13_openapi.md) | OpenAPI / Swagger と Frontend 型生成の連携 |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 

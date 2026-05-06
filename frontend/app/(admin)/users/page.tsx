@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, userApi } from '@/lib/api';
-import type { CreateUserRequest, UpdateUserRequest, User } from '@/types/user';
+import type { Schemas } from '@/lib/openapi/client';
+
+type User = Schemas['UserResponseDto'];
+type CreateUserRequest = Schemas['CreateUserRequestDto'];
+type UpdateUserRequest = Schemas['UpdateUserRequestDto'];
 
 type Modal =
   | { type: 'create' }

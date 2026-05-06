@@ -1,12 +1,12 @@
 export class LoginRequestDto {
-  email: string;
-  password: string;
+  email!: string;
+  password!: string;
 }
 
 export class LoginResponseDto {
-  accessToken: string;
-  idToken: string;
-  refreshToken: string;
-  expiresIn: number;
-  email: string;
+  accessToken!: string;
+  idToken!: string;
+  refreshToken!: string;
+  expiresIn!: number;
+  email!: string;
 }

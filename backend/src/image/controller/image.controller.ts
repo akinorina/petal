@@ -10,6 +10,7 @@ import {
   Req,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { User } from '../../user/domain/user';
 import { UserService } from '../../user/application/user.service';
@@ -23,6 +24,8 @@ import {
   ImageResponseDto,
 } from './image.dto';
 
+@ApiTags('images')
+@ApiBearerAuth('bearer')
 @Controller('images')
 export class ImageController {
   constructor(
@@ -111,7 +114,7 @@ function toResponse(image: Image): ImageResponseDto {
     sizeBytes: image.sizeBytes,
     title: image.title,
     description: image.description,
-    createdAt: image.createdAt,
-    updatedAt: image.updatedAt,
+    createdAt: image.createdAt.toISOString(),
+    updatedAt: image.updatedAt.toISOString(),
   };
 }
