@@ -2,12 +2,12 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { imageApi, uploadToPresignedUrl } from '@/lib/api';
 import {
   ALLOWED_IMAGE_MIME_TYPES,
   type ImageMimeType,
   MAX_IMAGE_SIZE_BYTES,
 } from '@/lib/image-constants';
+import type { UploadInput } from '@/lib/api-hooks/use-images-api';
 import { useImagesPage } from './use-images-page';
 
 export default function ImagesPage() {
@@ -18,7 +18,7 @@ export default function ImagesPage() {
     modal,
     setModal,
     handleDelete,
-    handleUploaded,
+    handleUpload,
   } = useImagesPage();
 
   return (
@@ -89,7 +89,7 @@ export default function ImagesPage() {
       {modal?.type === 'upload' && (
         <UploadModal
           onClose={() => setModal(null)}
-          onUploaded={handleUploaded}
+          onUpload={handleUpload}
         />
       )}
 
@@ -108,10 +108,10 @@ export default function ImagesPage() {
 
 function UploadModal({
   onClose,
-  onUploaded,
+  onUpload,
 }: {
   onClose: () => void;
-  onUploaded: () => Promise<void>;
+  onUpload: (input: UploadInput) => Promise<void>;
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
@@ -145,19 +145,7 @@ function UploadModal({
 
     setIsSaving(true);
     try {
-      const created = await imageApi.create({
-        originalFilename: file.name,
-        mimeType: file.type,
-        sizeBytes: file.size,
-        title: title || undefined,
-        description: description || undefined,
-      });
-      await uploadToPresignedUrl(
-        created.upload.url,
-        file,
-        created.upload.headers['Content-Type'],
-      );
-      await onUploaded();
+      await onUpload({ file, mimeType: file.type, title, description });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'アップロードに失敗しました');
     } finally {
