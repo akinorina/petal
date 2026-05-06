@@ -16,6 +16,9 @@ export class UserEntity {
   @Column({ name: 'cognito_sub', length: 255, unique: true })
   cognitoSub!: string;
 
+  @Column({ length: 255, unique: true })
+  email!: string;
+
   @Column({ length: 100 })
   name!: string;
 

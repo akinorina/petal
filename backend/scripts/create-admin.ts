@@ -61,9 +61,9 @@ async function main(): Promise<void> {
   await AppDataSource.initialize();
 
   await AppDataSource.query(
-    `INSERT INTO "petal"."users" (id, cognito_sub, name, name_kana, role)
-     VALUES ($1, $2, $3, $4, 'admin')`,
-    [randomUUID(), sub, name, nameKana],
+    `INSERT INTO "petal"."users" (id, cognito_sub, email, name, name_kana, role)
+     VALUES ($1, $2, $3, $4, $5, 'admin')`,
+    [randomUUID(), sub, email, name, nameKana],
   );
 
   await AppDataSource.destroy();

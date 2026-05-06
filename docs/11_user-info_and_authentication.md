@@ -14,7 +14,7 @@ v1（MVP）では **Admin ユーザー1名のみ** でシステムを稼働さ�
 
 | 属性 | 管理場所 | 備考 |
 | ---- | -------- | ---- |
-| メールアドレス | AWS Cognito | ログイン ID として使用 |
+| メールアドレス | AWS Cognito（正） + PostgreSQL（キャッシュ） | ログイン ID として使用。Cognito が正で、表示・検索用に DB にもコピーを持つ |
 | パスワード | AWS Cognito | Cognito が暗号化して管理 |
 | ID | PostgreSQL | UUID（アプリケーション内の識別子） |
 | 氏名 | PostgreSQL | |
@@ -36,6 +36,7 @@ CREATE TYPE "petal"."user_role" AS ENUM ('admin', 'user');
 CREATE TABLE "petal"."users" (
     id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
     cognito_sub VARCHAR(255) NOT NULL UNIQUE,
+    email       VARCHAR(255) UNIQUE,           -- アプリ層で必須・一意を担保（DB は NULL 許容 + UNIQUE のみ）
     name        VARCHAR(100) NOT NULL,
     name_kana   VARCHAR(100) NOT NULL,
     role        user_role    NOT NULL DEFAULT 'user',
@@ -66,10 +67,15 @@ CREATE TABLE "petal"."users" (
 | ---- | -- | --------- |
 | ログイン（メール＋パスワード） | ○ | |
 | ログアウト | ○ | |
+| 管理者によるユーザー登録（招待メール送信） | ○ | |
+| 管理者によるユーザー削除（DB softDelete + Cognito 無効化） | ○ | |
+| 初回ログイン時のパスワード設定（NEW_PASSWORD_REQUIRED） | ○ | |
 | サインアップ（ユーザー自己登録） | — | ○ |
 | メール確認（Email Verification） | — | ○ |
 | パスワードリセット | — | ○ |
 | OAuth（Google / GitHub） | — | 将来構想 |
+
+管理者によるユーザー登録・削除・初回ログインフローの詳細は [15_user-management-enhancement.md](15_user-management-enhancement.md) を参照。
 
 ### 4.2 パスワードポリシー（Cognito 設定）
 
@@ -189,7 +195,7 @@ Cognito の JWKS を自動取得・キャッシュし、`CognitoJwtVerifier` で
 専用スクリプトを実装し、実行によって Admin ユーザーを作成する。
 
 - Cognito にユーザーを登録し、`sub` を取得する
-- PostgreSQL の `users` テーブルに `role = 'admin'` のレコードを挿入する
+- PostgreSQL の `users` テーブルに `role = 'admin'` のレコードを挿入する（`email` も保存する）
 - スクリプトは `scripts/create-admin.ts` として実装する
 
 ---

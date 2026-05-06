@@ -68,6 +68,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/challenge/new-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthController_completeNewPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/images": {
         parameters: {
             query?: never;
@@ -132,12 +148,14 @@ export interface components {
             deletedAt: string | null;
             id: string;
             cognitoSub: string;
+            email: string;
             name: string;
             nameKana: string;
         };
         CreateUserRequestDto: {
+            /** Format: email */
+            email: string;
             role?: components["schemas"]["UserRole"];
-            cognitoSub: string;
             name: string;
             nameKana: string;
         };
@@ -146,16 +164,39 @@ export interface components {
             name?: string;
             nameKana?: string;
         };
-        LoginRequestDto: {
-            email: string;
-            password: string;
-        };
-        LoginResponseDto: {
+        AuthenticatedResponseDto: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            status: "AUTHENTICATED";
             accessToken: string;
             idToken: string;
             refreshToken: string;
             expiresIn: number;
             email: string;
+        };
+        ChallengeResponseDto: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            status: "CHALLENGE";
+            /** @enum {string} */
+            challengeName: "NEW_PASSWORD_REQUIRED";
+            session: string;
+            email: string;
+        };
+        LoginRequestDto: {
+            /** Format: email */
+            email: string;
+            password: string;
+        };
+        NewPasswordChallengeRequestDto: {
+            /** Format: email */
+            email: string;
+            newPassword: string;
+            session: string;
         };
         CreateImageRequestDto: {
             /** @enum {string} */
@@ -350,7 +391,30 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LoginResponseDto"];
+                    "application/json": components["schemas"]["AuthenticatedResponseDto"] | components["schemas"]["ChallengeResponseDto"];
+                };
+            };
+        };
+    };
+    AuthController_completeNewPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewPasswordChallengeRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthenticatedResponseDto"];
                 };
             };
         };

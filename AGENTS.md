@@ -16,6 +16,7 @@
 | [docs/12_image-management.md](docs/12_image-management.md) | 画像管理機能の設計（TSK-3） |
 | [docs/13_openapi.md](docs/13_openapi.md) | OpenAPI / Swagger と Frontend 型生成の連携 |
 | [docs/14_cognito-user-pool-setup.md](docs/14_cognito-user-pool-setup.md) | Cognito User Pool の構築手順（AWS コンソール作業） |
+| [docs/15_user-management-enhancement.md](docs/15_user-management-enhancement.md) | ユーザー管理機能の拡張設計（TSK-4：Cognito 登録／無効化／初回ログイン） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 

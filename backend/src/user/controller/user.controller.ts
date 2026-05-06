@@ -67,6 +67,7 @@ function toResponse(user: User): UserResponseDto {
   return {
     id: user.id,
     cognitoSub: user.cognitoSub,
+    email: user.email,
     name: user.name,
     nameKana: user.nameKana,
     role: user.role,

@@ -209,7 +209,52 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LoginResponseDto"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthenticatedResponseDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ChallengeResponseDto"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "status",
+                    "mapping": {
+                      "AUTHENTICATED": "#/components/schemas/AuthenticatedResponseDto",
+                      "CHALLENGE": "#/components/schemas/ChallengeResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/challenge/new-password": {
+      "post": {
+        "operationId": "AuthController_completeNewPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewPasswordChallengeRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedResponseDto"
                 }
               }
             }
@@ -434,6 +479,9 @@
           "cognitoSub": {
             "type": "string"
           },
+          "email": {
+            "type": "string"
+          },
           "name": {
             "type": "string"
           },
@@ -448,6 +496,7 @@
           "deletedAt",
           "id",
           "cognitoSub",
+          "email",
           "name",
           "nameKana"
         ]
@@ -455,15 +504,16 @@
       "CreateUserRequestDto": {
         "type": "object",
         "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
           "role": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/UserRole"
               }
             ]
-          },
-          "cognitoSub": {
-            "type": "string"
           },
           "name": {
             "type": "string"
@@ -473,7 +523,7 @@
           }
         },
         "required": [
-          "cognitoSub",
+          "email",
           "name",
           "nameKana"
         ]
@@ -496,24 +546,15 @@
           }
         }
       },
-      "LoginRequestDto": {
+      "AuthenticatedResponseDto": {
         "type": "object",
         "properties": {
-          "email": {
-            "type": "string"
+          "status": {
+            "type": "string",
+            "enum": [
+              "AUTHENTICATED"
+            ]
           },
-          "password": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "email",
-          "password"
-        ]
-      },
-      "LoginResponseDto": {
-        "type": "object",
-        "properties": {
           "accessToken": {
             "type": "string"
           },
@@ -531,11 +572,77 @@
           }
         },
         "required": [
+          "status",
           "accessToken",
           "idToken",
           "refreshToken",
           "expiresIn",
           "email"
+        ]
+      },
+      "ChallengeResponseDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "CHALLENGE"
+            ]
+          },
+          "challengeName": {
+            "type": "string",
+            "enum": [
+              "NEW_PASSWORD_REQUIRED"
+            ]
+          },
+          "session": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "challengeName",
+          "session",
+          "email"
+        ]
+      },
+      "LoginRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "NewPasswordChallengeRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "newPassword": {
+            "type": "string"
+          },
+          "session": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "newPassword",
+          "session"
         ]
       },
       "CreateImageRequestDto": {

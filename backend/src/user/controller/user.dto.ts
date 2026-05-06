@@ -4,6 +4,7 @@ import { UserRole } from '../domain/user-role.enum';
 export class UserResponseDto {
   id!: string;
   cognitoSub!: string;
+  email!: string;
   name!: string;
   nameKana!: string;
   @ApiProperty({ enum: UserRole, enumName: 'UserRole' })
@@ -17,7 +18,8 @@ export class UserResponseDto {
 }
 
 export class CreateUserRequestDto {
-  cognitoSub!: string;
+  @ApiProperty({ format: 'email' })
+  email!: string;
   name!: string;
   nameKana!: string;
   @ApiProperty({ enum: UserRole, enumName: 'UserRole', required: false })
