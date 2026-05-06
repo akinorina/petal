@@ -27,7 +27,7 @@
 - セルフサービスのサインアップ（[11_](11_user-info_and_authentication.md) §4.1 通り v1.1 以降）
 - パスワードリセット
 - メールアドレス変更フロー
-- 削除済みユーザーの復活（再有効化）API（運用ニーズが出たら別タスク）
+- 削除済みユーザーの復活（再有効化）API → TSK-6 で対応（[16_user-restore.md](16_user-restore.md)）
 
 ### 完了条件（Notion チケット転記＋細分化）
 
@@ -460,7 +460,7 @@ export interface IUserRepository {
 
 ## 12. 未確定事項 / 将来検討
 
-- 削除済みユーザーの **再有効化 API**（運用ニーズが出たら別タスク）。
+- 削除済みユーザーの **再有効化 API** → TSK-6 で対応（[16_user-restore.md](16_user-restore.md) 参照）。
 - パスワードリセット（`ForgotPassword` / `ConfirmForgotPassword`）。
 - メールアドレス変更フロー（Cognito の email 検証ステップを伴う）。
 - ロール変更時の Cognito 側 attribute 反映（現状ロールは DB のみで管理。Cognito の `cognito:groups` を使う運用にする場合は別タスク）。

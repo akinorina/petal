@@ -1,5 +1,6 @@
 import {
   BadGatewayException,
+  BadRequestException,
   ConflictException,
   Inject,
   Injectable,
@@ -99,6 +100,41 @@ export class UserService {
     if (input.role !== undefined) user.role = input.role;
 
     return this.userRepository.save(user);
+  }
+
+  async restore(id: string): Promise<User> {
+    const user = await this.userRepository.findByIdWithDeleted(id);
+    if (!user) {
+      throw new NotFoundException(`ユーザーが見つかりません: ${id}`);
+    }
+    if (user.deletedAt === null) {
+      throw new BadRequestException('既に有効なユーザーです');
+    }
+
+    await this.userRepository.restore(id);
+
+    try {
+      await this.cognitoUser.enableUser(user.email);
+    } catch (err) {
+      if (this.cognitoUser.isUserNotFound(err)) {
+        this.logger.error(
+          `Cognito 上にユーザーが存在しません（DB は restore 済み）: ${user.email}`,
+          err instanceof Error ? err.stack : String(err),
+        );
+        throw new BadGatewayException(
+          'Cognito 上にユーザーが存在しません。整合性復旧が必要です。',
+        );
+      }
+      this.logger.error(
+        `Cognito ユーザー有効化に失敗しました（DB は restore 済み）: ${user.email}`,
+        err instanceof Error ? err.stack : String(err),
+      );
+      throw new BadGatewayException(
+        'Cognito 側のユーザー有効化に失敗しました。運用で再実行してください。',
+      );
+    }
+
+    return this.findById(id);
   }
 
   async remove(id: string): Promise<void> {

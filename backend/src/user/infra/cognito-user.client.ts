@@ -4,6 +4,7 @@ import {
   AdminCreateUserCommand,
   AdminDeleteUserCommand,
   AdminDisableUserCommand,
+  AdminEnableUserCommand,
   CognitoIdentityProviderClient,
   UsernameExistsException,
   UserNotFoundException,
@@ -98,7 +99,24 @@ export class CognitoUserClient {
     }
   }
 
+  /**
+   * ユーザーを有効化する。
+   * 不整合検知のため、ユーザーが存在しない場合は例外を投げる（disableUser とは異なる扱い）。
+   */
+  async enableUser(email: string): Promise<void> {
+    await this.client.send(
+      new AdminEnableUserCommand({
+        UserPoolId: this.userPoolId,
+        Username: email,
+      }),
+    );
+  }
+
   isUsernameExists(err: unknown): boolean {
     return err instanceof UsernameExistsException;
+  }
+
+  isUserNotFound(err: unknown): boolean {
+    return err instanceof UserNotFoundException;
   }
 }
