@@ -122,6 +122,23 @@ backend/
 - 複数フィーチャから参照される真に共通のコードのみ `common/` に置く。フィーチャ固有のものはフィーチャ内に置く。
 - フィーチャ間の依存はモジュールの `exports` を経由する。他フィーチャの内部実装ファイルを直接 import しない。
 
+### Frontend のページ構成
+
+ページコンポーネント（`app/**/page.tsx`）は **View（JSX）に専念** させ、ステート・副作用・イベントハンドラなどのロジックは **同居するカスタムフック**に切り出す。
+
+```text
+app/login/
+  page.tsx              # JSX のみ。フックを呼び出して props/handler を受け取り render する
+  use-login-page.ts     # useState / useEffect / useCallback / fetch 呼び出し等のロジック
+```
+
+ルール：
+
+- カスタムフックはページと同じディレクトリに置き、`use-<page>-page.ts` の命名にする。
+- フックは `'use client'` を必要とせず、ページ側のみが `'use client'` を持つ。
+- 1 ページにつき 1 フックを基本とし、無理に細分化しない。
+- 真に汎用的に再利用できるフックのみ `frontend/hooks/` に置く（現状はそうしたものは無い）。
+
 ---
 
 ## 4. DB ルール
