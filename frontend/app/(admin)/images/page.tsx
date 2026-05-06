@@ -1,56 +1,25 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
-import { ApiError, imageApi, uploadToPresignedUrl } from '@/lib/api';
+import { useState } from 'react';
+import { imageApi, uploadToPresignedUrl } from '@/lib/api';
 import {
   ALLOWED_IMAGE_MIME_TYPES,
   type ImageMimeType,
   MAX_IMAGE_SIZE_BYTES,
 } from '@/lib/image-constants';
-import type { Schemas } from '@/lib/openapi/client';
-
-type ImageItem = Schemas['ImageResponseDto'];
-
-type Modal =
-  | { type: 'upload' }
-  | { type: 'delete'; image: ImageItem }
-  | null;
+import { useImagesPage } from './use-images-page';
 
 export default function ImagesPage() {
-  const [images, setImages] = useState<ImageItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [modal, setModal] = useState<Modal>(null);
-
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      setError(null);
-      const data = await imageApi.findAll();
-      setImages(data);
-    } catch (e) {
-      setError(
-        e instanceof ApiError ? e.message : 'データの取得に失敗しました',
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  async function handleDelete(image: ImageItem) {
-    try {
-      await imageApi.remove(image.id);
-      setModal(null);
-      await load();
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : '削除に失敗しました');
-    }
-  }
+  const {
+    images,
+    isLoading,
+    error,
+    modal,
+    setModal,
+    handleDelete,
+    handleUploaded,
+  } = useImagesPage();
 
   return (
     <div>
@@ -120,10 +89,7 @@ export default function ImagesPage() {
       {modal?.type === 'upload' && (
         <UploadModal
           onClose={() => setModal(null)}
-          onUploaded={async () => {
-            setModal(null);
-            await load();
-          }}
+          onUploaded={handleUploaded}
         />
       )}
 
