@@ -8,16 +8,19 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { UserService } from '../application/user.service';
 import {
   CreateUserSchema,
+  ListUsersQuerySchema,
   UpdateUserSchema,
 } from '../application/user.schemas';
 import { User } from '../domain/user';
 import {
   CreateUserRequestDto,
+  ListUsersQueryDto,
   UpdateUserRequestDto,
   UserResponseDto,
 } from './user.dto';
@@ -29,8 +32,15 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get()
-  async findAll(): Promise<UserResponseDto[]> {
-    const users = await this.userService.findAll();
+  async findAll(
+    @Query() query: ListUsersQueryDto,
+  ): Promise<UserResponseDto[]> {
+    const parsed = ListUsersQuerySchema.safeParse(query);
+    if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
+
+    const users = parsed.data.deleted
+      ? await this.userService.findAllDeleted()
+      : await this.userService.findAll();
     return users.map(toResponse);
   }
 

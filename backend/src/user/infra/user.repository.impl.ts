@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
 import { User } from '../domain/user';
 import { IUserRepository } from '../domain/user.repository';
 import { UserEntity } from './user.entity';
@@ -37,6 +37,14 @@ export class UserRepositoryImpl implements IUserRepository {
 
   async findAll(): Promise<User[]> {
     const entities = await this.repo.find();
+    return entities.map((e) => this.toDomain(e));
+  }
+
+  async findAllDeleted(): Promise<User[]> {
+    const entities = await this.repo.find({
+      withDeleted: true,
+      where: { deletedAt: Not(IsNull()) },
+    });
     return entities.map((e) => this.toDomain(e));
   }
 

@@ -14,5 +14,13 @@ export const UpdateUserSchema = z.object({
   role: z.enum(UserRole).optional(),
 });
 
+export const ListUsersQuerySchema = z.object({
+  deleted: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((v) => v === 'true'),
+});
+
 export type CreateUserInput = z.infer<typeof CreateUserSchema>;
 export type UpdateUserInput = z.infer<typeof UpdateUserSchema>;
+export type ListUsersQuery = z.infer<typeof ListUsersQuerySchema>;
