@@ -8,10 +8,12 @@ import {
   useState,
 } from 'react';
 import {
+  completeNewPassword as cognitoCompleteNewPassword,
   getCurrentUserEmail,
   getAccessToken,
   login as cognitoLogin,
   logout as cognitoLogout,
+  type LoginResult,
 } from '@/lib/cognito';
 
 type AuthState = {
@@ -21,7 +23,12 @@ type AuthState = {
 };
 
 type AuthContextValue = AuthState & {
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<LoginResult>;
+  completeNewPassword: (
+    email: string,
+    newPassword: string,
+    session: string,
+  ) => Promise<void>;
   logout: () => void;
 };
 
@@ -35,7 +42,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    // 起動時にセッションの有効性を確認
     getAccessToken().then((token) => {
       setState({
         isAuthenticated: !!token,
@@ -46,9 +52,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    await cognitoLogin(email, password);
-    setState({ isAuthenticated: true, email, isLoading: false });
+    const result = await cognitoLogin(email, password);
+    if (result.kind === 'authenticated') {
+      setState({ isAuthenticated: true, email: result.email, isLoading: false });
+    }
+    return result;
   }, []);
+
+  const completeNewPassword = useCallback(
+    async (email: string, newPassword: string, session: string) => {
+      await cognitoCompleteNewPassword(email, newPassword, session);
+      setState({ isAuthenticated: true, email, isLoading: false });
+    },
+    [],
+  );
 
   const logout = useCallback(() => {
     cognitoLogout();
@@ -56,7 +73,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout }}>
+    <AuthContext.Provider
+      value={{ ...state, login, completeNewPassword, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -23,7 +23,8 @@
     "migration:generate": "typeorm-ts-node-commonjs -d database/data-source.ts migration:generate",
     "migration:create": "typeorm-ts-node-commonjs migration:create",
     "migration:show": "typeorm-ts-node-commonjs -d database/data-source.ts migration:show",
-    "create-admin": "ts-node -r tsconfig-paths/register scripts/create-admin.ts"
+    "create-admin": "ts-node -r tsconfig-paths/register scripts/create-admin.ts",
+    "openapi:export": "nest build && node dist/src/openapi-export.js"
   },
   "dependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.1041.0",
@@ -33,6 +34,7 @@
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/swagger": "^11.4.2",
     "@nestjs/typeorm": "^11.0.1",
     "aws-jwt-verify": "^5.1.1",
     "dotenv": "^17.4.2",

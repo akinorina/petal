@@ -4,7 +4,9 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, imageApi } from '@/lib/api';
-import type { ImageItem } from '@/types/image';
+import type { Schemas } from '@/lib/openapi/client';
+
+type ImageItem = Schemas['ImageResponseDto'];
 
 export default function ImageDetailPage() {
   const params = useParams<{ id: string }>();

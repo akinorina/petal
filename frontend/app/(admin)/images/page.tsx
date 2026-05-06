@@ -5,10 +5,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { ApiError, imageApi, uploadToPresignedUrl } from '@/lib/api';
 import {
   ALLOWED_IMAGE_MIME_TYPES,
-  type ImageItem,
   type ImageMimeType,
   MAX_IMAGE_SIZE_BYTES,
-} from '@/types/image';
+} from '@/lib/image-constants';
+import type { Schemas } from '@/lib/openapi/client';
+
+type ImageItem = Schemas['ImageResponseDto'];
 
 type Modal =
   | { type: 'upload' }

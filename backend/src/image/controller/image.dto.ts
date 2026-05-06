@@ -1,20 +1,32 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { ALLOWED_IMAGE_MIME_TYPES } from '../domain/image';
+
 export class ImageResponseDto {
   id!: string;
   ownerUserId!: string;
   originalFilename!: string;
-  mimeType!: string;
+  @ApiProperty({ enum: ALLOWED_IMAGE_MIME_TYPES })
+  mimeType!: (typeof ALLOWED_IMAGE_MIME_TYPES)[number];
   sizeBytes!: number;
   title!: string | null;
   description!: string | null;
-  createdAt!: Date;
-  updatedAt!: Date;
+  @ApiProperty({ format: 'date-time' })
+  createdAt!: string;
+  @ApiProperty({ format: 'date-time' })
+  updatedAt!: string;
+}
+
+export class UploadInstructionHeadersDto {
+  @ApiProperty({ name: 'Content-Type' })
+  'Content-Type'!: string;
 }
 
 export class UploadInstructionDto {
   url!: string;
+  @ApiProperty({ enum: ['PUT'] })
   method!: 'PUT';
   expiresInSeconds!: number;
-  headers!: { 'Content-Type': string };
+  headers!: UploadInstructionHeadersDto;
 }
 
 export class CreateImageResponseDto {
@@ -29,7 +41,8 @@ export class DownloadUrlResponseDto {
 
 export class CreateImageRequestDto {
   originalFilename!: string;
-  mimeType!: string;
+  @ApiProperty({ enum: ALLOWED_IMAGE_MIME_TYPES })
+  mimeType!: (typeof ALLOWED_IMAGE_MIME_TYPES)[number];
   sizeBytes!: number;
   title?: string;
   description?: string;

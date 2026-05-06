@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, userApi } from '@/lib/api';
-import type { CreateUserRequest, UpdateUserRequest, User } from '@/types/user';
+import type { Schemas } from '@/lib/openapi/client';
+
+type User = Schemas['UserResponseDto'];
+type CreateUserRequest = Schemas['CreateUserRequestDto'];
+type UpdateUserRequest = Schemas['UpdateUserRequestDto'];
 
 type Modal =
   | { type: 'create' }
@@ -103,9 +107,7 @@ export default function UsersPage() {
                   <tr key={user.id} className="hover:bg-zinc-50">
                     <td className="px-4 py-3 font-medium">{user.name}</td>
                     <td className="px-4 py-3 text-zinc-500">{user.nameKana}</td>
-                    <td className="px-4 py-3 text-zinc-500">
-                      {user.cognitoSub}
-                    </td>
+                    <td className="px-4 py-3 text-zinc-500">{user.email}</td>
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -196,7 +198,7 @@ function UserFormModal({
   onSubmit,
 }: UserFormModalProps) {
   const isCreate = !initial;
-  const [cognitoSub, setCognitoSub] = useState(initial?.cognitoSub ?? '');
+  const [email, setEmail] = useState(initial?.email ?? '');
   const [name, setName] = useState(initial?.name ?? '');
   const [nameKana, setNameKana] = useState(initial?.nameKana ?? '');
   const [role, setRole] = useState<'admin' | 'user'>(initial?.role ?? 'user');
@@ -209,7 +211,7 @@ function UserFormModal({
     setIsSaving(true);
     try {
       const data = isCreate
-        ? { cognitoSub, name, nameKana, role }
+        ? { email, name, nameKana, role }
         : { name, nameKana, role };
       await onSubmit(data);
     } catch (err) {
@@ -224,11 +226,11 @@ function UserFormModal({
       <h2 className="mb-4 text-base font-semibold">{title}</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         {isCreate && (
-          <Field label="Cognito Sub（メールアドレス）">
+          <Field label="メールアドレス">
             <input
-              type="text"
-              value={cognitoSub}
-              onChange={(e) => setCognitoSub(e.target.value)}
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
               className={inputClass}
             />

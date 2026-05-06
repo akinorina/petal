@@ -1,33 +1,4 @@
-import { getAccessToken } from './cognito';
-import type { CreateUserRequest, UpdateUserRequest, User } from '@/types/user';
-import type {
-  CreateImageRequest,
-  CreateImageResponse,
-  DownloadUrlResponse,
-  ImageItem,
-} from '@/types/image';
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
-
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const token = await getAccessToken();
-  const res = await fetch(`${BASE_URL}${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...init?.headers,
-    },
-  });
-
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new ApiError(res.status, body?.message ?? res.statusText);
-  }
-
-  if (res.status === 204) return undefined as T;
-  return res.json() as Promise<T>;
-}
+import { apiClient, type Schemas } from './openapi/client';
 
 export class ApiError extends Error {
   constructor(
@@ -38,18 +9,36 @@ export class ApiError extends Error {
   }
 }
 
+async function unwrap<T>(promise: Promise<{ data?: T; response: Response }>): Promise<T> {
+  const { data, response } = await promise;
+  if (!response.ok) {
+    const body: unknown = await response.clone().json().catch(() => null);
+    const message =
+      (body && typeof body === 'object' && 'message' in body
+        ? String((body as { message?: unknown }).message ?? '')
+        : '') || response.statusText;
+    throw new ApiError(response.status, message);
+  }
+  return data as T;
+}
+
 export const imageApi = {
-  findAll: () => request<ImageItem[]>('/images'),
-  findById: (id: string) => request<ImageItem>(`/images/${id}`),
-  create: (data: CreateImageRequest) =>
-    request<CreateImageResponse>('/images', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+  findAll: () => unwrap(apiClient.GET('/images')),
+  findById: (id: string) =>
+    unwrap(apiClient.GET('/images/{id}', { params: { path: { id } } })),
+  create: (body: Schemas['CreateImageRequestDto']) =>
+    unwrap(apiClient.POST('/images', { body })),
   getDownloadUrl: (id: string) =>
-    request<DownloadUrlResponse>(`/images/${id}/download-url`),
-  remove: (id: string) =>
-    request<void>(`/images/${id}`, { method: 'DELETE' }),
+    unwrap(
+      apiClient.GET('/images/{id}/download-url', {
+        params: { path: { id } },
+      }),
+    ),
+  remove: async (id: string): Promise<void> => {
+    await unwrap(
+      apiClient.DELETE('/images/{id}', { params: { path: { id } } }),
+    );
+  },
 };
 
 export async function uploadToPresignedUrl(
@@ -68,14 +57,16 @@ export async function uploadToPresignedUrl(
 }
 
 export const userApi = {
-  findAll: () => request<User[]>('/users'),
-  findById: (id: string) => request<User>(`/users/${id}`),
-  create: (data: CreateUserRequest) =>
-    request<User>('/users', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: UpdateUserRequest) =>
-    request<User>(`/users/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    }),
-  remove: (id: string) => request<void>(`/users/${id}`, { method: 'DELETE' }),
+  findAll: () => unwrap(apiClient.GET('/users')),
+  findById: (id: string) =>
+    unwrap(apiClient.GET('/users/{id}', { params: { path: { id } } })),
+  create: (body: Schemas['CreateUserRequestDto']) =>
+    unwrap(apiClient.POST('/users', { body })),
+  update: (id: string, body: Schemas['UpdateUserRequestDto']) =>
+    unwrap(
+      apiClient.PATCH('/users/{id}', { params: { path: { id } }, body }),
+    ),
+  remove: async (id: string): Promise<void> => {
+    await unwrap(apiClient.DELETE('/users/{id}', { params: { path: { id } } }));
+  },
 };

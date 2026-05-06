@@ -22,6 +22,11 @@ export class UserRepositoryImpl implements IUserRepository {
     return entity ? this.toDomain(entity) : null;
   }
 
+  async findByEmail(email: string): Promise<User | null> {
+    const entity = await this.repo.findOne({ where: { email } });
+    return entity ? this.toDomain(entity) : null;
+  }
+
   async findAll(): Promise<User[]> {
     const entities = await this.repo.find();
     return entities.map((e) => this.toDomain(e));
@@ -41,6 +46,7 @@ export class UserRepositoryImpl implements IUserRepository {
     return new User({
       id: entity.id,
       cognitoSub: entity.cognitoSub,
+      email: entity.email,
       name: entity.name,
       nameKana: entity.nameKana,
       role: entity.role,
@@ -54,10 +60,10 @@ export class UserRepositoryImpl implements IUserRepository {
     const entity = new UserEntity();
     entity.id = user.id;
     entity.cognitoSub = user.cognitoSub;
+    entity.email = user.email;
     entity.name = user.name;
     entity.nameKana = user.nameKana;
     entity.role = user.role;
-    // createdAt / updatedAt は @CreateDateColumn / @UpdateDateColumn が管理
     return entity;
   }
 }

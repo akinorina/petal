@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { UserService } from '../application/user.service';
 import {
   CreateUserSchema,
@@ -21,6 +22,8 @@ import {
   UserResponseDto,
 } from './user.dto';
 
+@ApiTags('users')
+@ApiBearerAuth('bearer')
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
@@ -64,11 +67,12 @@ function toResponse(user: User): UserResponseDto {
   return {
     id: user.id,
     cognitoSub: user.cognitoSub,
+    email: user.email,
     name: user.name,
     nameKana: user.nameKana,
     role: user.role,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt,
-    deletedAt: user.deletedAt,
+    createdAt: user.createdAt.toISOString(),
+    updatedAt: user.updatedAt.toISOString(),
+    deletedAt: user.deletedAt ? user.deletedAt.toISOString() : null,
   };
 }
