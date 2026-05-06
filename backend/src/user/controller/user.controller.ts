@@ -61,6 +61,12 @@ export class UserController {
   async remove(@Param('id') id: string): Promise<void> {
     await this.userService.remove(id);
   }
+
+  @Post(':id/restore')
+  @HttpCode(200)
+  async restore(@Param('id') id: string): Promise<UserResponseDto> {
+    return toResponse(await this.userService.restore(id));
+  }
 }
 
 function toResponse(user: User): UserResponseDto {

@@ -17,6 +17,14 @@ export class UserRepositoryImpl implements IUserRepository {
     return entity ? this.toDomain(entity) : null;
   }
 
+  async findByIdWithDeleted(id: string): Promise<User | null> {
+    const entity = await this.repo.findOne({
+      where: { id },
+      withDeleted: true,
+    });
+    return entity ? this.toDomain(entity) : null;
+  }
+
   async findByCognitoSub(cognitoSub: string): Promise<User | null> {
     const entity = await this.repo.findOne({ where: { cognitoSub } });
     return entity ? this.toDomain(entity) : null;
@@ -40,6 +48,10 @@ export class UserRepositoryImpl implements IUserRepository {
 
   async softDelete(id: string): Promise<void> {
     await this.repo.softDelete(id);
+  }
+
+  async restore(id: string): Promise<void> {
+    await this.repo.restore(id);
   }
 
   private toDomain(entity: UserEntity): User {
