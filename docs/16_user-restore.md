@@ -29,13 +29,13 @@
 
 ### 完了条件
 
-- [ ] `POST /users/:id/restore` で DB の `deleted_at` が NULL に戻る
-- [ ] 同 API で Cognito 上のユーザーが Enabled に戻る
-- [ ] 復活後に当該ユーザーで通常通りログインできる
-- [ ] active ユーザーへの restore は 400 を返す
-- [ ] 該当 id が存在しない場合は 404 を返す
+- [x] `POST /users/:id/restore` で DB の `deleted_at` が NULL に戻る
+- [x] 同 API で Cognito 上のユーザーが Enabled に戻る
+- [x] 復活後に当該ユーザーで通常通りログインできる
+- [x] active ユーザーへの restore は 400 を返す
+- [x] 該当 id が存在しない場合は 404 を返す
 - [ ] DB に softDelete 済みだが Cognito 上に存在しない不整合は 502 を返す
-- [ ] [docs/15_user-management-enhancement.md](15_user-management-enhancement.md) §12 を更新（本タスクで対応した旨を反映）
+- [x] [docs/15_user-management-enhancement.md](15_user-management-enhancement.md) §12 を更新（本タスクで対応した旨を反映）
 
 ---
 
