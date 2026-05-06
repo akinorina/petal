@@ -1,24 +1,15 @@
 'use client';
 
-import { useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAdminLayout } from './use-admin-layout';
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const { isAuthenticated, isLoading, email, logout } = useAuth();
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.replace('/login');
-    }
-  }, [isLoading, isAuthenticated, router]);
+  const { pathname, email, isAuthenticated, isLoading, handleLogout } =
+    useAdminLayout();
 
   if (isLoading) {
     return (
@@ -48,10 +39,7 @@ export default function AdminLayout({
           <div className="flex items-center gap-4">
             <span className="text-xs text-zinc-500">{email}</span>
             <button
-              onClick={async () => {
-                await logout();
-                router.push('/login');
-              }}
+              onClick={handleLogout}
               className="text-xs text-zinc-500 hover:text-zinc-900"
             >
               ログアウト
