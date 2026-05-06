@@ -6,8 +6,14 @@ import {
   AdminRespondToAuthChallengeCommand,
   AuthFlowType,
   ChallengeNameType,
+  CodeMismatchException,
   CognitoIdentityProviderClient,
+  ConfirmForgotPasswordCommand,
+  ExpiredCodeException,
+  ForgotPasswordCommand,
   GlobalSignOutCommand,
+  InvalidPasswordException,
+  UserNotFoundException,
 } from '@aws-sdk/client-cognito-identity-provider';
 
 export type CognitoAuthTokens = {
@@ -116,6 +122,48 @@ export class CognitoAuthClient {
     await this.client.send(
       new GlobalSignOutCommand({ AccessToken: accessToken }),
     );
+  }
+
+  async forgotPassword(email: string): Promise<void> {
+    await this.client.send(
+      new ForgotPasswordCommand({
+        ClientId: this.clientId,
+        Username: email,
+        SecretHash: this.computeSecretHash(email),
+      }),
+    );
+  }
+
+  async confirmForgotPassword(
+    email: string,
+    code: string,
+    newPassword: string,
+  ): Promise<void> {
+    await this.client.send(
+      new ConfirmForgotPasswordCommand({
+        ClientId: this.clientId,
+        Username: email,
+        ConfirmationCode: code,
+        Password: newPassword,
+        SecretHash: this.computeSecretHash(email),
+      }),
+    );
+  }
+
+  isUserNotFound(err: unknown): boolean {
+    return err instanceof UserNotFoundException;
+  }
+
+  isCodeMismatch(err: unknown): boolean {
+    return err instanceof CodeMismatchException;
+  }
+
+  isExpiredCode(err: unknown): boolean {
+    return err instanceof ExpiredCodeException;
+  }
+
+  isInvalidPassword(err: unknown): boolean {
+    return err instanceof InvalidPasswordException;
   }
 
   private computeSecretHash(username: string): string {

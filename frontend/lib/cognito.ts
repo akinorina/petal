@@ -116,6 +116,34 @@ function persistSession(accessToken: string, email: string): void {
   localStorage.setItem(EMAIL_KEY, email);
 }
 
+export async function requestPasswordReset(email: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/auth/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body?.message ?? 'パスワードリセット要求に失敗しました');
+  }
+}
+
+export async function confirmPasswordReset(
+  email: string,
+  code: string,
+  newPassword: string,
+): Promise<void> {
+  const res = await fetch(`${BASE_URL}/auth/confirm-forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, code, newPassword }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body?.message ?? 'パスワード設定に失敗しました');
+  }
+}
+
 function isTokenExpired(token: string): boolean {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));

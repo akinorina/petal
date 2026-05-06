@@ -5,6 +5,7 @@ import {
   AdminDeleteUserCommand,
   AdminDisableUserCommand,
   AdminEnableUserCommand,
+  AdminUserGlobalSignOutCommand,
   CognitoIdentityProviderClient,
   UsernameExistsException,
   UserNotFoundException,
@@ -110,6 +111,27 @@ export class CognitoUserClient {
         Username: email,
       }),
     );
+  }
+
+  /**
+   * 管理者権限でユーザーの全セッションを失効させる（リフレッシュトークン無効化）。
+   * 既に存在しないユーザーは握り潰し（呼び出し側で問題にならない）。
+   */
+  async globalSignOut(email: string): Promise<void> {
+    try {
+      await this.client.send(
+        new AdminUserGlobalSignOutCommand({
+          UserPoolId: this.userPoolId,
+          Username: email,
+        }),
+      );
+    } catch (err) {
+      if (err instanceof UserNotFoundException) {
+        this.logger.warn(`Cognito 上にユーザーが存在しません: ${email}`);
+        return;
+      }
+      throw err;
+    }
   }
 
   isUsernameExists(err: unknown): boolean {

@@ -16,12 +16,16 @@ import {
 import { AuthService } from '../application/auth.service';
 import { Public } from '../../common/decorators/public.decorator';
 import {
+  ConfirmForgotPasswordSchema,
+  ForgotPasswordSchema,
   LoginSchema,
   NewPasswordChallengeSchema,
 } from '../application/auth.schemas';
 import {
   AuthenticatedResponseDto,
   ChallengeResponseDto,
+  ConfirmForgotPasswordRequestDto,
+  ForgotPasswordRequestDto,
   LoginRequestDto,
   LoginResponseDto,
   NewPasswordChallengeRequestDto,
@@ -69,6 +73,36 @@ export class AuthController {
       throw new UnauthorizedException('Authorization ヘッダーが不正です');
     }
     await this.authService.logout(token);
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(204)
+  async forgotPassword(
+    @Body() body: ForgotPasswordRequestDto,
+  ): Promise<void> {
+    const parsed = ForgotPasswordSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.flatten());
+    }
+    await this.authService.forgotPassword(parsed.data.email);
+  }
+
+  @Public()
+  @Post('confirm-forgot-password')
+  @HttpCode(204)
+  async confirmForgotPassword(
+    @Body() body: ConfirmForgotPasswordRequestDto,
+  ): Promise<void> {
+    const parsed = ConfirmForgotPasswordSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.flatten());
+    }
+    await this.authService.confirmForgotPassword(
+      parsed.data.email,
+      parsed.data.code,
+      parsed.data.newPassword,
+    );
   }
 
   @Public()

@@ -18,6 +18,6 @@ import { UserRepositoryImpl } from './infra/user.repository.impl';
     CognitoUserClient,
     UserService,
   ],
-  exports: [USER_REPOSITORY, UserService],
+  exports: [USER_REPOSITORY, UserService, CognitoUserClient],
 })
 export class UserModule {}

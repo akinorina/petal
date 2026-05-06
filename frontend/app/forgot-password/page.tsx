@@ -1,64 +1,57 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState } from 'react';
+import {
+  confirmPasswordReset,
+  requestPasswordReset,
+} from '@/lib/cognito';
 
 type Step =
-  | { kind: 'login' }
-  | { kind: 'new-password'; email: string; session: string };
+  | { kind: 'request' }
+  | { kind: 'confirm'; email: string };
 
-export default function LoginPage() {
+export default function ForgotPasswordPage() {
   const router = useRouter();
-  const { login, completeNewPassword } = useAuth();
-  const [step, setStep] = useState<Step>({ kind: 'login' });
+  const [step, setStep] = useState<Step>({ kind: 'request' });
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleRequest(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
-
     try {
-      const result = await login(email, password);
-      if (result.kind === 'challenge') {
-        setStep({
-          kind: 'new-password',
-          email: result.email,
-          session: result.session,
-        });
-        setPassword('');
-      } else {
-        router.push('/users');
-      }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'ログインに失敗しました');
+      await requestPasswordReset(email);
+      setStep({ kind: 'confirm', email });
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'コード送信に失敗しました',
+      );
     } finally {
       setIsLoading(false);
     }
   }
 
-  async function handleNewPassword(e: React.FormEvent) {
+  async function handleConfirm(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (step.kind !== 'new-password') return;
-
     if (newPassword !== confirmPassword) {
       setError('パスワードが一致しません');
       return;
     }
+    if (step.kind !== 'confirm') return;
 
     setIsLoading(true);
     try {
-      await completeNewPassword(step.email, newPassword, step.session);
-      router.push('/users');
-    } catch (err: unknown) {
+      await confirmPasswordReset(step.email, code, newPassword);
+      router.push('/login');
+    } catch (err) {
       setError(
         err instanceof Error ? err.message : 'パスワード設定に失敗しました',
       );
@@ -74,23 +67,17 @@ export default function LoginPage() {
           Petal
         </h1>
 
-        {step.kind === 'login' ? (
-          <form onSubmit={handleLogin} className="space-y-4">
+        {step.kind === 'request' ? (
+          <form onSubmit={handleRequest} className="space-y-4">
+            <p className="text-sm text-zinc-600">
+              登録メールアドレスに検証コードを送信します。
+            </p>
+
             <Field label="メールアドレス">
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required
-                className={inputClass}
-              />
-            </Field>
-
-            <Field label="パスワード">
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 required
                 className={inputClass}
               />
@@ -103,30 +90,31 @@ export default function LoginPage() {
               disabled={isLoading}
               className={primaryBtnClass}
             >
-              {isLoading ? 'ログイン中...' : 'ログイン'}
+              {isLoading ? '送信中...' : 'コードを送信'}
             </button>
 
             <p className="text-center text-sm">
               <Link
-                href="/forgot-password"
+                href="/login"
                 className="text-zinc-500 hover:text-zinc-900"
               >
-                パスワードを忘れた方
+                ログイン画面へ戻る
               </Link>
             </p>
           </form>
         ) : (
-          <form onSubmit={handleNewPassword} className="space-y-4">
+          <form onSubmit={handleConfirm} className="space-y-4">
             <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700">
-              初回ログインです。新しいパスワードを設定してください。
+              {step.email} 宛にコードを送信しました。受信メールのコードと新しいパスワードを入力してください。
             </p>
 
-            <Field label="メールアドレス">
+            <Field label="検証コード">
               <input
-                type="email"
-                value={step.email}
-                disabled
-                className={`${inputClass} bg-zinc-50 text-zinc-500`}
+                type="text"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                required
+                className={inputClass}
               />
             </Field>
 
@@ -161,6 +149,22 @@ export default function LoginPage() {
             >
               {isLoading ? '設定中...' : 'パスワードを設定'}
             </button>
+
+            <p className="text-center text-sm">
+              <button
+                type="button"
+                onClick={() => {
+                  setStep({ kind: 'request' });
+                  setCode('');
+                  setNewPassword('');
+                  setConfirmPassword('');
+                  setError(null);
+                }}
+                className="text-zinc-500 hover:text-zinc-900"
+              >
+                メールアドレスを入力し直す
+              </button>
+            </p>
           </form>
         )}
       </div>
