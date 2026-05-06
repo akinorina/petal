@@ -29,7 +29,7 @@ type AuthContextValue = AuthState & {
     newPassword: string,
     session: string,
   ) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -67,8 +67,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
-  const logout = useCallback(() => {
-    cognitoLogout();
+  const logout = useCallback(async () => {
+    await cognitoLogout();
     setState({ isAuthenticated: false, email: null, isLoading: false });
   }, []);
 

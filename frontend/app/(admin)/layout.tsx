@@ -48,8 +48,8 @@ export default function AdminLayout({
           <div className="flex items-center gap-4">
             <span className="text-xs text-zinc-500">{email}</span>
             <button
-              onClick={() => {
-                logout();
+              onClick={async () => {
+                await logout();
                 router.push('/login');
               }}
               className="text-xs text-zinc-500 hover:text-zinc-900"

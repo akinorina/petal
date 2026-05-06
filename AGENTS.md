@@ -19,6 +19,7 @@
 | [docs/15_user-management-enhancement.md](docs/15_user-management-enhancement.md) | ユーザー管理機能の拡張設計（TSK-4：Cognito 登録／無効化／初回ログイン） |
 | [docs/16_user-restore.md](docs/16_user-restore.md) | 削除済みユーザーの再有効化 API 設計（TSK-6） |
 | [docs/17_deleted-users-ui.md](docs/17_deleted-users-ui.md) | 削除済みユーザーの閲覧・復活 UI 設計（TSK-7） |
+| [docs/18_logout-api.md](docs/18_logout-api.md) | ログアウト API 設計（TSK-19：GlobalSignOut 連携） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 

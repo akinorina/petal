@@ -78,9 +78,21 @@ export async function completeNewPassword(
   persistSession(data.accessToken, data.email);
 }
 
-export function logout(): void {
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(EMAIL_KEY);
+export async function logout(): Promise<void> {
+  const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+  try {
+    if (token) {
+      await fetch(`${BASE_URL}/auth/logout`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }
+  } catch {
+    // ネットワーク失敗等はローカル状態クリアを優先するため握り潰す
+  } finally {
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(EMAIL_KEY);
+  }
 }
 
 export function getAccessToken(): Promise<string | null> {
