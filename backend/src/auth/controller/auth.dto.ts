@@ -33,3 +33,15 @@ export class NewPasswordChallengeRequestDto {
   newPassword!: string;
   session!: string;
 }
+
+export class ForgotPasswordRequestDto {
+  @ApiProperty({ format: 'email' })
+  email!: string;
+}
+
+export class ConfirmForgotPasswordRequestDto {
+  @ApiProperty({ format: 'email' })
+  email!: string;
+  code!: string;
+  newPassword!: string;
+}
