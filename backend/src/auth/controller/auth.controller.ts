@@ -2,8 +2,10 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Headers,
   HttpCode,
   Post,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiExtraModels,
@@ -57,6 +59,18 @@ export class AuthController {
     return this.authService.login(parsed.data.email, parsed.data.password);
   }
 
+  @Post('logout')
+  @HttpCode(204)
+  async logout(
+    @Headers('authorization') authorization: string | undefined,
+  ): Promise<void> {
+    const token = extractBearer(authorization);
+    if (!token) {
+      throw new UnauthorizedException('Authorization ヘッダーが不正です');
+    }
+    await this.authService.logout(token);
+  }
+
   @Public()
   @Post('challenge/new-password')
   @HttpCode(200)
@@ -74,4 +88,10 @@ export class AuthController {
       parsed.data.session,
     );
   }
+}
+
+function extractBearer(authorization: string | undefined): string | null {
+  if (!authorization) return null;
+  const match = /^Bearer\s+(.+)$/i.exec(authorization);
+  return match ? match[1] : null;
 }

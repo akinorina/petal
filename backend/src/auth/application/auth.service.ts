@@ -1,4 +1,9 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadGatewayException,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { CognitoAuthClient } from '../infra/cognito-auth.client';
 import {
   AuthenticatedResponseDto,
@@ -8,7 +13,21 @@ import {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(private readonly cognitoAuth: CognitoAuthClient) {}
+
+  async logout(accessToken: string): Promise<void> {
+    try {
+      await this.cognitoAuth.globalSignOut(accessToken);
+    } catch (err) {
+      this.logger.error(
+        'Cognito ログアウトに失敗しました',
+        err instanceof Error ? err.stack : String(err),
+      );
+      throw new BadGatewayException('ログアウトに失敗しました');
+    }
+  }
 
   async login(email: string, password: string): Promise<LoginResponseDto> {
     try {

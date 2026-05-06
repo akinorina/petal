@@ -7,6 +7,7 @@ import {
   AuthFlowType,
   ChallengeNameType,
   CognitoIdentityProviderClient,
+  GlobalSignOutCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
 
 export type CognitoAuthTokens = {
@@ -109,6 +110,12 @@ export class CognitoAuthClient {
       refreshToken: result.RefreshToken!,
       expiresIn: result.ExpiresIn!,
     };
+  }
+
+  async globalSignOut(accessToken: string): Promise<void> {
+    await this.client.send(
+      new GlobalSignOutCommand({ AccessToken: accessToken }),
+    );
   }
 
   private computeSecretHash(username: string): string {
