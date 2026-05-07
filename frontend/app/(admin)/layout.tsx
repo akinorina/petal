@@ -34,6 +34,12 @@ export default function AdminLayout({
               <NavLink href="/images" active={pathname.startsWith('/images')}>
                 画像
               </NavLink>
+              <NavLink
+                href="/audit-logs"
+                active={pathname.startsWith('/audit-logs')}
+              >
+                監査ログ
+              </NavLink>
             </nav>
           </div>
           <div className="flex items-center gap-4">
