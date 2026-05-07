@@ -6,9 +6,16 @@ import {
   AdminDisableUserCommand,
   AdminEnableUserCommand,
   AdminUserGlobalSignOutCommand,
+  AliasExistsException,
+  CodeMismatchException,
   CognitoIdentityProviderClient,
+  ExpiredCodeException,
+  GetUserCommand,
+  NotAuthorizedException,
+  UpdateUserAttributesCommand,
   UsernameExistsException,
   UserNotFoundException,
+  VerifyUserAttributeCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
 
 export type CognitoUserCreated = {
@@ -134,11 +141,68 @@ export class CognitoUserClient {
     }
   }
 
+  /**
+   * 自分のアクセストークンで email 属性の更新を要求する。
+   * Cognito は新メアドへ検証コードを送信し、`email_verified=false` に切り替える。
+   */
+  async updateUserEmail(accessToken: string, newEmail: string): Promise<void> {
+    await this.client.send(
+      new UpdateUserAttributesCommand({
+        AccessToken: accessToken,
+        UserAttributes: [{ Name: 'email', Value: newEmail }],
+      }),
+    );
+  }
+
+  /**
+   * 自分のアクセストークンで email 属性の検証コードを確定する。
+   * 成功すると `email_verified=true` になり、新 email が確定する。
+   */
+  async verifyUserEmail(accessToken: string, code: string): Promise<void> {
+    await this.client.send(
+      new VerifyUserAttributeCommand({
+        AccessToken: accessToken,
+        AttributeName: 'email',
+        Code: code,
+      }),
+    );
+  }
+
+  /**
+   * 自分のアクセストークンで Cognito 上の email 属性（保留中の新 email を含む）を取得する。
+   */
+  async getUserEmail(accessToken: string): Promise<string> {
+    const result = await this.client.send(
+      new GetUserCommand({ AccessToken: accessToken }),
+    );
+    const email = result.UserAttributes?.find((a) => a.Name === 'email')?.Value;
+    if (!email) {
+      throw new Error('Cognito から email 属性を取得できませんでした');
+    }
+    return email;
+  }
+
   isUsernameExists(err: unknown): boolean {
     return err instanceof UsernameExistsException;
   }
 
   isUserNotFound(err: unknown): boolean {
     return err instanceof UserNotFoundException;
+  }
+
+  isCodeMismatch(err: unknown): boolean {
+    return err instanceof CodeMismatchException;
+  }
+
+  isExpiredCode(err: unknown): boolean {
+    return err instanceof ExpiredCodeException;
+  }
+
+  isAliasExists(err: unknown): boolean {
+    return err instanceof AliasExistsException;
+  }
+
+  isNotAuthorized(err: unknown): boolean {
+    return err instanceof NotAuthorizedException;
   }
 }

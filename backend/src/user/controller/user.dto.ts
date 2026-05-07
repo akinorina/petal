@@ -37,3 +37,12 @@ export class ListUsersQueryDto {
   @ApiProperty({ enum: ['true', 'false'], required: false })
   deleted?: 'true' | 'false';
 }
+
+export class RequestEmailChangeRequestDto {
+  @ApiProperty({ format: 'email' })
+  email!: string;
+}
+
+export class ConfirmEmailChangeRequestDto {
+  code!: string;
+}

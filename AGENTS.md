@@ -21,6 +21,7 @@
 | [docs/17_deleted-users-ui.md](docs/17_deleted-users-ui.md) | 削除済みユーザーの閲覧・復活 UI 設計（TSK-7） |
 | [docs/18_logout-api.md](docs/18_logout-api.md) | ログアウト API 設計（TSK-19：GlobalSignOut 連携） |
 | [docs/19_password-reset.md](docs/19_password-reset.md) | パスワードリセット 設計（TSK-8：ForgotPassword + ConfirmForgotPassword + GlobalSignOut） |
+| [docs/20_email-change-flow.md](docs/20_email-change-flow.md) | メールアドレス変更フロー 設計（TSK-9：UpdateUserAttributes + VerifyUserAttribute） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 

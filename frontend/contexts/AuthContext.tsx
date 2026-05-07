@@ -7,7 +7,11 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { getCurrentUserEmail, getAccessToken } from '@/lib/cognito';
+import {
+  getAccessToken,
+  getCurrentUserEmail,
+  setCurrentUserEmail,
+} from '@/lib/cognito';
 import {
   useAuthApi,
   type LoginResult,
@@ -27,6 +31,7 @@ type AuthContextValue = AuthState & {
     session: string,
   ) => Promise<void>;
   logout: () => Promise<void>;
+  updateEmail: (newEmail: string) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -77,9 +82,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState({ isAuthenticated: false, email: null, isLoading: false });
   }, [api]);
 
+  const updateEmail = useCallback((newEmail: string) => {
+    setCurrentUserEmail(newEmail);
+    setState((prev) => ({ ...prev, email: newEmail }));
+  }, []);
+
   return (
     <AuthContext.Provider
-      value={{ ...state, login, completeNewPassword, logout }}
+      value={{ ...state, login, completeNewPassword, logout, updateEmail }}
     >
       {children}
     </AuthContext.Provider>

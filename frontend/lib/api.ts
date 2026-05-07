@@ -80,4 +80,14 @@ export const userApi = {
     unwrap(
       apiClient.POST('/users/{id}/restore', { params: { path: { id } } }),
     ),
+  requestEmailChange: async (email: string): Promise<void> => {
+    await unwrap(
+      apiClient.PATCH('/users/me/email', { body: { email } }),
+    );
+  },
+  confirmEmailChange: async (code: string): Promise<void> => {
+    await unwrap(
+      apiClient.POST('/users/me/email/verify', { body: { code } }),
+    );
+  },
 };
