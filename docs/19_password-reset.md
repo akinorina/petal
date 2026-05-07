@@ -25,7 +25,7 @@
 ### 非対象
 
 - アプリ層のレート制限（Cognito の組み込み制限に任せる。詳細なアプリ層ガードは別タスク「不正ログイン試行のロックアウト」）。
-- パスワードポリシーのフロント事前検証（別タスク化済み）。
+- パスワードポリシーのフロント事前検証（[docs/22_password-policy-frontend-validation.md](22_password-policy-frontend-validation.md) / TSK-11 で対応）。
 
 ### 完了条件（Notion チケット転記）
 
