@@ -182,6 +182,21 @@ export class CognitoUserClient {
     return email;
   }
 
+  /**
+   * 自分の MFA 設定状況を取得する（TOTP のみ判定）。
+   */
+  async getUserMfaSettings(
+    accessToken: string,
+  ): Promise<{ totpEnabled: boolean }> {
+    const result = await this.client.send(
+      new GetUserCommand({ AccessToken: accessToken }),
+    );
+    const totpEnabled = (result.UserMFASettingList ?? []).includes(
+      'SOFTWARE_TOKEN_MFA',
+    );
+    return { totpEnabled };
+  }
+
   isUsernameExists(err: unknown): boolean {
     return err instanceof UsernameExistsException;
   }

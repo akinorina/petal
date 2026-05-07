@@ -392,13 +392,17 @@
                     },
                     {
                       "$ref": "#/components/schemas/ChallengeResponseDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MfaChallengeResponseDto"
                     }
                   ],
                   "discriminator": {
                     "propertyName": "status",
                     "mapping": {
                       "AUTHENTICATED": "#/components/schemas/AuthenticatedResponseDto",
-                      "CHALLENGE": "#/components/schemas/ChallengeResponseDto"
+                      "CHALLENGE": "#/components/schemas/ChallengeResponseDto",
+                      "MFA_REQUIRED": "#/components/schemas/MfaChallengeResponseDto"
                     }
                   }
                 }
@@ -528,6 +532,96 @@
                 }
               }
             }
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/challenge/mfa": {
+      "post": {
+        "operationId": "AuthController_respondMfaChallenge",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MfaChallengeRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/mfa/setup": {
+      "post": {
+        "operationId": "AuthController_setupMfa",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MfaSetupResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/mfa/verify": {
+      "post": {
+        "operationId": "AuthController_verifyMfa",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MfaVerifyRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/mfa/disable": {
+      "post": {
+        "operationId": "AuthController_disableMfa",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
           }
         },
         "tags": [
@@ -742,6 +836,10 @@
             "type": "string",
             "nullable": true,
             "format": "date-time"
+          },
+          "mfaEnabled": {
+            "type": "boolean",
+            "description": "自分自身（GET /users/me）にのみセットされる。MFA(TOTP) 有効状態。"
           },
           "id": {
             "type": "string"
@@ -967,6 +1065,35 @@
           "email"
         ]
       },
+      "MfaChallengeResponseDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "MFA_REQUIRED"
+            ]
+          },
+          "challengeName": {
+            "type": "string",
+            "enum": [
+              "SOFTWARE_TOKEN_MFA"
+            ]
+          },
+          "session": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "challengeName",
+          "session",
+          "email"
+        ]
+      },
       "LoginRequestDto": {
         "type": "object",
         "properties": {
@@ -1073,6 +1200,52 @@
           "email",
           "newPassword",
           "session"
+        ]
+      },
+      "MfaChallengeRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "code": {
+            "type": "string"
+          },
+          "session": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "code",
+          "session"
+        ]
+      },
+      "MfaSetupResponseDto": {
+        "type": "object",
+        "properties": {
+          "secretCode": {
+            "type": "string"
+          },
+          "otpauthUri": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "secretCode",
+          "otpauthUri"
+        ]
+      },
+      "MfaVerifyRequestDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
         ]
       },
       "CreateImageRequestDto": {

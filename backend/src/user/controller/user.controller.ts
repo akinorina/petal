@@ -43,9 +43,22 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get('me')
-  async findMe(@Req() req: Request): Promise<UserResponseDto> {
+  async findMe(
+    @Req() req: Request,
+    @Headers('authorization') authorization: string | undefined,
+  ): Promise<UserResponseDto> {
     const actor = requireAuthUser(req);
-    return toResponse(await this.userService.findById(actor.userId));
+    const user = await this.userService.findById(actor.userId);
+    let mfaEnabled: boolean | undefined;
+    try {
+      const accessToken = extractBearer(authorization);
+      const settings = await this.userService.getMfaSettings(accessToken);
+      mfaEnabled = settings.totpEnabled;
+    } catch {
+      // MFA 状態取得は補助情報のため、失敗時は undefined のまま返す
+      mfaEnabled = undefined;
+    }
+    return { ...toResponse(user), mfaEnabled };
   }
 
   @Patch('me/email')

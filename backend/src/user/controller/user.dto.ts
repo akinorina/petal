@@ -15,6 +15,11 @@ export class UserResponseDto {
   updatedAt!: string;
   @ApiProperty({ format: 'date-time', nullable: true })
   deletedAt!: string | null;
+  @ApiProperty({
+    required: false,
+    description: '自分自身（GET /users/me）にのみセットされる。MFA(TOTP) 有効状態。',
+  })
+  mfaEnabled?: boolean;
 }
 
 export class CreateUserRequestDto {

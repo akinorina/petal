@@ -50,6 +50,10 @@ export class UserService {
     return this.userRepository.findByCognitoSub(cognitoSub);
   }
 
+  getMfaSettings(accessToken: string): Promise<{ totpEnabled: boolean }> {
+    return this.cognitoUser.getUserMfaSettings(accessToken);
+  }
+
   async create(input: CreateUserInput, actorId: string): Promise<User> {
     const existing = await this.userRepository.findByEmail(input.email);
     if (existing) {

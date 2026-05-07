@@ -73,6 +73,7 @@ function buildMockCognitoUser(): MockCognitoUserClient {
     updateUserEmail: jest.fn(),
     verifyUserEmail: jest.fn(),
     getUserEmail: jest.fn(),
+    getUserMfaSettings: jest.fn(),
     isUsernameExists: jest.fn().mockReturnValue(false),
     isUserNotFound: jest.fn().mockReturnValue(false),
     isCodeMismatch: jest.fn().mockReturnValue(false),
