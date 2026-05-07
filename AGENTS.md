@@ -26,6 +26,7 @@
 | [docs/22_password-policy-frontend-validation.md](docs/22_password-policy-frontend-validation.md) | パスワードポリシー フロント事前検証 設計（TSK-11：共通モジュール + チェックリスト UI） |
 | [docs/23_user-token-revocation-on-delete.md](docs/23_user-token-revocation-on-delete.md) | 削除ユーザーの既存トークン無効化 設計（TSK-14：DELETE /users/:id に GlobalSignOut を追加） |
 | [docs/24_testing-strategy.md](docs/24_testing-strategy.md) | テスト方針 設計（TSK-28：Jest によるユニットテスト整備、レイヤー別責務、モック戦略） |
+| [docs/25_authguard-db-validation-tests.md](docs/25_authguard-db-validation-tests.md) | AuthGuard の DB ユーザー存在・有効性チェック テスト整備（TSK-15：実装は TSK-10 完了済みで、回帰防止のためテストで明文化） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 
