@@ -216,4 +216,4 @@ Cognito の JWKS を自動取得・キャッシュし、`CognitoJwtVerifier` で
 | ---- | ---- |
 | ORM | TypeORM |
 | パッケージマネージャー | pnpm（npm / yarn は使用禁止） |
-| テスト方針 | 要議論（別途決定） |
+| テスト方針 | [docs/00_rules.md §8](00_rules.md) および [docs/24_testing-strategy.md](24_testing-strategy.md) を参照 |

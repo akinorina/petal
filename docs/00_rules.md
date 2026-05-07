@@ -262,3 +262,41 @@ cp backend/.env.example backend/.env
 - 本番・開発・Local の３環境を維持し、環境差分は環境変数で吸収する。
 - Localstack は S3 などのストレージ系 AWS リソースのローカルエミュレートに使用する。
 - Cognito については Local 環境でも実際の AWS Cognito を使用する（Localstack の Cognito は使わない）。
+
+---
+
+## 8. テスト方針
+
+詳細は [docs/24_testing-strategy.md](24_testing-strategy.md) を参照。本節は要旨。
+
+### 8.1 フレームワークと配置
+
+- **Jest 30 + ts-jest**（既存）を使用する。HTTP 統合は `supertest`。
+- ユニットテストは対象ファイルと **同居** させ `<file>.spec.ts` 命名（例: `user.service.ts` ↔ `user.service.spec.ts`）。
+- e2e テストは `backend/test/*.e2e-spec.ts` に置く（Jest 設定が分かれている）。
+- `describe` はクラス名 + メソッド名、`it` は日本語で振る舞いを記述する。
+
+### 8.2 レイヤー別の責務
+
+| レイヤー | テスト | 備考 |
+| ---- | ---- | ---- |
+| Domain | 必要に応じてユニット | `Zod` の不変条件は Service テストで間接的にカバーされる範囲を許容 |
+| Application（`*.service.ts`） | **ユニット必須** | Repository / SDK クライアントを DI モックで差し替え |
+| Infra（TypeORM・AWS SDK ラッパー） | スコープ外 | 統合テストは別タスクで方針を定める |
+| Controller | 原則スコープ外 | 薄く Service に委譲するだけのため、Service テストで担保 |
+| Cross-cutting（Guard など） | 原則スコープ外 | 既存の e2e で担保 |
+
+### 8.3 モック戦略
+
+- **Repository**: `IUserRepository` 等のインターフェースと DI シンボル（例: `USER_REPOSITORY`）を `useValue` でモック。`jest.Mocked<...>` で型安全を保つ。
+- **Cognito クライアント**: 具象クラス（`CognitoAuthClient` / `CognitoUserClient`）を `useValue` でモック。**インターフェース化はしない**（DI で差替可能なため過剰抽象化を避ける）。例外判定メソッド（`isUserNotFound` 等）も spec 側で `jest.fn()` を実装する。
+- **`runInTransaction`**: モックでは `(fn) => fn(txRepo)` の形で即時実行。実 DB トランザクションの挙動はユニットでは検証しない。
+
+### 8.4 カバレッジと CI
+
+- カバレッジ閾値は本書時点では設定しない（実態が見えてから別タスクで決める）。
+- CI への組み込みは別タスク。本書の要件はローカルで `pnpm --filter backend test` が緑になること。
+
+### 8.5 認証ガードのテスト時スキップ
+
+`SKIP_AUTH=true` のときガードをスキップする仕組みを使う（[docs/11_user-info_and_authentication.md §5.5](11_user-info_and_authentication.md) 参照）。ユニットテストは Service 層に閉じるためガードは関与しない。e2e の共通化は別タスクで扱う。
