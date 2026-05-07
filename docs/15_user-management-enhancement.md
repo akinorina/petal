@@ -218,12 +218,18 @@ Frontend            Backend             Cognito        PostgreSQL
    │                    │<──── user ────────────────────────│
    │                    │ softDelete        │              │
    │                    │──────────────────────────────────>│
+   │                    │ AdminUserGlobalSignOut            │
+   │                    │  (TSK-14 追加: refresh token 失効) │
+   │                    │──────────────────>│              │
+   │                    │<── ok / not-found │              │
    │                    │ AdminDisableUser  │              │
    │                    │  (Username = email or sub)        │
    │                    │──────────────────>│              │
    │                    │<── ok / not-found │              │
    │<── 204 ────────────│                   │              │
 ```
+
+> TSK-14（[docs/23_user-token-revocation-on-delete.md](23_user-token-revocation-on-delete.md)）で `AdminUserGlobalSignOut` を `softDelete` と `AdminDisableUser` の間に挿入し、削除済みユーザーのリフレッシュトークンを失効させる。`globalSignOut` 自体の失敗は WARN ログのみで握り潰し、`disableUser` 工程まで進める。
 
 ### 5.3 冪等性・部分失敗
 
