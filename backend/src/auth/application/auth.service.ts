@@ -11,6 +11,8 @@ import {
   AuthenticatedResponseDto,
   ChallengeResponseDto,
   LoginResponseDto,
+  MfaChallengeResponseDto,
+  MfaSetupResponseDto,
   RefreshResponseDto,
 } from '../controller/auth.dto';
 
@@ -132,12 +134,134 @@ export class AuthService {
         return challenge;
       }
 
+      if (result.kind === 'mfa_challenge') {
+        const mfa: MfaChallengeResponseDto = {
+          status: 'MFA_REQUIRED',
+          challengeName: result.challengeName,
+          session: result.session,
+          email,
+        };
+        return mfa;
+      }
+
       return this.toAuthenticated(result.tokens, email);
     } catch (err) {
       if (err instanceof UnauthorizedException) throw err;
       throw new UnauthorizedException(
         'メールアドレスまたはパスワードが正しくありません',
       );
+    }
+  }
+
+  async respondMfaChallenge(
+    email: string,
+    code: string,
+    session: string,
+  ): Promise<AuthenticatedResponseDto> {
+    try {
+      const tokens = await this.cognitoAuth.respondToMfaChallenge(
+        email,
+        code,
+        session,
+      );
+      if (!tokens) {
+        throw new UnauthorizedException('MFA 認証に失敗しました');
+      }
+      return this.toAuthenticated(tokens, email);
+    } catch (err) {
+      if (err instanceof UnauthorizedException) throw err;
+      if (this.cognitoAuth.isCodeMismatch(err)) {
+        throw new UnauthorizedException('コードが正しくありません');
+      }
+      throw new UnauthorizedException(
+        'MFA 認証に失敗しました。セッションが切れているかコードが正しくありません。',
+      );
+    }
+  }
+
+  async setupMfa(accessToken: string): Promise<MfaSetupResponseDto> {
+    let email: string;
+    try {
+      email = await this.cognitoUser.getUserEmail(accessToken);
+    } catch (err) {
+      if (this.cognitoUser.isNotAuthorized(err)) {
+        throw new UnauthorizedException('認証情報が無効です');
+      }
+      this.logger.error(
+        'GetUser (email) に失敗しました',
+        err instanceof Error ? err.stack : String(err),
+      );
+      throw new BadGatewayException('MFA 設定の開始に失敗しました');
+    }
+
+    try {
+      const { secretCode } =
+        await this.cognitoAuth.associateSoftwareToken(accessToken);
+      const otpauthUri =
+        `otpauth://totp/Petal:${encodeURIComponent(email)}` +
+        `?secret=${secretCode}&issuer=Petal&algorithm=SHA1&digits=6&period=30`;
+      return { secretCode, otpauthUri };
+    } catch (err) {
+      if (this.cognitoAuth.isNotAuthorized(err)) {
+        throw new UnauthorizedException('認証情報が無効です');
+      }
+      this.logger.error(
+        'AssociateSoftwareToken に失敗しました',
+        err instanceof Error ? err.stack : String(err),
+      );
+      throw new BadGatewayException('MFA 設定の開始に失敗しました');
+    }
+  }
+
+  async verifyMfaSetup(accessToken: string, code: string): Promise<void> {
+    try {
+      const { status } = await this.cognitoAuth.verifySoftwareToken(
+        accessToken,
+        code,
+        'Petal',
+      );
+      if (status !== 'SUCCESS') {
+        throw new BadRequestException('コードが正しくありません');
+      }
+      await this.cognitoAuth.setSoftwareTokenMfaEnabled(accessToken, true);
+    } catch (err) {
+      if (
+        err instanceof BadRequestException ||
+        err instanceof UnauthorizedException
+      ) {
+        throw err;
+      }
+      if (this.cognitoAuth.isCodeMismatch(err)) {
+        throw new BadRequestException('コードが正しくありません');
+      }
+      if (this.cognitoAuth.isEnableSoftwareTokenMfa(err)) {
+        throw new BadRequestException(
+          'MFA を有効化できませんでした。再度コードを入力してください。',
+        );
+      }
+      if (this.cognitoAuth.isNotAuthorized(err)) {
+        throw new UnauthorizedException('認証情報が無効です');
+      }
+      this.logger.error(
+        'VerifySoftwareToken / SetUserMFAPreference に失敗しました',
+        err instanceof Error ? err.stack : String(err),
+      );
+      throw new BadGatewayException('MFA の有効化に失敗しました');
+    }
+  }
+
+  async disableMfa(accessToken: string): Promise<void> {
+    try {
+      await this.cognitoAuth.setSoftwareTokenMfaEnabled(accessToken, false);
+    } catch (err) {
+      if (this.cognitoAuth.isNotAuthorized(err)) {
+        throw new UnauthorizedException('認証情報が無効です');
+      }
+      this.logger.error(
+        'SetUserMFAPreference (disable) に失敗しました',
+        err instanceof Error ? err.stack : String(err),
+      );
+      throw new BadGatewayException('MFA の無効化に失敗しました');
     }
   }
 

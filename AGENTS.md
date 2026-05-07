@@ -30,6 +30,7 @@
 | [docs/26_last-admin-protection.md](docs/26_last-admin-protection.md) | 最後の admin の削除/降格を防ぐ 設計（TSK-16：DELETE/PATCH /users/:id に admin 数チェックと自身削除拒否を追加） |
 | [docs/27_refresh-token-flow.md](docs/27_refresh-token-flow.md) | リフレッシュトークンによるアクセストークン更新 設計（TSK-20：POST /auth/refresh + openapi-fetch middleware による自動 refresh） |
 | [docs/28_audit-logs.md](docs/28_audit-logs.md) | 監査ログ（ユーザー管理操作）設計（TSK-24：audit_logs テーブル + UserService 連動 + admin 閲覧 UI） |
+| [docs/29_mfa-totp.md](docs/29_mfa-totp.md) | MFA (TOTP) 対応 設計（TSK-13：Cognito Software Token MFA Optional + ログインチャレンジ拡張 + マイページ設定 UI） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 

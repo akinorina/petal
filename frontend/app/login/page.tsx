@@ -15,11 +15,14 @@ export default function LoginPage() {
     setNewPassword,
     confirmPassword,
     setConfirmPassword,
+    mfaCode,
+    setMfaCode,
     error,
     isLoading,
     newPasswordCheck,
     handleLogin,
     handleNewPassword,
+    handleMfa,
   } = useLoginPage();
 
   return (
@@ -29,7 +32,7 @@ export default function LoginPage() {
           Petal
         </h1>
 
-        {step.kind === 'login' ? (
+        {step.kind === 'login' && (
           <form onSubmit={handleLogin} className="space-y-4">
             <Field label="メールアドレス">
               <input
@@ -70,7 +73,9 @@ export default function LoginPage() {
               </Link>
             </p>
           </form>
-        ) : (
+        )}
+
+        {step.kind === 'new-password' && (
           <form onSubmit={handleNewPassword} className="space-y-4">
             <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700">
               初回ログインです。新しいパスワードを設定してください。
@@ -120,6 +125,48 @@ export default function LoginPage() {
               className={primaryBtnClass}
             >
               {isLoading ? '設定中...' : 'パスワードを設定'}
+            </button>
+          </form>
+        )}
+
+        {step.kind === 'mfa' && (
+          <form onSubmit={handleMfa} className="space-y-4">
+            <p className="rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">
+              認証アプリに表示されている 6 桁のコードを入力してください。
+            </p>
+
+            <Field label="メールアドレス">
+              <input
+                type="email"
+                value={step.email}
+                disabled
+                className={`${inputClass} bg-zinc-50 text-zinc-500`}
+              />
+            </Field>
+
+            <Field label="認証コード">
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]{6}"
+                value={mfaCode}
+                onChange={(e) =>
+                  setMfaCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))
+                }
+                required
+                autoFocus
+                className={`${inputClass} text-center font-mono tracking-[0.5em]`}
+              />
+            </Field>
+
+            {error && <ErrorBanner message={error} />}
+
+            <button
+              type="submit"
+              disabled={isLoading || mfaCode.length !== 6}
+              className={primaryBtnClass}
+            >
+              {isLoading ? '確認中...' : '確認'}
             </button>
           </form>
         )}

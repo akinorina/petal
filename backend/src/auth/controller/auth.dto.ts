@@ -25,7 +25,19 @@ export class ChallengeResponseDto {
   email!: string;
 }
 
-export type LoginResponseDto = AuthenticatedResponseDto | ChallengeResponseDto;
+export class MfaChallengeResponseDto {
+  @ApiProperty({ enum: ['MFA_REQUIRED'] })
+  status!: 'MFA_REQUIRED';
+  @ApiProperty({ enum: ['SOFTWARE_TOKEN_MFA'] })
+  challengeName!: 'SOFTWARE_TOKEN_MFA';
+  session!: string;
+  email!: string;
+}
+
+export type LoginResponseDto =
+  | AuthenticatedResponseDto
+  | ChallengeResponseDto
+  | MfaChallengeResponseDto;
 
 export class NewPasswordChallengeRequestDto {
   @ApiProperty({ format: 'email' })
@@ -58,4 +70,20 @@ export class RefreshResponseDto {
   expiresIn!: number;
   @ApiProperty({ format: 'email' })
   email!: string;
+}
+
+export class MfaSetupResponseDto {
+  secretCode!: string;
+  otpauthUri!: string;
+}
+
+export class MfaVerifyRequestDto {
+  code!: string;
+}
+
+export class MfaChallengeRequestDto {
+  @ApiProperty({ format: 'email' })
+  email!: string;
+  code!: string;
+  session!: string;
 }

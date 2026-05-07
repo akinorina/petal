@@ -19,6 +19,8 @@ import {
   ConfirmForgotPasswordSchema,
   ForgotPasswordSchema,
   LoginSchema,
+  MfaChallengeSchema,
+  MfaVerifySchema,
   NewPasswordChallengeSchema,
   RefreshSchema,
 } from '../application/auth.schemas';
@@ -29,13 +31,21 @@ import {
   ForgotPasswordRequestDto,
   LoginRequestDto,
   LoginResponseDto,
+  MfaChallengeRequestDto,
+  MfaChallengeResponseDto,
+  MfaSetupResponseDto,
+  MfaVerifyRequestDto,
   NewPasswordChallengeRequestDto,
   RefreshRequestDto,
   RefreshResponseDto,
 } from './auth.dto';
 
 @ApiTags('auth')
-@ApiExtraModels(AuthenticatedResponseDto, ChallengeResponseDto)
+@ApiExtraModels(
+  AuthenticatedResponseDto,
+  ChallengeResponseDto,
+  MfaChallengeResponseDto,
+)
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -48,12 +58,14 @@ export class AuthController {
       oneOf: [
         { $ref: getSchemaPath(AuthenticatedResponseDto) },
         { $ref: getSchemaPath(ChallengeResponseDto) },
+        { $ref: getSchemaPath(MfaChallengeResponseDto) },
       ],
       discriminator: {
         propertyName: 'status',
         mapping: {
           AUTHENTICATED: getSchemaPath(AuthenticatedResponseDto),
           CHALLENGE: getSchemaPath(ChallengeResponseDto),
+          MFA_REQUIRED: getSchemaPath(MfaChallengeResponseDto),
         },
       },
     },
@@ -136,6 +148,66 @@ export class AuthController {
       parsed.data.newPassword,
       parsed.data.session,
     );
+  }
+
+  @Public()
+  @Post('challenge/mfa')
+  @HttpCode(200)
+  @ApiOkResponse({ type: AuthenticatedResponseDto })
+  async respondMfaChallenge(
+    @Body() body: MfaChallengeRequestDto,
+  ): Promise<AuthenticatedResponseDto> {
+    const parsed = MfaChallengeSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.flatten());
+    }
+    return this.authService.respondMfaChallenge(
+      parsed.data.email,
+      parsed.data.code,
+      parsed.data.session,
+    );
+  }
+
+  @Post('mfa/setup')
+  @HttpCode(200)
+  @ApiOkResponse({ type: MfaSetupResponseDto })
+  async setupMfa(
+    @Headers('authorization') authorization: string | undefined,
+  ): Promise<MfaSetupResponseDto> {
+    const token = extractBearer(authorization);
+    if (!token) {
+      throw new UnauthorizedException('Authorization ヘッダーが不正です');
+    }
+    return this.authService.setupMfa(token);
+  }
+
+  @Post('mfa/verify')
+  @HttpCode(204)
+  async verifyMfa(
+    @Headers('authorization') authorization: string | undefined,
+    @Body() body: MfaVerifyRequestDto,
+  ): Promise<void> {
+    const token = extractBearer(authorization);
+    if (!token) {
+      throw new UnauthorizedException('Authorization ヘッダーが不正です');
+    }
+    const parsed = MfaVerifySchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.flatten());
+    }
+    await this.authService.verifyMfaSetup(token, parsed.data.code);
+  }
+
+  @Post('mfa/disable')
+  @HttpCode(204)
+  async disableMfa(
+    @Headers('authorization') authorization: string | undefined,
+  ): Promise<void> {
+    const token = extractBearer(authorization);
+    if (!token) {
+      throw new UnauthorizedException('Authorization ヘッダーが不正です');
+    }
+    await this.authService.disableMfa(token);
   }
 }
 

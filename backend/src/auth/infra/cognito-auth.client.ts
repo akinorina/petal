@@ -4,17 +4,22 @@ import { ConfigService } from '@nestjs/config';
 import {
   AdminInitiateAuthCommand,
   AdminRespondToAuthChallengeCommand,
+  AssociateSoftwareTokenCommand,
   AuthFlowType,
   ChallengeNameType,
   CodeMismatchException,
   CognitoIdentityProviderClient,
   ConfirmForgotPasswordCommand,
+  EnableSoftwareTokenMFAException,
   ExpiredCodeException,
   ForgotPasswordCommand,
   GlobalSignOutCommand,
   InvalidPasswordException,
   NotAuthorizedException,
+  SetUserMFAPreferenceCommand,
   UserNotFoundException,
+  VerifySoftwareTokenCommand,
+  VerifySoftwareTokenResponseType,
 } from '@aws-sdk/client-cognito-identity-provider';
 
 export type CognitoAuthTokens = {
@@ -35,6 +40,11 @@ export type CognitoAuthResult =
   | {
       kind: 'challenge';
       challengeName: 'NEW_PASSWORD_REQUIRED';
+      session: string;
+    }
+  | {
+      kind: 'mfa_challenge';
+      challengeName: 'SOFTWARE_TOKEN_MFA';
       session: string;
     };
 
@@ -78,6 +88,17 @@ export class CognitoAuthClient {
       return {
         kind: 'challenge',
         challengeName: 'NEW_PASSWORD_REQUIRED',
+        session: response.Session,
+      };
+    }
+
+    if (
+      response.ChallengeName === ChallengeNameType.SOFTWARE_TOKEN_MFA &&
+      response.Session
+    ) {
+      return {
+        kind: 'mfa_challenge',
+        challengeName: 'SOFTWARE_TOKEN_MFA',
         session: response.Session,
       };
     }
@@ -156,6 +177,81 @@ export class CognitoAuthClient {
     };
   }
 
+  async respondToMfaChallenge(
+    username: string,
+    code: string,
+    session: string,
+  ): Promise<CognitoAuthTokens | null> {
+    const command = new AdminRespondToAuthChallengeCommand({
+      UserPoolId: this.userPoolId,
+      ClientId: this.clientId,
+      ChallengeName: ChallengeNameType.SOFTWARE_TOKEN_MFA,
+      Session: session,
+      ChallengeResponses: {
+        USERNAME: username,
+        SOFTWARE_TOKEN_MFA_CODE: code,
+        SECRET_HASH: this.computeSecretHash(username),
+      },
+    });
+
+    const response = await this.client.send(command);
+    const result = response.AuthenticationResult;
+    if (!result?.AccessToken) return null;
+
+    return {
+      accessToken: result.AccessToken,
+      idToken: result.IdToken!,
+      refreshToken: result.RefreshToken!,
+      expiresIn: result.ExpiresIn!,
+    };
+  }
+
+  async associateSoftwareToken(
+    accessToken: string,
+  ): Promise<{ secretCode: string }> {
+    const response = await this.client.send(
+      new AssociateSoftwareTokenCommand({ AccessToken: accessToken }),
+    );
+    if (!response.SecretCode) {
+      throw new Error('Cognito から SecretCode を取得できませんでした');
+    }
+    return { secretCode: response.SecretCode };
+  }
+
+  async verifySoftwareToken(
+    accessToken: string,
+    userCode: string,
+    friendlyDeviceName?: string,
+  ): Promise<{ status: 'SUCCESS' | 'ERROR' }> {
+    const response = await this.client.send(
+      new VerifySoftwareTokenCommand({
+        AccessToken: accessToken,
+        UserCode: userCode,
+        FriendlyDeviceName: friendlyDeviceName,
+      }),
+    );
+    const status =
+      response.Status === VerifySoftwareTokenResponseType.SUCCESS
+        ? 'SUCCESS'
+        : 'ERROR';
+    return { status };
+  }
+
+  async setSoftwareTokenMfaEnabled(
+    accessToken: string,
+    enabled: boolean,
+  ): Promise<void> {
+    await this.client.send(
+      new SetUserMFAPreferenceCommand({
+        AccessToken: accessToken,
+        SoftwareTokenMfaSettings: {
+          Enabled: enabled,
+          PreferredMfa: enabled,
+        },
+      }),
+    );
+  }
+
   async forgotPassword(email: string): Promise<void> {
     await this.client.send(
       new ForgotPasswordCommand({
@@ -200,6 +296,10 @@ export class CognitoAuthClient {
 
   isNotAuthorized(err: unknown): boolean {
     return err instanceof NotAuthorizedException;
+  }
+
+  isEnableSoftwareTokenMfa(err: unknown): boolean {
+    return err instanceof EnableSoftwareTokenMFAException;
   }
 
   private computeSecretHash(username: string): string {

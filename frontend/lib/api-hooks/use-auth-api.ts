@@ -7,6 +7,7 @@ import {
   login,
   logout,
   requestPasswordReset,
+  respondMfaChallenge,
   type LoginResult,
 } from '@/lib/cognito';
 
@@ -17,6 +18,7 @@ export function useAuthApi() {
     () => ({
       login,
       completeNewPassword,
+      respondMfaChallenge,
       logout,
       requestPasswordReset,
       confirmPasswordReset,

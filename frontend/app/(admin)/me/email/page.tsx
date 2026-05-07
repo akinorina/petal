@@ -20,6 +20,15 @@ export default function MeEmailPage() {
 
   return (
     <div className="mx-auto max-w-md">
+      <nav className="mb-4 flex gap-3 text-xs">
+        <span className="font-medium text-zinc-900">メールアドレス変更</span>
+        <a
+          href="/me/mfa"
+          className="text-zinc-500 hover:text-zinc-900"
+        >
+          2 段階認証
+        </a>
+      </nav>
       <h1 className="text-lg font-semibold">メールアドレス変更</h1>
 
       <div className="mt-4 rounded border border-zinc-200 bg-white p-4 text-sm">
