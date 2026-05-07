@@ -248,6 +248,17 @@ export class UserService {
   async remove(id: string): Promise<void> {
     const user = await this.findById(id);
     await this.userRepository.softDelete(id);
+
+    try {
+      await this.cognitoUser.globalSignOut(user.email);
+    } catch (err) {
+      this.logger.warn(
+        `Cognito 強制サインアウトに失敗しました（処理は継続）: ${user.email} / ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
+
     try {
       await this.cognitoUser.disableUser(user.email);
     } catch (err) {
