@@ -12,6 +12,15 @@ export class UserRepositoryImpl implements IUserRepository {
     private readonly repo: Repository<UserEntity>,
   ) {}
 
+  async runInTransaction<T>(
+    fn: (txRepo: IUserRepository) => Promise<T>,
+  ): Promise<T> {
+    return this.repo.manager.transaction(async (manager) => {
+      const txRepo = new UserRepositoryImpl(manager.getRepository(UserEntity));
+      return fn(txRepo);
+    });
+  }
+
   async findById(id: string): Promise<User | null> {
     const entity = await this.repo.findOne({ where: { id } });
     return entity ? this.toDomain(entity) : null;

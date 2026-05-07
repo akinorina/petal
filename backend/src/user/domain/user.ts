@@ -18,7 +18,7 @@ export type UserProps = z.infer<typeof UserSchema>;
 export class User {
   readonly id: string;
   readonly cognitoSub: string;
-  readonly email: string;
+  email: string;
   name: string;
   nameKana: string;
   role: UserRole;

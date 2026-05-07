@@ -6,6 +6,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { User } from '../domain/user';
@@ -139,6 +140,109 @@ export class UserService {
     }
 
     return this.findById(id);
+  }
+
+  /**
+   * メールアドレス変更要求: Cognito へ新メアドの検証コード送信を依頼する。
+   * DB の email はまだ書き換えない（verify 確定後に行う）。
+   */
+  async requestEmailChange(
+    actor: User,
+    newEmail: string,
+    accessToken: string,
+  ): Promise<void> {
+    if (actor.email === newEmail) {
+      throw new BadRequestException(
+        '現在のメールアドレスと同じです',
+      );
+    }
+
+    const existing = await this.userRepository.findByEmail(newEmail);
+    if (existing && existing.id !== actor.id) {
+      throw new ConflictException('すでに使用中のメールアドレスです');
+    }
+
+    try {
+      await this.cognitoUser.updateUserEmail(accessToken, newEmail);
+    } catch (err) {
+      if (this.cognitoUser.isAliasExists(err)) {
+        throw new ConflictException('すでに使用中のメールアドレスです');
+      }
+      if (this.cognitoUser.isNotAuthorized(err)) {
+        throw new UnauthorizedException('認証情報が無効です');
+      }
+      this.logger.error(
+        `Cognito UpdateUserAttributes 失敗: user=${actor.id}`,
+        err instanceof Error ? err.stack : String(err),
+      );
+      throw new BadGatewayException(
+        'メールアドレス変更要求に失敗しました',
+      );
+    }
+  }
+
+  /**
+   * 検証コードを確定して DB の email も更新する。
+   * 「DB UPDATE → Cognito Verify → COMMIT」の順でトランザクション境界を引き、
+   * Verify が失敗した場合は DB をロールバックして整合性を保つ。
+   */
+  async confirmEmailChange(
+    actor: User,
+    code: string,
+    accessToken: string,
+  ): Promise<void> {
+    let pendingEmail: string;
+    try {
+      pendingEmail = await this.cognitoUser.getUserEmail(accessToken);
+    } catch (err) {
+      if (this.cognitoUser.isNotAuthorized(err)) {
+        throw new UnauthorizedException('認証情報が無効です');
+      }
+      this.logger.error(
+        `Cognito GetUser 失敗: user=${actor.id}`,
+        err instanceof Error ? err.stack : String(err),
+      );
+      throw new BadGatewayException('メールアドレス取得に失敗しました');
+    }
+
+    if (pendingEmail === actor.email) {
+      throw new BadRequestException(
+        '保留中のメールアドレス変更がありません',
+      );
+    }
+
+    await this.userRepository.runInTransaction(async (txRepo) => {
+      const dup = await txRepo.findByEmail(pendingEmail);
+      if (dup && dup.id !== actor.id) {
+        throw new ConflictException('すでに使用中のメールアドレスです');
+      }
+
+      const target = await txRepo.findById(actor.id);
+      if (!target) {
+        throw new NotFoundException(`ユーザーが見つかりません: ${actor.id}`);
+      }
+      target.email = pendingEmail;
+      await txRepo.save(target);
+
+      try {
+        await this.cognitoUser.verifyUserEmail(accessToken, code);
+      } catch (err) {
+        if (this.cognitoUser.isCodeMismatch(err)) {
+          throw new BadRequestException('コードが正しくありません');
+        }
+        if (this.cognitoUser.isExpiredCode(err)) {
+          throw new BadRequestException('コードの有効期限が切れています');
+        }
+        if (this.cognitoUser.isNotAuthorized(err)) {
+          throw new UnauthorizedException('認証情報が無効です');
+        }
+        this.logger.error(
+          `Cognito VerifyUserAttribute 失敗: user=${actor.id}`,
+          err instanceof Error ? err.stack : String(err),
+        );
+        throw new BadGatewayException('メールアドレス変更に失敗しました');
+      }
+    });
   }
 
   async remove(id: string): Promise<void> {

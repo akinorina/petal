@@ -111,6 +111,11 @@ export function getCurrentUserEmail(): string | null {
   return localStorage.getItem(EMAIL_KEY);
 }
 
+export function setCurrentUserEmail(email: string): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(EMAIL_KEY, email);
+}
+
 function persistSession(accessToken: string, email: string): void {
   localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
   localStorage.setItem(EMAIL_KEY, email);

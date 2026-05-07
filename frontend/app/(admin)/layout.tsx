@@ -37,7 +37,12 @@ export default function AdminLayout({
             </nav>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-xs text-zinc-500">{email}</span>
+            <Link
+              href="/me/email"
+              className="text-xs text-zinc-500 hover:text-zinc-900"
+            >
+              {email}
+            </Link>
             <button
               onClick={handleLogout}
               className="text-xs text-zinc-500 hover:text-zinc-900"

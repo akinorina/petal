@@ -21,6 +21,16 @@ export const ListUsersQuerySchema = z.object({
     .transform((v) => v === 'true'),
 });
 
+export const RequestEmailChangeSchema = z.object({
+  email: z.email(),
+});
+
+export const ConfirmEmailChangeSchema = z.object({
+  code: z.string().min(1),
+});
+
 export type CreateUserInput = z.infer<typeof CreateUserSchema>;
 export type UpdateUserInput = z.infer<typeof UpdateUserSchema>;
 export type ListUsersQuery = z.infer<typeof ListUsersQuerySchema>;
+export type RequestEmailChangeInput = z.infer<typeof RequestEmailChangeSchema>;
+export type ConfirmEmailChangeInput = z.infer<typeof ConfirmEmailChangeSchema>;
