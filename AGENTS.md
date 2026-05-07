@@ -28,6 +28,7 @@
 | [docs/24_testing-strategy.md](docs/24_testing-strategy.md) | テスト方針 設計（TSK-28：Jest によるユニットテスト整備、レイヤー別責務、モック戦略） |
 | [docs/25_authguard-db-validation-tests.md](docs/25_authguard-db-validation-tests.md) | AuthGuard の DB ユーザー存在・有効性チェック テスト整備（TSK-15：実装は TSK-10 完了済みで、回帰防止のためテストで明文化） |
 | [docs/26_last-admin-protection.md](docs/26_last-admin-protection.md) | 最後の admin の削除/降格を防ぐ 設計（TSK-16：DELETE/PATCH /users/:id に admin 数チェックと自身削除拒否を追加） |
+| [docs/27_refresh-token-flow.md](docs/27_refresh-token-flow.md) | リフレッシュトークンによるアクセストークン更新 設計（TSK-20：POST /auth/refresh + openapi-fetch middleware による自動 refresh） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 
