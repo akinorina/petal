@@ -321,6 +321,51 @@
         ]
       }
     },
+    "/audit-logs": {
+      "get": {
+        "operationId": "AuditLogController_findAll",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 0,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListAuditLogsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "audit-logs"
+        ]
+      }
+    },
     "/auth/login": {
       "post": {
         "operationId": "AuthController_login",
@@ -793,6 +838,71 @@
             "type": "string"
           }
         }
+      },
+      "AuditLogResponseDto": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "enum": [
+              "CREATE_USER",
+              "UPDATE_USER",
+              "DELETE_USER",
+              "RESTORE_USER"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "actorUserId": {
+            "type": "string"
+          },
+          "targetUserId": {
+            "type": "string",
+            "nullable": true
+          },
+          "metadata": {
+            "type": "object",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "id",
+          "actorUserId",
+          "targetUserId",
+          "metadata",
+          "createdAt"
+        ]
+      },
+      "ListAuditLogsResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditLogResponseDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "offset": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ]
       },
       "AuthenticatedResponseDto": {
         "type": "object",

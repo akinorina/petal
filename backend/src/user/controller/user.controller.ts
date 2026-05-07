@@ -108,21 +108,29 @@ export class UserController {
 
   @Post()
   @Roles(UserRole.Admin)
-  async create(@Body() body: CreateUserRequestDto): Promise<UserResponseDto> {
+  async create(
+    @Req() req: Request,
+    @Body() body: CreateUserRequestDto,
+  ): Promise<UserResponseDto> {
     const result = CreateUserSchema.safeParse(body);
     if (!result.success) throw new BadRequestException(result.error.flatten());
-    return toResponse(await this.userService.create(result.data));
+    const actor = requireAuthUser(req);
+    return toResponse(await this.userService.create(result.data, actor.userId));
   }
 
   @Patch(':id')
   @Roles(UserRole.Admin)
   async update(
+    @Req() req: Request,
     @Param('id') id: string,
     @Body() body: UpdateUserRequestDto,
   ): Promise<UserResponseDto> {
     const result = UpdateUserSchema.safeParse(body);
     if (!result.success) throw new BadRequestException(result.error.flatten());
-    return toResponse(await this.userService.update(id, result.data));
+    const actor = requireAuthUser(req);
+    return toResponse(
+      await this.userService.update(id, result.data, actor.userId),
+    );
   }
 
   @Delete(':id')
@@ -136,8 +144,12 @@ export class UserController {
   @Post(':id/restore')
   @Roles(UserRole.Admin)
   @HttpCode(200)
-  async restore(@Param('id') id: string): Promise<UserResponseDto> {
-    return toResponse(await this.userService.restore(id));
+  async restore(
+    @Req() req: Request,
+    @Param('id') id: string,
+  ): Promise<UserResponseDto> {
+    const actor = requireAuthUser(req);
+    return toResponse(await this.userService.restore(id, actor.userId));
   }
 
   private async resolveActor(req: Request): Promise<User> {

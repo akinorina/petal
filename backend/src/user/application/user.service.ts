@@ -9,6 +9,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { AuditLogService } from '../../audit/application/audit-log.service';
+import { AuditAction } from '../../audit/domain/audit-action.enum';
 import { LastAdminConflictException } from '../../common/exceptions/last-admin-conflict.exception';
 import { User } from '../domain/user';
 import { UserRole } from '../domain/user-role.enum';
@@ -27,6 +29,7 @@ export class UserService {
     @Inject(USER_REPOSITORY)
     private readonly userRepository: IUserRepository,
     private readonly cognitoUser: CognitoUserClient,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
   findAll(): Promise<User[]> {
@@ -47,7 +50,7 @@ export class UserService {
     return this.userRepository.findByCognitoSub(cognitoSub);
   }
 
-  async create(input: CreateUserInput): Promise<User> {
+  async create(input: CreateUserInput, actorId: string): Promise<User> {
     const existing = await this.userRepository.findByEmail(input.email);
     if (existing) {
       throw new ConflictException('すでに登録済みのメールアドレスです');
@@ -70,6 +73,7 @@ export class UserService {
       throw new BadGatewayException('Cognito 連携に失敗しました');
     }
 
+    let saved: User;
     try {
       const now = new Date();
       const user = new User({
@@ -83,7 +87,7 @@ export class UserService {
         updatedAt: now,
         deletedAt: null,
       });
-      return await this.userRepository.save(user);
+      saved = await this.userRepository.save(user);
     } catch (err) {
       this.logger.error(
         `DB 登録に失敗したため Cognito 側を補償削除します: ${input.email}`,
@@ -97,9 +101,26 @@ export class UserService {
       });
       throw err;
     }
+
+    await this.auditLogService.record({
+      actorUserId: actorId,
+      action: AuditAction.CreateUser,
+      targetUserId: saved.id,
+      metadata: {
+        email: saved.email,
+        role: saved.role,
+        name: saved.name,
+      },
+    });
+
+    return saved;
   }
 
-  async update(id: string, input: UpdateUserInput): Promise<User> {
+  async update(
+    id: string,
+    input: UpdateUserInput,
+    actorId: string,
+  ): Promise<User> {
     const user = await this.findById(id);
 
     if (
@@ -113,14 +134,42 @@ export class UserService {
       }
     }
 
+    const before = {
+      name: user.name,
+      nameKana: user.nameKana,
+      role: user.role,
+    };
+
     if (input.name !== undefined) user.name = input.name;
     if (input.nameKana !== undefined) user.nameKana = input.nameKana;
     if (input.role !== undefined) user.role = input.role;
 
-    return this.userRepository.save(user);
+    const saved = await this.userRepository.save(user);
+
+    const changes: Record<string, { before: unknown; after: unknown }> = {};
+    if (before.name !== saved.name) {
+      changes.name = { before: before.name, after: saved.name };
+    }
+    if (before.nameKana !== saved.nameKana) {
+      changes.nameKana = { before: before.nameKana, after: saved.nameKana };
+    }
+    if (before.role !== saved.role) {
+      changes.role = { before: before.role, after: saved.role };
+    }
+
+    if (Object.keys(changes).length > 0) {
+      await this.auditLogService.record({
+        actorUserId: actorId,
+        action: AuditAction.UpdateUser,
+        targetUserId: saved.id,
+        metadata: { changes },
+      });
+    }
+
+    return saved;
   }
 
-  async restore(id: string): Promise<User> {
+  async restore(id: string, actorId: string): Promise<User> {
     const user = await this.userRepository.findByIdWithDeleted(id);
     if (!user) {
       throw new NotFoundException(`ユーザーが見つかりません: ${id}`);
@@ -151,6 +200,13 @@ export class UserService {
         'Cognito 側のユーザー有効化に失敗しました。運用で再実行してください。',
       );
     }
+
+    await this.auditLogService.record({
+      actorUserId: actorId,
+      action: AuditAction.RestoreUser,
+      targetUserId: id,
+      metadata: { targetEmail: user.email },
+    });
 
     return this.findById(id);
   }
@@ -274,9 +330,11 @@ export class UserService {
 
     await this.userRepository.softDelete(id);
 
+    let forcedLogout = true;
     try {
       await this.cognitoUser.globalSignOut(user.email);
     } catch (err) {
+      forcedLogout = false;
       this.logger.warn(
         `Cognito 強制サインアウトに失敗しました（処理は継続）: ${user.email} / ${
           err instanceof Error ? err.message : String(err)
@@ -295,5 +353,12 @@ export class UserService {
         'Cognito 側のユーザー無効化に失敗しました。運用で再実行してください。',
       );
     }
+
+    await this.auditLogService.record({
+      actorUserId: actorId,
+      action: AuditAction.DeleteUser,
+      targetUserId: id,
+      metadata: { targetEmail: user.email, forcedLogout },
+    });
   }
 }
