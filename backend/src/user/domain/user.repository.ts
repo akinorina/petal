@@ -13,6 +13,11 @@ export interface IUserRepository {
   softDelete(id: string): Promise<void>;
   restore(id: string): Promise<void>;
   /**
+   * softDelete されていない admin の人数を返す。
+   * 「最後の admin」判定（TSK-16）で使う。
+   */
+  countActiveAdmins(): Promise<number>;
+  /**
    * 指定したコールバックを単一の DB トランザクション内で実行する。
    * コールバックに渡されるリポジトリは同一トランザクションに紐づき、
    * コールバックが例外を throw すれば自動的にロールバックされる。

@@ -9,7 +9,9 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { LastAdminConflictException } from '../../common/exceptions/last-admin-conflict.exception';
 import { User } from '../domain/user';
+import { UserRole } from '../domain/user-role.enum';
 import {
   IUserRepository,
   USER_REPOSITORY,
@@ -99,6 +101,17 @@ export class UserService {
 
   async update(id: string, input: UpdateUserInput): Promise<User> {
     const user = await this.findById(id);
+
+    if (
+      input.role !== undefined &&
+      user.role === UserRole.Admin &&
+      input.role !== UserRole.Admin
+    ) {
+      const adminCount = await this.userRepository.countActiveAdmins();
+      if (adminCount <= 1) {
+        throw new LastAdminConflictException();
+      }
+    }
 
     if (input.name !== undefined) user.name = input.name;
     if (input.nameKana !== undefined) user.nameKana = input.nameKana;
@@ -245,8 +258,20 @@ export class UserService {
     });
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, actorId: string): Promise<void> {
+    if (id === actorId) {
+      throw new LastAdminConflictException('自分自身は削除できません');
+    }
+
     const user = await this.findById(id);
+
+    if (user.role === UserRole.Admin) {
+      const adminCount = await this.userRepository.countActiveAdmins();
+      if (adminCount <= 1) {
+        throw new LastAdminConflictException();
+      }
+    }
+
     await this.userRepository.softDelete(id);
 
     try {

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Not, Repository } from 'typeorm';
 import { User } from '../domain/user';
+import { UserRole } from '../domain/user-role.enum';
 import { IUserRepository } from '../domain/user.repository';
 import { UserEntity } from './user.entity';
 
@@ -69,6 +70,10 @@ export class UserRepositoryImpl implements IUserRepository {
 
   async restore(id: string): Promise<void> {
     await this.repo.restore(id);
+  }
+
+  async countActiveAdmins(): Promise<number> {
+    return this.repo.count({ where: { role: UserRole.Admin } });
   }
 
   private toDomain(entity: UserEntity): User {
