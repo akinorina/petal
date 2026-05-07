@@ -23,3 +23,6 @@ pnpm-debug.log*
 
 # pnpm
 .pnpm-store/
+
+# Claude Code (user-local settings)
+.claude/settings.local.json
