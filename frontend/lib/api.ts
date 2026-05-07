@@ -56,6 +56,16 @@ export async function uploadToPresignedUrl(
   }
 }
 
+export const mfaApi = {
+  setup: () => unwrap(apiClient.POST('/auth/mfa/setup')),
+  verify: async (code: string): Promise<void> => {
+    await unwrap(apiClient.POST('/auth/mfa/verify', { body: { code } }));
+  },
+  disable: async (): Promise<void> => {
+    await unwrap(apiClient.POST('/auth/mfa/disable'));
+  },
+};
+
 export const auditLogApi = {
   findAll: (params: { limit: number; offset: number }) =>
     unwrap(
@@ -71,6 +81,7 @@ export const auditLogApi = {
 };
 
 export const userApi = {
+  findMe: () => unwrap(apiClient.GET('/users/me')),
   findAll: (params?: { deleted?: boolean }) =>
     unwrap(
       apiClient.GET('/users', {

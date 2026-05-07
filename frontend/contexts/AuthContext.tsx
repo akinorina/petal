@@ -31,6 +31,11 @@ type AuthContextValue = AuthState & {
     newPassword: string,
     session: string,
   ) => Promise<void>;
+  respondMfaChallenge: (
+    email: string,
+    code: string,
+    session: string,
+  ) => Promise<void>;
   logout: () => Promise<void>;
   updateEmail: (newEmail: string) => void;
 };
@@ -85,6 +90,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [api],
   );
 
+  const respondMfaChallenge = useCallback(
+    async (email: string, code: string, session: string) => {
+      await api.respondMfaChallenge(email, code, session);
+      setState({ isAuthenticated: true, email, isLoading: false });
+    },
+    [api],
+  );
+
   const logout = useCallback(async () => {
     await api.logout();
     setState({ isAuthenticated: false, email: null, isLoading: false });
@@ -97,7 +110,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ ...state, login, completeNewPassword, logout, updateEmail }}
+      value={{
+        ...state,
+        login,
+        completeNewPassword,
+        respondMfaChallenge,
+        logout,
+        updateEmail,
+      }}
     >
       {children}
     </AuthContext.Provider>

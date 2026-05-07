@@ -228,6 +228,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/challenge/mfa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthController_respondMfaChallenge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/mfa/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthController_setupMfa"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/mfa/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthController_verifyMfa"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/mfa/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthController_disableMfa"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/images": {
         parameters: {
             query?: never;
@@ -290,6 +354,8 @@ export interface components {
             updatedAt: string;
             /** Format: date-time */
             deletedAt: string | null;
+            /** @description 自分自身（GET /users/me）にのみセットされる。MFA(TOTP) 有効状態。 */
+            mfaEnabled?: boolean;
             id: string;
             cognitoSub: string;
             email: string;
@@ -353,6 +419,17 @@ export interface components {
             session: string;
             email: string;
         };
+        MfaChallengeResponseDto: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            status: "MFA_REQUIRED";
+            /** @enum {string} */
+            challengeName: "SOFTWARE_TOKEN_MFA";
+            session: string;
+            email: string;
+        };
         LoginRequestDto: {
             /** Format: email */
             email: string;
@@ -385,6 +462,19 @@ export interface components {
             email: string;
             newPassword: string;
             session: string;
+        };
+        MfaChallengeRequestDto: {
+            /** Format: email */
+            email: string;
+            code: string;
+            session: string;
+        };
+        MfaSetupResponseDto: {
+            secretCode: string;
+            otpauthUri: string;
+        };
+        MfaVerifyRequestDto: {
+            code: string;
         };
         CreateImageRequestDto: {
             /** @enum {string} */
@@ -685,7 +775,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AuthenticatedResponseDto"] | components["schemas"]["ChallengeResponseDto"];
+                    "application/json": components["schemas"]["AuthenticatedResponseDto"] | components["schemas"]["ChallengeResponseDto"] | components["schemas"]["MfaChallengeResponseDto"];
                 };
             };
         };
@@ -792,6 +882,86 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AuthenticatedResponseDto"];
                 };
+            };
+        };
+    };
+    AuthController_respondMfaChallenge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MfaChallengeRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthenticatedResponseDto"];
+                };
+            };
+        };
+    };
+    AuthController_setupMfa: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MfaSetupResponseDto"];
+                };
+            };
+        };
+    };
+    AuthController_verifyMfa: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MfaVerifyRequestDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_disableMfa: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
