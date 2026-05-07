@@ -57,6 +57,8 @@ CREATE TABLE "petal"."users" (
 
 各ロールが実行できる操作の詳細は、機能実装時に順次定義する。
 
+ロールは **DB（`users.role`）が単一の真実**として扱う。Cognito グループ機能は使わず、認可は `JwtAuthGuard` の DB lookup によって `request.user.role` に解決される（[21_role-cognito-group-sync.md](21_role-cognito-group-sync.md)）。
+
 ---
 
 ## 4. 認証フロー
@@ -123,8 +125,16 @@ Localstack の Cognito は使用しない。Local 環境でも実際の AWS Cogn
 1. リクエストの `Authorization` ヘッダーから JWT（`Bearer <token>`）を取り出す
 2. Cognito が公開している公開鍵（JWKS）を使って JWT の署名を検証する
 3. トークンの有効期限・発行元（User Pool / Client ID）が正しいか確認する
-4. 検証が通れば `request.user` にデコード済みの情報（`sub`・メールアドレスなど）をセットしてリクエストを通す
-5. 検証に失敗した場合は `401 Unauthorized` を返してリクエストをここで止める
+4. 検証が通れば、`payload.sub` を使って DB の `users` テーブルから対応レコードを引く（[21_role-cognito-group-sync.md](21_role-cognito-group-sync.md) §3.2 参照）
+5. 該当ユーザーが存在しない / `deleted_at IS NOT NULL` の場合は `401 Unauthorized` を返す
+6. `request.user` に正規化済みの `AuthUser`（`{ sub, userId, email, role }`）をセットしてリクエストを通す
+7. 検証に失敗した場合は `401 Unauthorized` を返してリクエストをここで止める
+
+### ロールベース認可（RolesGuard / @Roles）
+
+`request.user.role` を使った認可は、`RolesGuard` と `@Roles(UserRole.Admin)` デコレータで宣言的に行う。
+ロールはアプリケーション側 DB（`users.role`）が単一の真実であり、Cognito グループは使用しない。
+詳細は [21_role-cognito-group-sync.md](21_role-cognito-group-sync.md) を参照。
 
 ### 全体のどの位置付けか
 

@@ -22,6 +22,7 @@
 | [docs/18_logout-api.md](docs/18_logout-api.md) | ログアウト API 設計（TSK-19：GlobalSignOut 連携） |
 | [docs/19_password-reset.md](docs/19_password-reset.md) | パスワードリセット 設計（TSK-8：ForgotPassword + ConfirmForgotPassword + GlobalSignOut） |
 | [docs/20_email-change-flow.md](docs/20_email-change-flow.md) | メールアドレス変更フロー 設計（TSK-9：UpdateUserAttributes + VerifyUserAttribute） |
+| [docs/21_role-cognito-group-sync.md](docs/21_role-cognito-group-sync.md) | ロール認可基盤 設計（TSK-10：AuthGuard で DB lookup → request.user.role / RolesGuard / GET /users/me） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 
