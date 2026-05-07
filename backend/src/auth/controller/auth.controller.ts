@@ -20,6 +20,7 @@ import {
   ForgotPasswordSchema,
   LoginSchema,
   NewPasswordChallengeSchema,
+  RefreshSchema,
 } from '../application/auth.schemas';
 import {
   AuthenticatedResponseDto,
@@ -29,6 +30,8 @@ import {
   LoginRequestDto,
   LoginResponseDto,
   NewPasswordChallengeRequestDto,
+  RefreshRequestDto,
+  RefreshResponseDto,
 } from './auth.dto';
 
 @ApiTags('auth')
@@ -103,6 +106,18 @@ export class AuthController {
       parsed.data.code,
       parsed.data.newPassword,
     );
+  }
+
+  @Public()
+  @Post('refresh')
+  @HttpCode(200)
+  @ApiOkResponse({ type: RefreshResponseDto })
+  async refresh(@Body() body: RefreshRequestDto): Promise<RefreshResponseDto> {
+    const parsed = RefreshSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.flatten());
+    }
+    return this.authService.refresh(parsed.data.refreshToken, parsed.data.email);
   }
 
   @Public()

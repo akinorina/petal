@@ -11,6 +11,7 @@ import {
   AuthenticatedResponseDto,
   ChallengeResponseDto,
   LoginResponseDto,
+  RefreshResponseDto,
 } from '../controller/auth.dto';
 
 @Injectable()
@@ -73,6 +74,34 @@ export class AuthService {
         `AdminUserGlobalSignOut に失敗（パスワードリセットは成功）: ${email}`,
         err instanceof Error ? err.stack : String(err),
       );
+    }
+  }
+
+  async refresh(
+    refreshToken: string,
+    email: string,
+  ): Promise<RefreshResponseDto> {
+    try {
+      const tokens = await this.cognitoAuth.refreshAccessToken(
+        refreshToken,
+        email,
+      );
+      if (!tokens) {
+        throw new UnauthorizedException('リフレッシュトークンが無効です');
+      }
+      return { ...tokens, email };
+    } catch (err) {
+      if (err instanceof UnauthorizedException) throw err;
+      if (this.cognitoAuth.isNotAuthorized(err)) {
+        throw new UnauthorizedException(
+          'リフレッシュトークンが無効または失効しています',
+        );
+      }
+      this.logger.error(
+        'Cognito refresh に失敗しました',
+        err instanceof Error ? err.stack : String(err),
+      );
+      throw new BadGatewayException('トークン更新に失敗しました');
     }
   }
 

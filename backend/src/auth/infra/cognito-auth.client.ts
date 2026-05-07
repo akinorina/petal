@@ -13,6 +13,7 @@ import {
   ForgotPasswordCommand,
   GlobalSignOutCommand,
   InvalidPasswordException,
+  NotAuthorizedException,
   UserNotFoundException,
 } from '@aws-sdk/client-cognito-identity-provider';
 
@@ -20,6 +21,12 @@ export type CognitoAuthTokens = {
   accessToken: string;
   idToken: string;
   refreshToken: string;
+  expiresIn: number;
+};
+
+export type CognitoRefreshedTokens = {
+  accessToken: string;
+  idToken: string;
   expiresIn: number;
 };
 
@@ -124,6 +131,31 @@ export class CognitoAuthClient {
     );
   }
 
+  async refreshAccessToken(
+    refreshToken: string,
+    username: string,
+  ): Promise<CognitoRefreshedTokens | null> {
+    const command = new AdminInitiateAuthCommand({
+      UserPoolId: this.userPoolId,
+      ClientId: this.clientId,
+      AuthFlow: AuthFlowType.REFRESH_TOKEN_AUTH,
+      AuthParameters: {
+        REFRESH_TOKEN: refreshToken,
+        SECRET_HASH: this.computeSecretHash(username),
+      },
+    });
+
+    const response = await this.client.send(command);
+    const result = response.AuthenticationResult;
+    if (!result?.AccessToken || !result.IdToken) return null;
+
+    return {
+      accessToken: result.AccessToken,
+      idToken: result.IdToken,
+      expiresIn: result.ExpiresIn ?? 3600,
+    };
+  }
+
   async forgotPassword(email: string): Promise<void> {
     await this.client.send(
       new ForgotPasswordCommand({
@@ -164,6 +196,10 @@ export class CognitoAuthClient {
 
   isInvalidPassword(err: unknown): boolean {
     return err instanceof InvalidPasswordException;
+  }
+
+  isNotAuthorized(err: unknown): boolean {
+    return err instanceof NotAuthorizedException;
   }
 
   private computeSecretHash(username: string): string {
