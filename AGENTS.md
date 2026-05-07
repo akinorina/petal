@@ -25,6 +25,7 @@
 | [docs/21_role-cognito-group-sync.md](docs/21_role-cognito-group-sync.md) | ロール認可基盤 設計（TSK-10：AuthGuard で DB lookup → request.user.role / RolesGuard / GET /users/me） |
 | [docs/22_password-policy-frontend-validation.md](docs/22_password-policy-frontend-validation.md) | パスワードポリシー フロント事前検証 設計（TSK-11：共通モジュール + チェックリスト UI） |
 | [docs/23_user-token-revocation-on-delete.md](docs/23_user-token-revocation-on-delete.md) | 削除ユーザーの既存トークン無効化 設計（TSK-14：DELETE /users/:id に GlobalSignOut を追加） |
+| [docs/24_testing-strategy.md](docs/24_testing-strategy.md) | テスト方針 設計（TSK-28：Jest によるユニットテスト整備、レイヤー別責務、モック戦略） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 
