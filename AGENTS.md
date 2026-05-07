@@ -24,6 +24,7 @@
 | [docs/20_email-change-flow.md](docs/20_email-change-flow.md) | メールアドレス変更フロー 設計（TSK-9：UpdateUserAttributes + VerifyUserAttribute） |
 | [docs/21_role-cognito-group-sync.md](docs/21_role-cognito-group-sync.md) | ロール認可基盤 設計（TSK-10：AuthGuard で DB lookup → request.user.role / RolesGuard / GET /users/me） |
 | [docs/22_password-policy-frontend-validation.md](docs/22_password-policy-frontend-validation.md) | パスワードポリシー フロント事前検証 設計（TSK-11：共通モジュール + チェックリスト UI） |
+| [docs/23_user-token-revocation-on-delete.md](docs/23_user-token-revocation-on-delete.md) | 削除ユーザーの既存トークン無効化 設計（TSK-14：DELETE /users/:id に GlobalSignOut を追加） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 
