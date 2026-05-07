@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthApi } from '@/lib/api-hooks/use-auth-api';
+import { evaluatePasswordForm } from '@/lib/password-policy';
 
 type Step = { kind: 'request' } | { kind: 'confirm'; email: string };
 
@@ -31,14 +32,20 @@ export function useForgotPasswordPage() {
     }
   }
 
+  const newPasswordCheck = evaluatePasswordForm(newPassword, confirmPassword);
+
   async function handleConfirm(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (newPassword !== confirmPassword) {
+    if (step.kind !== 'confirm') return;
+    if (!newPasswordCheck.policyOk) {
+      setError('パスワードがポリシーを満たしていません');
+      return;
+    }
+    if (!newPasswordCheck.match) {
       setError('パスワードが一致しません');
       return;
     }
-    if (step.kind !== 'confirm') return;
 
     setIsLoading(true);
     try {
@@ -73,6 +80,7 @@ export function useForgotPasswordPage() {
     setConfirmPassword,
     error,
     isLoading,
+    newPasswordCheck,
     handleRequest,
     handleConfirm,
     backToRequest,

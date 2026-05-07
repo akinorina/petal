@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { PasswordPolicyChecklist } from '@/components/PasswordPolicyChecklist';
 import { useForgotPasswordPage } from './use-forgot-password-page';
 
 export default function ForgotPasswordPage() {
@@ -16,6 +17,7 @@ export default function ForgotPasswordPage() {
     setConfirmPassword,
     error,
     isLoading,
+    newPasswordCheck,
     handleRequest,
     handleConfirm,
     backToRequest,
@@ -101,11 +103,16 @@ export default function ForgotPasswordPage() {
               />
             </Field>
 
+            <PasswordPolicyChecklist
+              password={newPassword}
+              confirm={confirmPassword}
+            />
+
             {error && <ErrorBanner message={error} />}
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !newPasswordCheck.canSubmit}
               className={primaryBtnClass}
             >
               {isLoading ? '設定中...' : 'パスワードを設定'}

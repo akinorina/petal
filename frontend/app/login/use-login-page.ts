@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { evaluatePasswordForm } from '@/lib/password-policy';
 
 type Step =
   | { kind: 'login' }
@@ -42,12 +43,18 @@ export function useLoginPage() {
     }
   }
 
+  const newPasswordCheck = evaluatePasswordForm(newPassword, confirmPassword);
+
   async function handleNewPassword(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     if (step.kind !== 'new-password') return;
 
-    if (newPassword !== confirmPassword) {
+    if (!newPasswordCheck.policyOk) {
+      setError('パスワードがポリシーを満たしていません');
+      return;
+    }
+    if (!newPasswordCheck.match) {
       setError('パスワードが一致しません');
       return;
     }
@@ -77,6 +84,7 @@ export function useLoginPage() {
     setConfirmPassword,
     error,
     isLoading,
+    newPasswordCheck,
     handleLogin,
     handleNewPassword,
   };
