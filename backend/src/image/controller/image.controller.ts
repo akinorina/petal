@@ -87,22 +87,11 @@ export class ImageController {
   }
 
   private async resolveCurrentUser(req: Request): Promise<User> {
-    const sub = extractCognitoSub(req);
-    const user = await this.userService.findByCognitoSub(sub);
-    if (!user) {
-      throw new UnauthorizedException('認証ユーザーに対応するレコードがありません');
+    if (!req.user) {
+      throw new UnauthorizedException('認証情報がありません');
     }
-    return user;
+    return this.userService.findById(req.user.userId);
   }
-}
-
-function extractCognitoSub(req: Request): string {
-  const payload = (req as Request & { user?: { sub?: unknown } }).user;
-  const sub = payload?.sub;
-  if (typeof sub !== 'string' || sub.length === 0) {
-    throw new UnauthorizedException('認証情報が不正です');
-  }
-  return sub;
 }
 
 function toResponse(image: Image): ImageResponseDto {

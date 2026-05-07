@@ -24,6 +24,9 @@ import {
   UpdateUserSchema,
 } from '../application/user.schemas';
 import { User } from '../domain/user';
+import { UserRole } from '../domain/user-role.enum';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { AuthUser } from '../../common/types/auth-user';
 import {
   ConfirmEmailChangeRequestDto,
   CreateUserRequestDto,
@@ -39,51 +42,10 @@ import {
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Get()
-  async findAll(
-    @Query() query: ListUsersQueryDto,
-  ): Promise<UserResponseDto[]> {
-    const parsed = ListUsersQuerySchema.safeParse(query);
-    if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
-
-    const users = parsed.data.deleted
-      ? await this.userService.findAllDeleted()
-      : await this.userService.findAll();
-    return users.map(toResponse);
-  }
-
-  @Get(':id')
-  async findOne(@Param('id') id: string): Promise<UserResponseDto> {
-    return toResponse(await this.userService.findById(id));
-  }
-
-  @Post()
-  async create(@Body() body: CreateUserRequestDto): Promise<UserResponseDto> {
-    const result = CreateUserSchema.safeParse(body);
-    if (!result.success) throw new BadRequestException(result.error.flatten());
-    return toResponse(await this.userService.create(result.data));
-  }
-
-  @Patch(':id')
-  async update(
-    @Param('id') id: string,
-    @Body() body: UpdateUserRequestDto,
-  ): Promise<UserResponseDto> {
-    const result = UpdateUserSchema.safeParse(body);
-    if (!result.success) throw new BadRequestException(result.error.flatten());
-    return toResponse(await this.userService.update(id, result.data));
-  }
-
-  @Delete(':id')
-  @HttpCode(204)
-  async remove(@Param('id') id: string): Promise<void> {
-    await this.userService.remove(id);
-  }
-
-  @Post(':id/restore')
-  @HttpCode(200)
-  async restore(@Param('id') id: string): Promise<UserResponseDto> {
-    return toResponse(await this.userService.restore(id));
+  @Get('me')
+  async findMe(@Req() req: Request): Promise<UserResponseDto> {
+    const actor = requireAuthUser(req);
+    return toResponse(await this.userService.findById(actor.userId));
   }
 
   @Patch('me/email')
@@ -97,7 +59,7 @@ export class UserController {
     if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
 
     const accessToken = extractBearer(authorization);
-    const actor = await this.resolveCurrentUser(req);
+    const actor = await this.resolveActor(req);
     await this.userService.requestEmailChange(
       actor,
       parsed.data.email,
@@ -116,7 +78,7 @@ export class UserController {
     if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
 
     const accessToken = extractBearer(authorization);
-    const actor = await this.resolveCurrentUser(req);
+    const actor = await this.resolveActor(req);
     await this.userService.confirmEmailChange(
       actor,
       parsed.data.code,
@@ -124,25 +86,70 @@ export class UserController {
     );
   }
 
-  private async resolveCurrentUser(req: Request): Promise<User> {
-    const sub = extractCognitoSub(req);
-    const user = await this.userService.findByCognitoSub(sub);
-    if (!user) {
-      throw new UnauthorizedException(
-        '認証ユーザーに対応するレコードがありません',
-      );
-    }
-    return user;
+  @Get()
+  @Roles(UserRole.Admin)
+  async findAll(
+    @Query() query: ListUsersQueryDto,
+  ): Promise<UserResponseDto[]> {
+    const parsed = ListUsersQuerySchema.safeParse(query);
+    if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
+
+    const users = parsed.data.deleted
+      ? await this.userService.findAllDeleted()
+      : await this.userService.findAll();
+    return users.map(toResponse);
+  }
+
+  @Get(':id')
+  @Roles(UserRole.Admin)
+  async findOne(@Param('id') id: string): Promise<UserResponseDto> {
+    return toResponse(await this.userService.findById(id));
+  }
+
+  @Post()
+  @Roles(UserRole.Admin)
+  async create(@Body() body: CreateUserRequestDto): Promise<UserResponseDto> {
+    const result = CreateUserSchema.safeParse(body);
+    if (!result.success) throw new BadRequestException(result.error.flatten());
+    return toResponse(await this.userService.create(result.data));
+  }
+
+  @Patch(':id')
+  @Roles(UserRole.Admin)
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateUserRequestDto,
+  ): Promise<UserResponseDto> {
+    const result = UpdateUserSchema.safeParse(body);
+    if (!result.success) throw new BadRequestException(result.error.flatten());
+    return toResponse(await this.userService.update(id, result.data));
+  }
+
+  @Delete(':id')
+  @Roles(UserRole.Admin)
+  @HttpCode(204)
+  async remove(@Param('id') id: string): Promise<void> {
+    await this.userService.remove(id);
+  }
+
+  @Post(':id/restore')
+  @Roles(UserRole.Admin)
+  @HttpCode(200)
+  async restore(@Param('id') id: string): Promise<UserResponseDto> {
+    return toResponse(await this.userService.restore(id));
+  }
+
+  private async resolveActor(req: Request): Promise<User> {
+    const authUser = requireAuthUser(req);
+    return this.userService.findById(authUser.userId);
   }
 }
 
-function extractCognitoSub(req: Request): string {
-  const payload = (req as Request & { user?: { sub?: unknown } }).user;
-  const sub = payload?.sub;
-  if (typeof sub !== 'string' || sub.length === 0) {
-    throw new UnauthorizedException('認証情報が不正です');
+function requireAuthUser(req: Request): AuthUser {
+  if (!req.user) {
+    throw new UnauthorizedException('認証情報がありません');
   }
-  return sub;
+  return req.user;
 }
 
 function extractBearer(authorization: string | undefined): string {
