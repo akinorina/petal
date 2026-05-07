@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { randomUUID } from 'crypto';
+import { LastAdminConflictException } from '../../common/exceptions/last-admin-conflict.exception';
 import { User } from '../domain/user';
 import { UserRole } from '../domain/user-role.enum';
 import { IUserRepository, USER_REPOSITORY } from '../domain/user.repository';
@@ -49,6 +50,7 @@ function buildMockRepository(): MockUserRepository {
     softDelete: jest.fn(),
     restore: jest.fn(),
     runInTransaction: jest.fn(),
+    countActiveAdmins: jest.fn().mockResolvedValue(2),
   };
 }
 
@@ -185,6 +187,47 @@ describe('UserService.update', () => {
     await expect(service.update(target.id, { name: 'X' })).rejects.toBeInstanceOf(
       NotFoundException,
     );
+  });
+
+  it('admin → user 降格で admin 数 1 のとき LastAdminConflictException', async () => {
+    target = buildUser({ role: UserRole.Admin });
+    userRepository.findById.mockResolvedValue(target);
+    userRepository.countActiveAdmins.mockResolvedValue(1);
+
+    await expect(
+      service.update(target.id, { role: UserRole.User }),
+    ).rejects.toBeInstanceOf(LastAdminConflictException);
+    expect(userRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('admin → user 降格で admin 数 2 以上なら成功', async () => {
+    target = buildUser({ role: UserRole.Admin });
+    userRepository.findById.mockResolvedValue(target);
+    userRepository.countActiveAdmins.mockResolvedValue(2);
+
+    const result = await service.update(target.id, { role: UserRole.User });
+
+    expect(result.role).toBe(UserRole.User);
+    expect(userRepository.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('user → admin 昇格は admin 数を見ずに成功', async () => {
+    target = buildUser({ role: UserRole.User });
+    userRepository.findById.mockResolvedValue(target);
+
+    const result = await service.update(target.id, { role: UserRole.Admin });
+
+    expect(result.role).toBe(UserRole.Admin);
+    expect(userRepository.countActiveAdmins).not.toHaveBeenCalled();
+  });
+
+  it('role 変更なしの更新では countActiveAdmins を呼ばない', async () => {
+    target = buildUser({ role: UserRole.Admin });
+    userRepository.findById.mockResolvedValue(target);
+
+    await service.update(target.id, { name: '改名' });
+
+    expect(userRepository.countActiveAdmins).not.toHaveBeenCalled();
   });
 });
 
@@ -395,6 +438,7 @@ describe('UserService.confirmEmailChange', () => {
 
 describe('UserService.remove', () => {
   const targetEmail = 'taro@example.com';
+  const actorId = randomUUID();
 
   let service: UserService;
   let userRepository: MockUserRepository;
@@ -424,7 +468,7 @@ describe('UserService.remove', () => {
       calls.push('disableUser');
     });
 
-    await service.remove(target.id);
+    await service.remove(target.id, actorId);
 
     expect(calls).toEqual(['softDelete', 'globalSignOut', 'disableUser']);
     expect(userRepository.softDelete).toHaveBeenCalledWith(target.id);
@@ -435,7 +479,7 @@ describe('UserService.remove', () => {
   it('globalSignOut が失敗しても disableUser まで進み、メソッドは成功する', async () => {
     cognitoUser.globalSignOut.mockRejectedValue(new Error('signout boom'));
 
-    await expect(service.remove(target.id)).resolves.toBeUndefined();
+    await expect(service.remove(target.id, actorId)).resolves.toBeUndefined();
 
     expect(userRepository.softDelete).toHaveBeenCalledTimes(1);
     expect(cognitoUser.disableUser).toHaveBeenCalledWith(targetEmail);
@@ -444,9 +488,54 @@ describe('UserService.remove', () => {
   it('disableUser が失敗した場合は BadGatewayException を投げる', async () => {
     cognitoUser.disableUser.mockRejectedValue(new Error('disable boom'));
 
-    await expect(service.remove(target.id)).rejects.toBeInstanceOf(BadGatewayException);
+    await expect(service.remove(target.id, actorId)).rejects.toBeInstanceOf(
+      BadGatewayException,
+    );
 
     expect(userRepository.softDelete).toHaveBeenCalledTimes(1);
     expect(cognitoUser.globalSignOut).toHaveBeenCalledTimes(1);
+  });
+
+  it('自身削除（id === actorId）で LastAdminConflictException、副作用なし', async () => {
+    await expect(service.remove(target.id, target.id)).rejects.toBeInstanceOf(
+      LastAdminConflictException,
+    );
+
+    expect(userRepository.findById).not.toHaveBeenCalled();
+    expect(userRepository.softDelete).not.toHaveBeenCalled();
+    expect(cognitoUser.globalSignOut).not.toHaveBeenCalled();
+    expect(cognitoUser.disableUser).not.toHaveBeenCalled();
+  });
+
+  it('対象が admin かつ admin 数 1 で LastAdminConflictException、副作用なし', async () => {
+    target = buildUser({ email: targetEmail, role: UserRole.Admin });
+    userRepository.findById.mockResolvedValue(target);
+    userRepository.countActiveAdmins.mockResolvedValue(1);
+
+    await expect(service.remove(target.id, actorId)).rejects.toBeInstanceOf(
+      LastAdminConflictException,
+    );
+
+    expect(userRepository.softDelete).not.toHaveBeenCalled();
+    expect(cognitoUser.globalSignOut).not.toHaveBeenCalled();
+    expect(cognitoUser.disableUser).not.toHaveBeenCalled();
+  });
+
+  it('対象が admin かつ admin 数 2 以上なら通常削除フロー', async () => {
+    target = buildUser({ email: targetEmail, role: UserRole.Admin });
+    userRepository.findById.mockResolvedValue(target);
+    userRepository.countActiveAdmins.mockResolvedValue(2);
+
+    await expect(service.remove(target.id, actorId)).resolves.toBeUndefined();
+
+    expect(userRepository.softDelete).toHaveBeenCalledWith(target.id);
+    expect(cognitoUser.disableUser).toHaveBeenCalledWith(targetEmail);
+  });
+
+  it('対象が user なら countActiveAdmins を呼ばずに通常削除', async () => {
+    await service.remove(target.id, actorId);
+
+    expect(userRepository.countActiveAdmins).not.toHaveBeenCalled();
+    expect(userRepository.softDelete).toHaveBeenCalledWith(target.id);
   });
 });
