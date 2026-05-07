@@ -128,8 +128,9 @@ export class UserController {
   @Delete(':id')
   @Roles(UserRole.Admin)
   @HttpCode(204)
-  async remove(@Param('id') id: string): Promise<void> {
-    await this.userService.remove(id);
+  async remove(@Req() req: Request, @Param('id') id: string): Promise<void> {
+    const actor = requireAuthUser(req);
+    await this.userService.remove(id, actor.userId);
   }
 
   @Post(':id/restore')

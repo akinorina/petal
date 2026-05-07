@@ -52,6 +52,7 @@ function buildMockRepository(): MockUserRepository {
     softDelete: jest.fn(),
     restore: jest.fn(),
     runInTransaction: jest.fn(),
+    countActiveAdmins: jest.fn(),
   };
 }
 
