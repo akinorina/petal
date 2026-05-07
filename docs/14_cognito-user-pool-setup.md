@@ -57,8 +57,12 @@
 
 ### 3.6 MFA / リカバリ
 
-- **MFA**: 任意（推奨：本番は SMS or TOTP を有効化）
+- **MFA enforcement**: **Optional**（任意）
+- **MFA methods**: **Authenticator apps（Software token MFA / TOTP）にチェック**
+  - SMS にはチェックしない（[docs/29_mfa-totp.md](29_mfa-totp.md) のスコープ外）
 - **アカウントリカバリ**: Email のみを選択。
+
+> 既存の User Pool で MFA をまだ有効化していない場合: コンソール上で MFA enforcement を Optional に切り替え、Software token MFA を有効化する。Optional のため既存ユーザーには影響せず、明示的に有効化したユーザーのみ MFA を求められる。詳細は [docs/29_mfa-totp.md](29_mfa-totp.md) を参照。
 
 ### 3.7 サインアップ設定
 
