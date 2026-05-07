@@ -26,10 +26,12 @@ function buildMockCognitoAuth(): MockCognitoAuthClient {
     globalSignOut: jest.fn(),
     forgotPassword: jest.fn(),
     confirmForgotPassword: jest.fn(),
+    refreshAccessToken: jest.fn(),
     isUserNotFound: jest.fn().mockReturnValue(false),
     isCodeMismatch: jest.fn().mockReturnValue(false),
     isExpiredCode: jest.fn().mockReturnValue(false),
     isInvalidPassword: jest.fn().mockReturnValue(false),
+    isNotAuthorized: jest.fn().mockReturnValue(false),
   };
 }
 
@@ -292,5 +294,60 @@ describe('AuthService.logout', () => {
     cognitoAuth.globalSignOut.mockRejectedValue(new Error('boom'));
 
     await expect(service.logout('AT')).rejects.toBeInstanceOf(BadGatewayException);
+  });
+});
+
+describe('AuthService.refresh', () => {
+  let service: AuthService;
+  let cognitoAuth: MockCognitoAuthClient;
+  let cognitoUser: MockCognitoUserClient;
+
+  beforeEach(async () => {
+    cognitoAuth = buildMockCognitoAuth();
+    cognitoUser = buildMockCognitoUser();
+    service = await buildService(cognitoAuth, cognitoUser);
+  });
+
+  it('正常系: 新しいトークンと email を返す', async () => {
+    cognitoAuth.refreshAccessToken.mockResolvedValue({
+      accessToken: 'AT2',
+      idToken: 'IT2',
+      expiresIn: 3600,
+    });
+
+    const result = await service.refresh('RT', 'me@example.com');
+
+    expect(cognitoAuth.refreshAccessToken).toHaveBeenCalledWith('RT', 'me@example.com');
+    expect(result).toEqual({
+      accessToken: 'AT2',
+      idToken: 'IT2',
+      expiresIn: 3600,
+      email: 'me@example.com',
+    });
+  });
+
+  it('null 戻りで UnauthorizedException', async () => {
+    cognitoAuth.refreshAccessToken.mockResolvedValue(null);
+
+    await expect(service.refresh('RT', 'me@example.com')).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
+  });
+
+  it('NotAuthorized で UnauthorizedException', async () => {
+    cognitoAuth.refreshAccessToken.mockRejectedValue(new Error('boom'));
+    cognitoAuth.isNotAuthorized.mockReturnValue(true);
+
+    await expect(service.refresh('RT', 'me@example.com')).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
+  });
+
+  it('その他失敗で BadGatewayException', async () => {
+    cognitoAuth.refreshAccessToken.mockRejectedValue(new Error('boom'));
+
+    await expect(service.refresh('RT', 'me@example.com')).rejects.toBeInstanceOf(
+      BadGatewayException,
+    );
   });
 });

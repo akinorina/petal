@@ -45,3 +45,17 @@ export class ConfirmForgotPasswordRequestDto {
   code!: string;
   newPassword!: string;
 }
+
+export class RefreshRequestDto {
+  refreshToken!: string;
+  @ApiProperty({ format: 'email' })
+  email!: string;
+}
+
+export class RefreshResponseDto {
+  accessToken!: string;
+  idToken!: string;
+  expiresIn!: number;
+  @ApiProperty({ format: 'email' })
+  email!: string;
+}
