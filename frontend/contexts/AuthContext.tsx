@@ -8,6 +8,7 @@ import {
   useState,
 } from 'react';
 import {
+  AUTH_CLEARED_EVENT,
   getAccessToken,
   getCurrentUserEmail,
   setCurrentUserEmail,
@@ -52,6 +53,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading: false,
       });
     });
+  }, []);
+
+  useEffect(() => {
+    const handler = () =>
+      setState({ isAuthenticated: false, email: null, isLoading: false });
+    window.addEventListener(AUTH_CLEARED_EVENT, handler);
+    return () => window.removeEventListener(AUTH_CLEARED_EVENT, handler);
   }, []);
 
   const login = useCallback(

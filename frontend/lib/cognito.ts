@@ -1,7 +1,10 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
 const ACCESS_TOKEN_KEY = 'petal_access_token';
+const REFRESH_TOKEN_KEY = 'petal_refresh_token';
 const EMAIL_KEY = 'petal_email';
+
+export const AUTH_CLEARED_EVENT = 'petal:auth-cleared';
 
 type AuthenticatedResponse = {
   status: 'AUTHENTICATED';
@@ -16,6 +19,13 @@ type ChallengeResponse = {
   status: 'CHALLENGE';
   challengeName: 'NEW_PASSWORD_REQUIRED';
   session: string;
+  email: string;
+};
+
+type RefreshResponse = {
+  accessToken: string;
+  idToken: string;
+  expiresIn: number;
   email: string;
 };
 
@@ -54,7 +64,7 @@ export async function login(
     };
   }
 
-  persistSession(data.accessToken, data.email);
+  persistSession(data.accessToken, data.refreshToken, data.email);
   return { kind: 'authenticated', email: data.email };
 }
 
@@ -75,7 +85,7 @@ export async function completeNewPassword(
   }
 
   const data: AuthenticatedResponse = await res.json();
-  persistSession(data.accessToken, data.email);
+  persistSession(data.accessToken, data.refreshToken, data.email);
 }
 
 export async function logout(): Promise<void> {
@@ -90,8 +100,7 @@ export async function logout(): Promise<void> {
   } catch {
     // ネットワーク失敗等はローカル状態クリアを優先するため握り潰す
   } finally {
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
-    localStorage.removeItem(EMAIL_KEY);
+    clearSession();
   }
 }
 
@@ -116,9 +125,56 @@ export function setCurrentUserEmail(email: string): void {
   localStorage.setItem(EMAIL_KEY, email);
 }
 
-function persistSession(accessToken: string, email: string): void {
+/**
+ * 保存済みリフレッシュトークンで新しいアクセストークンを取得する。
+ * 成功したら localStorage を更新して新トークンを返す。失敗（refresh token
+ * 期限切れ・通信エラー等）はローカル状態をクリアして null を返し、
+ * AUTH_CLEARED_EVENT を発火する。
+ */
+export async function refreshAccessToken(): Promise<string | null> {
+  if (typeof window === 'undefined') return null;
+  const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+  const email = localStorage.getItem(EMAIL_KEY);
+  if (!refreshToken || !email) {
+    clearSession();
+    return null;
+  }
+
+  try {
+    const res = await fetch(`${BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken, email }),
+    });
+    if (!res.ok) {
+      clearSession();
+      return null;
+    }
+    const data: RefreshResponse = await res.json();
+    localStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
+    return data.accessToken;
+  } catch {
+    clearSession();
+    return null;
+  }
+}
+
+function persistSession(
+  accessToken: string,
+  refreshToken: string,
+  email: string,
+): void {
   localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
   localStorage.setItem(EMAIL_KEY, email);
+}
+
+function clearSession(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  localStorage.removeItem(EMAIL_KEY);
+  window.dispatchEvent(new Event(AUTH_CLEARED_EVENT));
 }
 
 export async function requestPasswordReset(email: string): Promise<void> {
