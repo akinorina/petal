@@ -56,6 +56,20 @@ export async function uploadToPresignedUrl(
   }
 }
 
+export const auditLogApi = {
+  findAll: (params: { limit: number; offset: number }) =>
+    unwrap(
+      apiClient.GET('/audit-logs', {
+        params: {
+          query: {
+            limit: params.limit,
+            offset: params.offset,
+          },
+        },
+      }),
+    ),
+};
+
 export const userApi = {
   findAll: (params?: { deleted?: boolean }) =>
     unwrap(

@@ -235,6 +235,8 @@ DB上のレコードの削除は、すべて **論理削除** とする。物理
 deletedAt: Date | null;
 ```
 
+例外: **追記のみ** のテーブル（監査ログなど）は `deleted_at` を持たない。これらのテーブルは UPDATE / DELETE 系の API を提供しないことで「履歴として永続」させる。詳細は [docs/28_audit-logs.md](28_audit-logs.md) を参照。
+
 ---
 
 ## 5. 環境変数

@@ -29,6 +29,7 @@
 | [docs/25_authguard-db-validation-tests.md](docs/25_authguard-db-validation-tests.md) | AuthGuard の DB ユーザー存在・有効性チェック テスト整備（TSK-15：実装は TSK-10 完了済みで、回帰防止のためテストで明文化） |
 | [docs/26_last-admin-protection.md](docs/26_last-admin-protection.md) | 最後の admin の削除/降格を防ぐ 設計（TSK-16：DELETE/PATCH /users/:id に admin 数チェックと自身削除拒否を追加） |
 | [docs/27_refresh-token-flow.md](docs/27_refresh-token-flow.md) | リフレッシュトークンによるアクセストークン更新 設計（TSK-20：POST /auth/refresh + openapi-fetch middleware による自動 refresh） |
+| [docs/28_audit-logs.md](docs/28_audit-logs.md) | 監査ログ（ユーザー管理操作）設計（TSK-24：audit_logs テーブル + UserService 連動 + admin 閲覧 UI） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 
