@@ -93,6 +93,9 @@ export class UserRepositoryImpl implements IUserRepository {
     entity.name = user.name;
     entity.nameKana = user.nameKana;
     entity.role = user.role;
+    entity.createdAt = user.createdAt;
+    entity.updatedAt = user.updatedAt;
+    entity.deletedAt = user.deletedAt;
     return entity;
   }
 }
