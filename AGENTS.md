@@ -12,6 +12,7 @@
 | [docs/01_requirements.md](docs/01_requirements.md) | プロジェクトの要求仕様（機能要件） |
 | [docs/02_ implementations.md](docs/02_%20implementations.md) | 技術スタック・システム構成 |
 | [docs/03_workflow.md](docs/03_workflow.md) | タスク遂行の標準ワークフロー（設計→計画→ブランチ作成→実装→自主レビュー） |
+| [docs/04_db-supabase-aws-hybrid.md](docs/04_db-supabase-aws-hybrid.md) | インフラ構成方針：DB のみ Supabase / その他 AWS（個人運用コスト最適化） |
 | [docs/11_user-info_and_authentication.md](docs/11_user-info_and_authentication.md) | ユーザー情報・認証機能の設計 |
 | [docs/12_image-management.md](docs/12_image-management.md) | 画像管理機能の設計（TSK-3） |
 | [docs/13_openapi.md](docs/13_openapi.md) | OpenAPI / Swagger と Frontend 型生成の連携 |
