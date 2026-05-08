@@ -93,7 +93,7 @@ request.user = toAuthUser(user);
 | 4 | `SKIP_AUTH=true` でダミーユーザーが見つからない | `UnauthorizedException` |
 | 5 | `SKIP_AUTH=true` でダミーユーザーが `deletedAt !== null` | `UnauthorizedException` |
 | 6 | `Authorization` ヘッダー欠落 | `UnauthorizedException`「認証トークンがありません」 |
-| 7 | `Authorization` が `Bearer ` で始まらない | `UnauthorizedException`（同上） |
+| 7 | `Authorization` が `Bearer<空白>` の prefix で始まらない | `UnauthorizedException`（同上） |
 | 8 | `verifier.verify` が throw | `UnauthorizedException`「認証トークンが無効です」 |
 | 9 | JWT 検証成功 + DB に該当 sub なし | `UnauthorizedException`「認証ユーザーに対応するレコードがありません」 |
 | 10 | JWT 検証成功 + DB の該当ユーザーが `deletedAt !== null` | 同上 |

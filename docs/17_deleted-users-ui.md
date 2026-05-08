@@ -93,6 +93,7 @@ findAllDeleted(): Promise<User[]>;   // 追加
 ```
 
 呼び分けは Controller 層が `deleted` クエリで決定する。理由：
+
 - Service の責務として「アクティブ取得」「削除済み取得」は意味的に別ユースケース
 - bool 引数より明示的なメソッド名のほうが将来の検索フィルタ追加と整合する
 

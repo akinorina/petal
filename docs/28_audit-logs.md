@@ -147,7 +147,7 @@ export class AuditLog {
 
 ### 4.1 フィーチャ構成
 
-```
+```text
 backend/src/audit/
   domain/
     audit-action.enum.ts

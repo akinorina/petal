@@ -53,7 +53,7 @@
 
 特殊文字（記号）の定義は AWS Cognito 公式の許可セットに揃える:
 
-```
+```text
 ^ $ * . [ ] { } ( ) ? " ! @ # % & / \ , > < ' : ; | _ ~ ` + = - (および空白)
 ```
 
@@ -127,11 +127,13 @@ type Props = {
 ### 3.3 適用画面
 
 #### `/login`（`app/login/page.tsx`, `use-login-page.ts`）
+
 - `NEW_PASSWORD_REQUIRED` ステップで `<PasswordPolicyChecklist>` を表示。
 - `handleNewPassword` の入口で `evaluatePasswordForm` を呼び、`canSubmit` が `false` なら API を叩かず内部状態のエラーで return（既存 `error` ステートを利用）。
 - 送信ボタンは `canSubmit === false || isLoading` で `disabled`。
 
 #### `/forgot-password`（`app/forgot-password/page.tsx`, `use-forgot-password-page.ts`）
+
 - confirm ステップで同様に `<PasswordPolicyChecklist>` を表示。
 - `handleConfirm` の入口で `evaluatePasswordForm` を呼び事前ガード。
 - 送信ボタンは `canSubmit === false || isLoading` で `disabled`。
@@ -148,7 +150,7 @@ type Props = {
 
 ## 5. シーケンス（NEW_PASSWORD_REQUIRED 例）
 
-```
+```text
 ユーザー        画面 (/login)            module
   | 入力中 ---->|
   |             | evaluatePasswordForm() ->|
@@ -179,6 +181,7 @@ type Props = {
 ## 8. 手動動作確認シナリオ
 
 ### 8.1 `/login` 初回ログイン
+
 - [ ] 招待直後ユーザーで初回ログインし `NEW_PASSWORD_REQUIRED` 画面へ遷移できる。
 - [ ] 新パスワード欄が空のとき、5 ルール全てが × 表示。
 - [ ] `abcdefgh`（小文字 8 文字）入力時、最小長・小文字のみ ◯、他は ×、送信ボタン disabled。
@@ -188,11 +191,13 @@ type Props = {
 - [ ] 有効状態で送信するとパスワード設定が完了し通常通りログイン後画面へ遷移。
 
 ### 8.2 `/forgot-password` リセット
+
 - [ ] メールアドレス送信 → 検証コード入力 → 新パスワード入力 confirm ステップに遷移できる。
 - [ ] 8.1 と同様にチェックリスト・disabled 制御が動作。
 - [ ] 有効状態で送信するとパスワード変更が完了し `/login` への誘導が表示。
 
 ### 8.3 共通
+
 - [ ] 入力中、各ルールの ◯/× がリアルタイムに切り替わる（onChange ベース）。
 - [ ] 既存の他画面（ログインの初回ステップ以外、画像管理等）に副作用がない。
 
@@ -201,10 +206,12 @@ type Props = {
 ## 9. 影響ファイル一覧（暫定）
 
 新規:
+
 - `frontend/lib/password-policy.ts`
 - `frontend/components/PasswordPolicyChecklist.tsx`
 
 変更:
+
 - `frontend/app/login/page.tsx`（チェックリスト挿入、disabled 制御）
 - `frontend/app/login/use-login-page.ts`（事前ガードロジック）
 - `frontend/app/forgot-password/page.tsx`（同上）

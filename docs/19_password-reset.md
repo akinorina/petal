@@ -220,6 +220,7 @@ type Step =
 ```
 
 UI:
+
 - Step `request`: email 入力 + 「コードを送信」ボタン → 成功で `confirm` に遷移
 - Step `confirm`: 受信したコード + 新パスワード（確認入力含む）+ 「設定する」ボタン → 成功でログイン画面へ `router.push('/login')`
 
