@@ -7,7 +7,7 @@ applications:
           commands:
             - corepack enable
             - corepack prepare pnpm@latest --activate
-            - pnpm install --frozen-lockfile
+            - pnpm install --frozen-lockfile --shamefully-hoist
         build:
           commands:
             - pnpm --filter frontend build
