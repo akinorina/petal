@@ -24,6 +24,7 @@ description: Petal リポジトリでタスク（Notion TSK-N など）に取り
 
 ### Step 1: 設計ドキュメントの作成（**ユーザー確認必須**）
 
+- Notion タスクページのステータスを **「進行中」** に更新する（`notion-update-page` ツール使用）。
 - `docs/` 配下に Markdown を作成（命名: `12_image-management.md` のように既存ルールに倣い、冒頭に TSK-N を明記）。
 - 必須項目:
   - スコープ（対象 / 非対象）
@@ -100,3 +101,4 @@ Step 5 を通過したら `gh` CLI で PR を作成し、ユーザーへ URL を
   2. `gh pr create --base main --title "..." --body "$(cat <<'EOF' ... EOF)"`。
   3. 出力された PR URL をユーザーへ報告。
 - 自動マージや force push は行わない。`--draft` は明示的な意図がある場合のみ。
+- PR URL 報告後、ユーザーからマージ完了の報告を受けたら Notion タスクページのステータスを **「完了」** に更新する（`notion-update-page` ツール使用）。
