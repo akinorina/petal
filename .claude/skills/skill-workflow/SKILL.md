@@ -62,6 +62,7 @@ description: Petal リポジトリでタスク（Notion TSK-N など）に取り
   - 設計ドキュメントの完了条件をすべて満たす。
   - 必要な migration が `backend/database/migrations/` に追加され、ローカル適用可能。
   - `.env.example` が必要に応じて更新されている。
+  - `docs/` 内の Markdown を追加・変更した場合は `npx markdownlint-cli 'docs/**/*.md'` が通る。
 
 ### Step 5: 自主コードレビュー
 
@@ -80,7 +81,7 @@ description: Petal リポジトリでタスク（Notion TSK-N など）に取り
   - クライアントシークレット等が `NEXT_PUBLIC_*` やフロントに混入していないか。
   - 認可漏れ（他ユーザー資源への到達）がないか。
 - **不要物**: デバッグログ、未使用 import、コメントアウトされた死コードが残っていないか。
-- **ドキュメント**: 設計ドキュメント・`AGENTS.md` 表・`.env.example` の更新漏れがないか。
+- **ドキュメント**: 設計ドキュメント・`AGENTS.md` 表・`.env.example` の更新漏れがないか。変更した `.md` ファイルに `npx markdownlint-cli 'docs/**/*.md'` のエラーがないか。
 
 ### Step 6: プルリクエストの作成
 
