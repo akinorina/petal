@@ -7,7 +7,8 @@ applications:
           commands:
             - corepack enable
             - corepack prepare pnpm@latest --activate
-            - pnpm install --frozen-lockfile --shamefully-hoist
+            - echo "node-linker=hoisted" >> .npmrc
+            - pnpm install --frozen-lockfile
         build:
           commands:
             - pnpm --filter frontend build
