@@ -34,6 +34,7 @@
 | [docs/29_mfa-totp.md](docs/29_mfa-totp.md) | MFA (TOTP) 対応 設計（TSK-13：Cognito Software Token MFA Optional + ログインチャレンジ拡張 + マイページ設定 UI） |
 | [docs/30_direnv-envrc.md](docs/30_direnv-envrc.md) | direnv 導入と .envrc 設定（TSK-30：.envs/ ディレクトリと symlink 切り替えによる環境変数管理） |
 | [docs/31_env-example.md](docs/31_env-example.md) | .env.example の整備（TSK-31：Supabase DB 変数・AWS 認証情報・frontend 変数の追加） |
+| [docs/34_typeorm-supabase.md](docs/34_typeorm-supabase.md) | TypeORM 設定更新（TSK-34：SSL 必須・PgBouncer Pooler 対応、DATABASE_URL / DATABASE_URL_DIRECT による接続切り替え） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 
