@@ -36,6 +36,31 @@ petal/
 
 ## セットアップ
 
+### direnv（環境変数の自動ロード）
+
+[direnv](https://direnv.net/) を使うとディレクトリ移動時に `.env` が自動ロードされます。
+
+```bash
+# 1. インストール
+brew install direnv
+
+# 2. シェルに hook を追加（~/.zshrc または ~/.bashrc）
+echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc  # zsh の場合
+source ~/.zshrc
+
+# 3. .envrc を作成して許可
+cp .envrc.example .envrc
+cp backend/.envrc.example backend/.envrc
+cp frontend/.envrc.example frontend/.envrc
+direnv allow                            # ルート
+(cd backend && direnv allow)            # backend
+(cd frontend && direnv allow)           # frontend
+```
+
+詳細は [docs/30_direnv-envrc.md](docs/30_direnv-envrc.md) を参照。
+
+### 依存関係と初期設定
+
 ```bash
 # 依存関係のインストール
 pnpm install

@@ -1,0 +1,7 @@
+# petal/.envrc.example
+# このファイルをコピーして .envrc を作成してください。
+#   cp .envrc.example .envrc
+#   direnv allow
+#
+# モノリポルートでの共通設定。
+# backend / frontend 配下では各ディレクトリの .envrc が自動ロードされます。

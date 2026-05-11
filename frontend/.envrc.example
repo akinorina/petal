@@ -1,0 +1,7 @@
+# petal/frontend/.envrc.example
+# このファイルをコピーして .envrc を作成してください。
+#   cp .envrc.example .envrc
+#   direnv allow
+#
+# frontend/.env.local を自動ロードします。
+dotenv .env.local
