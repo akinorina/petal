@@ -1,0 +1,80 @@
+service: petal-backend
+frameworkVersion: '4'
+
+provider:
+  name: aws
+  runtime: nodejs22.x
+  region: ap-northeast-1
+  memorySize: 512
+  timeout: 30
+  environment:
+    DATABASE_URL: ${env:DATABASE_URL}
+    COGNITO_REGION: ${env:COGNITO_REGION}
+    COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID}
+    COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
+    COGNITO_CLIENT_SECRET: ${env:COGNITO_CLIENT_SECRET}
+    S3_BUCKET: ${env:S3_BUCKET}
+    AWS_REGION: ${env:AWS_REGION, 'ap-northeast-1'}
+    CORS_ORIGIN: ${env:CORS_ORIGIN}
+    SKIP_AUTH: ${env:SKIP_AUTH, 'false'}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - cognito-idp:AdminGetUser
+            - cognito-idp:AdminListGroupsForUser
+            - cognito-idp:InitiateAuth
+            - cognito-idp:AdminInitiateAuth
+            - cognito-idp:RespondToAuthChallenge
+            - cognito-idp:AdminRespondToAuthChallenge
+            - cognito-idp:GlobalSignOut
+            - cognito-idp:AdminUserGlobalSignOut
+            - cognito-idp:GetUser
+            - cognito-idp:AdminCreateUser
+            - cognito-idp:AdminSetUserPassword
+            - cognito-idp:AdminDisableUser
+            - cognito-idp:AdminEnableUser
+            - cognito-idp:AdminDeleteUser
+            - cognito-idp:AdminAddUserToGroup
+            - cognito-idp:AdminRemoveUserFromGroup
+            - cognito-idp:ListUsersInGroup
+            - cognito-idp:ForgotPassword
+            - cognito-idp:ConfirmForgotPassword
+            - cognito-idp:AssociateSoftwareToken
+            - cognito-idp:VerifySoftwareToken
+            - cognito-idp:SetUserMFAPreference
+          Resource: '*'
+        - Effect: Allow
+          Action:
+            - s3:PutObject
+            - s3:GetObject
+            - s3:DeleteObject
+            - s3:HeadObject
+          Resource: arn:aws:s3:::${env:S3_BUCKET}/*
+
+package:
+  patterns:
+    - '!src/**'
+    - '!test/**'
+    - '!database/**'
+    - '!scripts/**'
+    - '!localstack/**'
+    - '!init/**'
+    - '!docker-compose.yml'
+    - '!*.md'
+    - '!*.example'
+    - '!.env*'
+    - '!coverage/**'
+    - '!node_modules/.cache/**'
+
+functions:
+  backend:
+    handler: dist/src/lambda.handler
+    events:
+      - httpApi:
+          path: /
+          method: ANY
+      - httpApi:
+          path: /{proxy+}
+          method: ANY
