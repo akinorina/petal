@@ -12,7 +12,7 @@ applications:
           commands:
             - pnpm --filter frontend build
       artifacts:
-        baseDirectory: frontend/.next
+        baseDirectory: .next
         files:
           - '**/*'
       cache:
