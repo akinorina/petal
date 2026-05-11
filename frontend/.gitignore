@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 !.envrc.example
 # .envs/ ディレクトリは追跡する（中身の実体ファイルのみ除外）
 !.envs/
