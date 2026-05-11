@@ -24,7 +24,8 @@
     "migration:create": "typeorm-ts-node-commonjs migration:create",
     "migration:show": "typeorm-ts-node-commonjs -d database/data-source.ts migration:show",
     "create-admin": "ts-node -r tsconfig-paths/register scripts/create-admin.ts",
-    "openapi:export": "nest build && node dist/src/openapi-export.js"
+    "openapi:export": "nest build && node dist/src/openapi-export.js",
+    "use-env": "bash scripts/use-env.sh"
   },
   "dependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.1041.0",
