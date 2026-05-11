@@ -93,7 +93,7 @@ direnv は `.envrc` 内の `dotenv .env` / `dotenv .env.local` でリンク先�
 ## `.gitignore` の方針
 
 | ファイル | gitignore | 理由 |
-|---|---|---|
+| --- | --- | --- |
 | `.envrc` | ✓ | 誤コミット防止 |
 | `backend/.env` | ✓（ルートの `.env` パターンで対応済み） | symlink を追跡しない |
 | `frontend/.env.local` | ✓（ルートの `.env.local` パターンで対応済み） | symlink を追跡しない |
