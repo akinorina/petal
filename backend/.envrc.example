@@ -1,0 +1,7 @@
+# petal/backend/.envrc.example
+# このファイルをコピーして .envrc を作成してください。
+#   cp .envrc.example .envrc
+#   direnv allow
+#
+# backend/.env（環境切り替えスクリプトが作成する symlink）を自動ロードします。
+dotenv .env

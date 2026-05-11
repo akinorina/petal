@@ -36,18 +36,50 @@ petal/
 
 ## セットアップ
 
+### 1. direnv のインストール（環境変数の自動ロード）
+
+[direnv](https://direnv.net/) を使うとディレクトリ移動時に `.env` が自動ロードされます。
+
+```bash
+# インストール
+brew install direnv
+
+# シェルに hook を追加（~/.zshrc に追記してリロード）
+echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc
+source ~/.zshrc
+
+# .envrc を各ディレクトリに作成して許可
+cp .envrc.example .envrc
+cp backend/.envrc.example backend/.envrc
+cp frontend/.envrc.example frontend/.envrc
+direnv allow
+(cd backend && direnv allow)
+(cd frontend && direnv allow)
+```
+
+詳細は [docs/30_direnv-envrc.md](docs/30_direnv-envrc.md) を参照。
+
+### 2. 環境変数ファイルの作成と切り替え
+
+```bash
+# 環境変数ファイルの実体を .envs/ に作成（テンプレートをコピーして値を埋める）
+cp backend/.envs/.env.local.example backend/.envs/.env.local
+cp frontend/.envs/.env.local.example frontend/.envs/.env.local
+
+# 環境を切り替え（symlink 作成）
+bash scripts/use-env.sh local
+```
+
+### 3. 依存関係と初期設定
+
 ```bash
 # 依存関係のインストール
 pnpm install
 
 # バックエンド
-cd backend && cp .env.example .env  # 設定値を埋める
-pnpm db:up                          # PostgreSQL 起動
-pnpm migration:run                  # マイグレーション
-pnpm create-admin                   # 初期 Admin ユーザー作成
-
-# フロントエンド
-cd ../frontend && cp .env.local.example .env.local  # 設定値を埋める
+pnpm --filter backend db:up         # PostgreSQL 起動
+pnpm --filter backend migration:run # マイグレーション
+pnpm --filter backend create-admin  # 初期 Admin ユーザー作成
 ```
 
 詳細は各ディレクトリの README を参照：

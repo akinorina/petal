@@ -32,6 +32,7 @@
 | [docs/27_refresh-token-flow.md](docs/27_refresh-token-flow.md) | リフレッシュトークンによるアクセストークン更新 設計（TSK-20：POST /auth/refresh + openapi-fetch middleware による自動 refresh） |
 | [docs/28_audit-logs.md](docs/28_audit-logs.md) | 監査ログ（ユーザー管理操作）設計（TSK-24：audit_logs テーブル + UserService 連動 + admin 閲覧 UI） |
 | [docs/29_mfa-totp.md](docs/29_mfa-totp.md) | MFA (TOTP) 対応 設計（TSK-13：Cognito Software Token MFA Optional + ログインチャレンジ拡張 + マイページ設定 UI） |
+| [docs/30_direnv-envrc.md](docs/30_direnv-envrc.md) | direnv 導入と .envrc 設定（TSK-30：.envs/ ディレクトリと symlink 切り替えによる環境変数管理） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 
