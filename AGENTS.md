@@ -33,6 +33,7 @@
 | [docs/28_audit-logs.md](docs/28_audit-logs.md) | 監査ログ（ユーザー管理操作）設計（TSK-24：audit_logs テーブル + UserService 連動 + admin 閲覧 UI） |
 | [docs/29_mfa-totp.md](docs/29_mfa-totp.md) | MFA (TOTP) 対応 設計（TSK-13：Cognito Software Token MFA Optional + ログインチャレンジ拡張 + マイページ設定 UI） |
 | [docs/30_direnv-envrc.md](docs/30_direnv-envrc.md) | direnv 導入と .envrc 設定（TSK-30：.envs/ ディレクトリと symlink 切り替えによる環境変数管理） |
+| [docs/31_env-example.md](docs/31_env-example.md) | .env.example の整備（TSK-31：Supabase DB 変数・AWS 認証情報・frontend 変数の追加） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 
