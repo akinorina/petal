@@ -36,6 +36,7 @@
 | [docs/31_env-example.md](docs/31_env-example.md) | .env.example の整備（TSK-31：Supabase DB 変数・AWS 認証情報・frontend 変数の追加） |
 | [docs/34_typeorm-supabase.md](docs/34_typeorm-supabase.md) | TypeORM 設定更新（TSK-34：SSL 必須・PgBouncer Pooler 対応、DATABASE_URL / DATABASE_URL_DIRECT による接続切り替え） |
 | [docs/36_lambda-api-gateway-setup.md](docs/36_lambda-api-gateway-setup.md) | Lambda + API Gateway デプロイ設定（TSK-36：Serverless Framework + @vendia/serverless-express、nest build で事前コンパイル） |
+| [docs/37_amplify-hosting-setup.md](docs/37_amplify-hosting-setup.md) | Amplify Hosting 設定（TSK-37：amplify.yml によるモノリポビルド・standalone モード） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 
