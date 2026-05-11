@@ -25,9 +25,10 @@ backend/
 ## セットアップ
 
 ```bash
-# 環境変数を設定
-cp .env.example .env
-# .env を編集して DB / Cognito の設定値を埋める
+# 環境変数を設定（.envs/ からコピーして値を埋め、symlink を作成）
+cp .envs/.env.local.example .envs/.env.local
+# .envs/.env.local を編集して DB / Cognito の設定値を埋める
+bash scripts/use-env.sh local
 
 # DB 起動（Docker）
 pnpm db:up
@@ -70,7 +71,7 @@ pnpm migration:show                                   # 適用状況の確認
 
 ## 環境変数
 
-`.env.example` を参照。主な変数：
+`.envs/.env.local.example` を参照。主な変数：
 
 | 変数 | 用途 |
 | ---- | ---- |

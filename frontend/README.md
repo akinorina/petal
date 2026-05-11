@@ -43,7 +43,7 @@ pnpm lint
 
 | 変数 | 用途 |
 | ---- | ---- |
-| `NEXT_PUBLIC_API_URL` | バックエンド API のベース URL |
+| `NEXT_PUBLIC_API_BASE_URL` | バックエンド API のベース URL |
 
 **注意:** クライアントシークレットなど秘密情報を `NEXT_PUBLIC_*` に含めないこと（ブラウザに露出する）。Cognito の認証はすべてバックエンド経由で行う。
 
