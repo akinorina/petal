@@ -26,8 +26,9 @@
     "create-admin": "ts-node -r tsconfig-paths/register scripts/create-admin.ts",
     "openapi:export": "nest build && node dist/src/openapi-export.js",
     "use-env": "bash scripts/use-env.sh",
-    "deploy": "nest build && serverless deploy --region ap-northeast-1",
-    "deploy:function": "nest build && serverless deploy function --function backend --region ap-northeast-1"
+    "bundle:lambda": "esbuild dist/src/lambda.js --bundle --platform=node --target=node22 --outfile=lambda.js --external:@aws-sdk/* --external:pg-native --external:class-transformer --external:class-validator --external:@nestjs/websockets --external:@nestjs/websockets/socket-module --external:@nestjs/microservices --external:@nestjs/microservices/microservices-module --external:cache-manager --keep-names",
+    "deploy": "nest build && pnpm run bundle:lambda && AWS_PROFILE=petal-deploy serverless deploy --region ap-northeast-1",
+    "deploy:function": "nest build && pnpm run bundle:lambda && AWS_PROFILE=petal-deploy serverless deploy function --function backend --region ap-northeast-1"
   },
   "dependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.1041.0",
@@ -60,6 +61,7 @@
     "@types/node": "^24.0.0",
     "@types/pg": "^8.20.0",
     "@types/supertest": "^7.0.0",
+    "esbuild": "^0.28.0",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",

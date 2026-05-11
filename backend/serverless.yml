@@ -1,5 +1,8 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: akinorina
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: petal
 service: petal-backend
-frameworkVersion: '4'
 
 provider:
   name: aws
@@ -14,7 +17,6 @@ provider:
     COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
     COGNITO_CLIENT_SECRET: ${env:COGNITO_CLIENT_SECRET}
     S3_BUCKET: ${env:S3_BUCKET}
-    AWS_REGION: ${env:AWS_REGION, 'ap-northeast-1'}
     CORS_ORIGIN: ${env:CORS_ORIGIN}
     SKIP_AUTH: ${env:SKIP_AUTH, 'false'}
   iam:
@@ -55,22 +57,12 @@ provider:
 
 package:
   patterns:
-    - '!src/**'
-    - '!test/**'
-    - '!database/**'
-    - '!scripts/**'
-    - '!localstack/**'
-    - '!init/**'
-    - '!docker-compose.yml'
-    - '!*.md'
-    - '!*.example'
-    - '!.env*'
-    - '!coverage/**'
-    - '!node_modules/.cache/**'
+    - '!**'
+    - 'lambda.js'
 
 functions:
   backend:
-    handler: dist/src/lambda.handler
+    handler: lambda.handler
     events:
       - httpApi:
           path: /
