@@ -1,0 +1,36 @@
+name: Backup (pg_dump → S3)
+
+on:
+  schedule:
+    - cron: '0 1 * * 0'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    name: pg_dump and upload to S3
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ap-northeast-1
+      DATABASE_URL_DIRECT: ${{ secrets.DATABASE_URL_DIRECT }}
+      BACKUP_S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install postgresql-client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Dump and compress
+        run: |
+          FILENAME="backup-$(date -u +%Y-%m-%d).sql.gz"
+          echo "FILENAME=$FILENAME" >> "$GITHUB_ENV"
+          pg_dump "$DATABASE_URL_DIRECT" | gzip > "$FILENAME"
+          ls -lh "$FILENAME"
+
+      - name: Upload to S3
+        run: |
+          aws s3 cp "$FILENAME" "s3://$BACKUP_S3_BUCKET/backups/$FILENAME"
