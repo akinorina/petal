@@ -24,7 +24,7 @@ import { ImageModule } from './image/image.module';
             url,
             ssl: { rejectUnauthorized: false },
             extra: { max: 1, prepareThreshold: 0 },
-            entities: [__dirname + '/**/*.entity{.ts,.js}'],
+            autoLoadEntities: true,
             synchronize: false,
           };
         }
@@ -35,7 +35,7 @@ import { ImageModule } from './image/image.module';
           username: config.get<string>('DB_USERNAME', 'postgres'),
           password: config.get<string>('DB_PASSWORD'),
           database: config.get<string>('DB_DATABASE', 'petal'),
-          entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          autoLoadEntities: true,
           synchronize: false,
         };
       },
