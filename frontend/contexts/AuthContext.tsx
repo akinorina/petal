@@ -12,7 +12,7 @@ import {
   getAccessToken,
   getCurrentUserEmail,
   setCurrentUserEmail,
-} from '@/lib/cognito';
+} from '@/lib/auth-session';
 import {
   useAuthApi,
   type LoginResult,

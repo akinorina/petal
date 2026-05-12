@@ -1,5 +1,5 @@
 import createClient, { type Middleware } from 'openapi-fetch';
-import { getAccessToken, refreshAccessToken } from '../cognito';
+import { getAccessToken, refreshAccessToken } from '../auth-session';
 import type { components, paths } from './schema';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3000';
