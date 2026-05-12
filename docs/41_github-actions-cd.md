@@ -34,14 +34,12 @@
 
 ```text
 pnpm install
-→ DB マイグレーション（DATABASE_URL_DIRECT 使用）
 → nest build
 → Lambda バンドル（esbuild）
-→ AWS 認証設定
 → zip 作成 + aws lambda update-function-code
 ```
 
-マイグレーションを Lambda デプロイより先に実行することで、新しいコードが古いスキーマで動く時間をなくす。
+DB マイグレーションは CD ワークフローには含めない。マイグレーションは手動で実施する。
 
 ### 3.3 Lambda デプロイ方式
 
@@ -63,7 +61,6 @@ Amplify と Lambda の同時デプロイが問題になる場合（例: フロ�
 | --- | --- |
 | `AWS_ACCESS_KEY_ID` | CD 専用 IAM ユーザーのアクセスキー ID |
 | `AWS_SECRET_ACCESS_KEY` | CD 専用 IAM ユーザーのシークレットアクセスキー |
-| `DATABASE_URL_DIRECT` | Neon Direct 接続文字列（port 5432）マイグレーション専用 |
 | `LAMBDA_FUNCTION_NAME` | Lambda 関数名（例: `petal-backend-production-backend`） |
 
 ## 5. IAM ポリシー（CD 専用ユーザー）
