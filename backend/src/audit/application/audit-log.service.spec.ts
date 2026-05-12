@@ -52,7 +52,7 @@ describe('AuditLogService.record', () => {
     });
 
     expect(repo.save).toHaveBeenCalledTimes(1);
-    const saved = repo.save.mock.calls[0][0];
+    const saved = (repo.save.mock.calls as Array<[AuditLog]>)[0][0];
     expect(saved).toBeInstanceOf(AuditLog);
     expect(saved.actorUserId).toBe(actorId);
     expect(saved.action).toBe(AuditAction.CreateUser);
@@ -66,7 +66,7 @@ describe('AuditLogService.record', () => {
       action: AuditAction.UpdateUser,
     });
 
-    const saved = repo.save.mock.calls[0][0];
+    const saved = (repo.save.mock.calls as Array<[AuditLog]>)[0][0];
     expect(saved.targetUserId).toBeNull();
     expect(saved.metadata).toBeNull();
   });
