@@ -17,8 +17,7 @@ export class S3StorageClient {
   constructor(config: ConfigService) {
     this.bucket = config.getOrThrow<string>('S3_BUCKET');
     const endpoint = config.get<string>('S3_ENDPOINT');
-    const forcePathStyle =
-      config.get<string>('S3_FORCE_PATH_STYLE') === 'true';
+    const forcePathStyle = config.get<string>('S3_FORCE_PATH_STYLE') === 'true';
 
     const usesLocalEndpoint = !!endpoint && endpoint.length > 0;
     this.client = new S3Client({

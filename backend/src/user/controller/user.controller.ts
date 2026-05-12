@@ -101,9 +101,7 @@ export class UserController {
 
   @Get()
   @Roles(UserRole.Admin)
-  async findAll(
-    @Query() query: ListUsersQueryDto,
-  ): Promise<UserResponseDto[]> {
+  async findAll(@Query() query: ListUsersQueryDto): Promise<UserResponseDto[]> {
     const parsed = ListUsersQuerySchema.safeParse(query);
     if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
 

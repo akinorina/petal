@@ -93,9 +93,7 @@ export class AuthController {
   @Public()
   @Post('forgot-password')
   @HttpCode(204)
-  async forgotPassword(
-    @Body() body: ForgotPasswordRequestDto,
-  ): Promise<void> {
+  async forgotPassword(@Body() body: ForgotPasswordRequestDto): Promise<void> {
     const parsed = ForgotPasswordSchema.safeParse(body);
     if (!parsed.success) {
       throw new BadRequestException(parsed.error.flatten());
@@ -129,7 +127,10 @@ export class AuthController {
     if (!parsed.success) {
       throw new BadRequestException(parsed.error.flatten());
     }
-    return this.authService.refresh(parsed.data.refreshToken, parsed.data.email);
+    return this.authService.refresh(
+      parsed.data.refreshToken,
+      parsed.data.email,
+    );
   }
 
   @Public()

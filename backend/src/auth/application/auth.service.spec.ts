@@ -110,7 +110,10 @@ describe('AuthService.login', () => {
   });
 
   it('authenticated 結果で AUTHENTICATED レスポンスを返す', async () => {
-    cognitoAuth.authenticate.mockResolvedValue({ kind: 'authenticated', tokens });
+    cognitoAuth.authenticate.mockResolvedValue({
+      kind: 'authenticated',
+      tokens,
+    });
 
     const result = await service.login('me@example.com', 'pass');
 
@@ -144,17 +147,17 @@ describe('AuthService.login', () => {
   it('null 戻りで UnauthorizedException', async () => {
     cognitoAuth.authenticate.mockResolvedValue(null);
 
-    await expect(service.login('me@example.com', 'pass')).rejects.toBeInstanceOf(
-      UnauthorizedException,
-    );
+    await expect(
+      service.login('me@example.com', 'pass'),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
   it('例外で UnauthorizedException', async () => {
     cognitoAuth.authenticate.mockRejectedValue(new Error('boom'));
 
-    await expect(service.login('me@example.com', 'pass')).rejects.toBeInstanceOf(
-      UnauthorizedException,
-    );
+    await expect(
+      service.login('me@example.com', 'pass'),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 });
 
@@ -172,7 +175,11 @@ describe('AuthService.completeNewPassword', () => {
   it('正常系: AUTHENTICATED レスポンスを返す', async () => {
     cognitoAuth.respondToNewPasswordChallenge.mockResolvedValue(tokens);
 
-    const result = await service.completeNewPassword('me@example.com', 'NewPass1!', 'sess');
+    const result = await service.completeNewPassword(
+      'me@example.com',
+      'NewPass1!',
+      'sess',
+    );
 
     expect(result).toMatchObject({
       status: 'AUTHENTICATED',
@@ -190,7 +197,9 @@ describe('AuthService.completeNewPassword', () => {
   });
 
   it('例外で UnauthorizedException', async () => {
-    cognitoAuth.respondToNewPasswordChallenge.mockRejectedValue(new Error('boom'));
+    cognitoAuth.respondToNewPasswordChallenge.mockRejectedValue(
+      new Error('boom'),
+    );
 
     await expect(
       service.completeNewPassword('me@example.com', 'NewPass1!', 'sess'),
@@ -212,7 +221,9 @@ describe('AuthService.forgotPassword', () => {
   it('正常系: 例外なく完了', async () => {
     cognitoAuth.forgotPassword.mockResolvedValue(undefined);
 
-    await expect(service.forgotPassword('me@example.com')).resolves.toBeUndefined();
+    await expect(
+      service.forgotPassword('me@example.com'),
+    ).resolves.toBeUndefined();
     expect(cognitoAuth.forgotPassword).toHaveBeenCalledWith('me@example.com');
   });
 
@@ -220,15 +231,17 @@ describe('AuthService.forgotPassword', () => {
     cognitoAuth.forgotPassword.mockRejectedValue(new Error('boom'));
     cognitoAuth.isUserNotFound.mockReturnValue(true);
 
-    await expect(service.forgotPassword('missing@example.com')).resolves.toBeUndefined();
+    await expect(
+      service.forgotPassword('missing@example.com'),
+    ).resolves.toBeUndefined();
   });
 
   it('その他失敗で BadGatewayException', async () => {
     cognitoAuth.forgotPassword.mockRejectedValue(new Error('boom'));
 
-    await expect(service.forgotPassword('me@example.com')).rejects.toBeInstanceOf(
-      BadGatewayException,
-    );
+    await expect(
+      service.forgotPassword('me@example.com'),
+    ).rejects.toBeInstanceOf(BadGatewayException);
   });
 });
 
@@ -247,7 +260,11 @@ describe('AuthService.confirmForgotPassword', () => {
     cognitoAuth.confirmForgotPassword.mockResolvedValue(undefined);
     cognitoUser.globalSignOut.mockResolvedValue(undefined);
 
-    await service.confirmForgotPassword('me@example.com', '123456', 'NewPass1!');
+    await service.confirmForgotPassword(
+      'me@example.com',
+      '123456',
+      'NewPass1!',
+    );
 
     expect(cognitoAuth.confirmForgotPassword).toHaveBeenCalledWith(
       'me@example.com',
@@ -316,7 +333,9 @@ describe('AuthService.logout', () => {
   it('Cognito 失敗で BadGatewayException', async () => {
     cognitoAuth.globalSignOut.mockRejectedValue(new Error('boom'));
 
-    await expect(service.logout('AT')).rejects.toBeInstanceOf(BadGatewayException);
+    await expect(service.logout('AT')).rejects.toBeInstanceOf(
+      BadGatewayException,
+    );
   });
 });
 
@@ -340,7 +359,10 @@ describe('AuthService.refresh', () => {
 
     const result = await service.refresh('RT', 'me@example.com');
 
-    expect(cognitoAuth.refreshAccessToken).toHaveBeenCalledWith('RT', 'me@example.com');
+    expect(cognitoAuth.refreshAccessToken).toHaveBeenCalledWith(
+      'RT',
+      'me@example.com',
+    );
     expect(result).toEqual({
       accessToken: 'AT2',
       idToken: 'IT2',
@@ -352,26 +374,26 @@ describe('AuthService.refresh', () => {
   it('null 戻りで UnauthorizedException', async () => {
     cognitoAuth.refreshAccessToken.mockResolvedValue(null);
 
-    await expect(service.refresh('RT', 'me@example.com')).rejects.toBeInstanceOf(
-      UnauthorizedException,
-    );
+    await expect(
+      service.refresh('RT', 'me@example.com'),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
   it('NotAuthorized で UnauthorizedException', async () => {
     cognitoAuth.refreshAccessToken.mockRejectedValue(new Error('boom'));
     cognitoAuth.isNotAuthorized.mockReturnValue(true);
 
-    await expect(service.refresh('RT', 'me@example.com')).rejects.toBeInstanceOf(
-      UnauthorizedException,
-    );
+    await expect(
+      service.refresh('RT', 'me@example.com'),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
   it('その他失敗で BadGatewayException', async () => {
     cognitoAuth.refreshAccessToken.mockRejectedValue(new Error('boom'));
 
-    await expect(service.refresh('RT', 'me@example.com')).rejects.toBeInstanceOf(
-      BadGatewayException,
-    );
+    await expect(
+      service.refresh('RT', 'me@example.com'),
+    ).rejects.toBeInstanceOf(BadGatewayException);
   });
 });
 
@@ -516,9 +538,9 @@ describe('AuthService.verifyMfaSetup', () => {
   it('ERROR なら BadRequestException', async () => {
     cognitoAuth.verifySoftwareToken.mockResolvedValue({ status: 'ERROR' });
 
-    await expect(
-      service.verifyMfaSetup('AT', '999999'),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.verifyMfaSetup('AT', '999999')).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
     expect(cognitoAuth.setSoftwareTokenMfaEnabled).not.toHaveBeenCalled();
   });
 
@@ -526,9 +548,9 @@ describe('AuthService.verifyMfaSetup', () => {
     cognitoAuth.verifySoftwareToken.mockRejectedValue(new Error('boom'));
     cognitoAuth.isCodeMismatch.mockReturnValue(true);
 
-    await expect(
-      service.verifyMfaSetup('AT', '999999'),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.verifyMfaSetup('AT', '999999')).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
   });
 });
 

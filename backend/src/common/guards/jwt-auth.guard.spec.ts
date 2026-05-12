@@ -24,7 +24,9 @@ type GuardConfig = {
   SKIP_AUTH_USER_ID?: string;
 };
 
-function buildUser(overrides: Partial<ConstructorParameters<typeof User>[0]> = {}): User {
+function buildUser(
+  overrides: Partial<ConstructorParameters<typeof User>[0]> = {},
+): User {
   const now = new Date('2026-05-01T00:00:00Z');
   return new User({
     id: randomUUID(),
@@ -56,7 +58,10 @@ function buildMockRepository(): MockUserRepository {
   };
 }
 
-function buildContext(req: Partial<Request>, isPublic = false): {
+function buildContext(
+  req: Partial<Request>,
+  isPublic = false,
+): {
   context: ExecutionContext;
   reflector: Reflector;
 } {
@@ -262,7 +267,9 @@ describe('JwtAuthGuard.canActivate', () => {
       await expect(guard.canActivate(context)).rejects.toBeInstanceOf(
         UnauthorizedException,
       );
-      expect(userRepository.findByCognitoSub).toHaveBeenCalledWith('sub-missing');
+      expect(userRepository.findByCognitoSub).toHaveBeenCalledWith(
+        'sub-missing',
+      );
     });
 
     it('JWT 検証成功 + 該当ユーザーが deletedAt !== null で UnauthorizedException', async () => {

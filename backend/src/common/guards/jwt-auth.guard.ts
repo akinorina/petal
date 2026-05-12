@@ -76,7 +76,9 @@ export class JwtAuthGuard implements CanActivate {
 
     const user = await this.userRepository.findByCognitoSub(sub);
     if (!user || user.deletedAt !== null) {
-      throw new UnauthorizedException('認証ユーザーに対応するレコードがありません');
+      throw new UnauthorizedException(
+        '認証ユーザーに対応するレコードがありません',
+      );
     }
 
     request.user = toAuthUser(user);

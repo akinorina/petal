@@ -78,10 +78,7 @@ export class ImageController {
 
   @Delete(':id')
   @HttpCode(204)
-  async remove(
-    @Req() req: Request,
-    @Param('id') id: string,
-  ): Promise<void> {
+  async remove(@Req() req: Request, @Param('id') id: string): Promise<void> {
     const currentUser = await this.resolveCurrentUser(req);
     await this.imageService.remove(currentUser, id);
   }
