@@ -1,0 +1,24 @@
+name: Keep-alive (SELECT 1)
+
+on:
+  schedule:
+    - cron: '0 0 * * 3'
+  workflow_dispatch:
+
+jobs:
+  keepalive:
+    name: psql SELECT 1
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL_DIRECT: ${{ secrets.DATABASE_URL_DIRECT }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install postgresql-client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Ping database
+        run: psql "$DATABASE_URL_DIRECT" -c "SELECT 1"

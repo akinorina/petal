@@ -41,6 +41,7 @@
 | [docs/39_s3-dev-setup.md](docs/39_s3-dev-setup.md) | S3 開発環境用バケット作成・IAM 設定（TSK-39：`petal-images-dev` バケット・CORS 設定） |
 | [docs/40_github-actions-ci.md](docs/40_github-actions-ci.md) | GitHub Actions CI ワークフロー設計（TSK-40：backend lint/test/build・frontend lint/build） |
 | [docs/41_github-actions-cd.md](docs/41_github-actions-cd.md) | GitHub Actions CD ワークフロー設計（TSK-41：DB マイグレーション→Lambda コード更新） |
+| [docs/42_operational-jobs.md](docs/42_operational-jobs.md) | 運用ジョブ設計（TSK-42：週次 pg_dump → S3 バックアップ・週次 keep-alive） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 
