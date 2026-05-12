@@ -39,6 +39,7 @@
 | [docs/37_amplify-hosting-setup.md](docs/37_amplify-hosting-setup.md) | Amplify Hosting 設定（TSK-37：amplify.yml によるモノリポビルド・standalone モード） |
 | [docs/38_cognito-dev-setup.md](docs/38_cognito-dev-setup.md) | Cognito 開発環境用 User Pool 作成手順（TSK-38：`dev` ステージ専用 User Pool・App Client 設定） |
 | [docs/39_s3-dev-setup.md](docs/39_s3-dev-setup.md) | S3 開発環境用バケット作成・IAM 設定（TSK-39：`petal-images-dev` バケット・CORS 設定） |
+| [docs/40_github-actions-ci.md](docs/40_github-actions-ci.md) | GitHub Actions CI ワークフロー設計（TSK-40：backend lint/test/build・frontend lint/build） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 
