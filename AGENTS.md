@@ -38,6 +38,7 @@
 | [docs/36_lambda-api-gateway-setup.md](docs/36_lambda-api-gateway-setup.md) | Lambda + API Gateway デプロイ設定（TSK-36：Serverless Framework + @vendia/serverless-express、nest build で事前コンパイル） |
 | [docs/37_amplify-hosting-setup.md](docs/37_amplify-hosting-setup.md) | Amplify Hosting 設定（TSK-37：amplify.yml によるモノリポビルド・standalone モード） |
 | [docs/38_cognito-dev-setup.md](docs/38_cognito-dev-setup.md) | Cognito 開発環境用 User Pool 作成手順（TSK-38：`dev` ステージ専用 User Pool・App Client 設定） |
+| [docs/39_s3-dev-setup.md](docs/39_s3-dev-setup.md) | S3 開発環境用バケット作成・IAM 設定（TSK-39：`petal-images-dev` バケット・CORS 設定） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 
