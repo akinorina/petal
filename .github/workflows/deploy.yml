@@ -12,7 +12,6 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: ap-northeast-1
-      DATABASE_URL_DIRECT: ${{ secrets.DATABASE_URL_DIRECT }}
 
     steps:
       - uses: actions/checkout@v6
@@ -28,10 +27,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: DB migration
-        working-directory: backend
-        run: pnpm migration:run
 
       - name: Build
         run: pnpm --filter backend build
