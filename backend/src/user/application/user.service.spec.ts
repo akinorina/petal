@@ -7,7 +7,10 @@ import {
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { randomUUID } from 'crypto';
-import { AuditLogService } from '../../audit/application/audit-log.service';
+import {
+  AuditLogService,
+  RecordAuditLogInput,
+} from '../../audit/application/audit-log.service';
 import { AuditAction } from '../../audit/domain/audit-action.enum';
 import { LastAdminConflictException } from '../../common/exceptions/last-admin-conflict.exception';
 import { User } from '../domain/user';
@@ -31,7 +34,9 @@ type MockAuditLogService = {
 
 const ACTOR_ID = randomUUID();
 
-function buildUser(overrides: Partial<ConstructorParameters<typeof User>[0]> = {}): User {
+function buildUser(
+  overrides: Partial<ConstructorParameters<typeof User>[0]> = {},
+): User {
   const now = new Date('2026-05-01T00:00:00Z');
   return new User({
     id: randomUUID(),
@@ -127,7 +132,7 @@ describe('UserService.create', () => {
   it('Cognito 登録 → DB save が成功し User を返す', async () => {
     userRepository.findByEmail.mockResolvedValue(null);
     cognitoUser.createUser.mockResolvedValue({ sub: 'sub-new' });
-    userRepository.save.mockImplementation(async (u: User) => u);
+    userRepository.save.mockImplementation((u: User) => u);
 
     const result = await service.create(input, ACTOR_ID);
 
@@ -138,9 +143,13 @@ describe('UserService.create', () => {
   });
 
   it('既存 email で ConflictException', async () => {
-    userRepository.findByEmail.mockResolvedValue(buildUser({ email: input.email }));
+    userRepository.findByEmail.mockResolvedValue(
+      buildUser({ email: input.email }),
+    );
 
-    await expect(service.create(input, ACTOR_ID)).rejects.toBeInstanceOf(ConflictException);
+    await expect(service.create(input, ACTOR_ID)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
     expect(cognitoUser.createUser).not.toHaveBeenCalled();
   });
 
@@ -149,7 +158,9 @@ describe('UserService.create', () => {
     cognitoUser.createUser.mockRejectedValue(new Error('boom'));
     cognitoUser.isUsernameExists.mockReturnValue(true);
 
-    await expect(service.create(input, ACTOR_ID)).rejects.toBeInstanceOf(ConflictException);
+    await expect(service.create(input, ACTOR_ID)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
     expect(userRepository.save).not.toHaveBeenCalled();
   });
 
@@ -157,7 +168,9 @@ describe('UserService.create', () => {
     userRepository.findByEmail.mockResolvedValue(null);
     cognitoUser.createUser.mockRejectedValue(new Error('boom'));
 
-    await expect(service.create(input, ACTOR_ID)).rejects.toBeInstanceOf(BadGatewayException);
+    await expect(service.create(input, ACTOR_ID)).rejects.toBeInstanceOf(
+      BadGatewayException,
+    );
   });
 
   it('DB save 失敗で Cognito 補償削除が呼ばれ、元の例外を再 throw する', async () => {
@@ -184,7 +197,7 @@ describe('UserService.update', () => {
     service = await buildService(userRepository, cognitoUser);
     target = buildUser();
     userRepository.findById.mockResolvedValue(target);
-    userRepository.save.mockImplementation(async (u: User) => u);
+    userRepository.save.mockImplementation((u: User) => u);
   });
 
   it('name / nameKana / role を更新できる', async () => {
@@ -283,7 +296,9 @@ describe('UserService.findById', () => {
   it('null のとき NotFoundException', async () => {
     userRepository.findById.mockResolvedValue(null);
 
-    await expect(service.findById('missing')).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.findById('missing')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
   });
 });
 
@@ -304,7 +319,9 @@ describe('UserService.restore', () => {
     userRepository.findByIdWithDeleted.mockResolvedValue(deletedUser);
     userRepository.restore.mockResolvedValue(undefined);
     cognitoUser.enableUser.mockResolvedValue(undefined);
-    userRepository.findById.mockResolvedValue(buildUser({ id: deletedUser.id }));
+    userRepository.findById.mockResolvedValue(
+      buildUser({ id: deletedUser.id }),
+    );
 
     await service.restore(deletedUser.id, ACTOR_ID);
 
@@ -313,7 +330,9 @@ describe('UserService.restore', () => {
   });
 
   it('既に有効なら BadRequestException', async () => {
-    userRepository.findByIdWithDeleted.mockResolvedValue(buildUser({ deletedAt: null }));
+    userRepository.findByIdWithDeleted.mockResolvedValue(
+      buildUser({ deletedAt: null }),
+    );
 
     await expect(service.restore('id', ACTOR_ID)).rejects.toBeInstanceOf(
       BadRequestException,
@@ -327,9 +346,9 @@ describe('UserService.restore', () => {
     cognitoUser.enableUser.mockRejectedValue(new Error('boom'));
     cognitoUser.isUserNotFound.mockReturnValue(true);
 
-    await expect(service.restore(deletedUser.id, ACTOR_ID)).rejects.toBeInstanceOf(
-      BadGatewayException,
-    );
+    await expect(
+      service.restore(deletedUser.id, ACTOR_ID),
+    ).rejects.toBeInstanceOf(BadGatewayException);
   });
 
   it('その他失敗で BadGatewayException', async () => {
@@ -337,9 +356,9 @@ describe('UserService.restore', () => {
     userRepository.restore.mockResolvedValue(undefined);
     cognitoUser.enableUser.mockRejectedValue(new Error('boom'));
 
-    await expect(service.restore(deletedUser.id, ACTOR_ID)).rejects.toBeInstanceOf(
-      BadGatewayException,
-    );
+    await expect(
+      service.restore(deletedUser.id, ACTOR_ID),
+    ).rejects.toBeInstanceOf(BadGatewayException);
   });
 });
 
@@ -363,7 +382,9 @@ describe('UserService.requestEmailChange', () => {
   });
 
   it('他ユーザーが既に使用中で ConflictException', async () => {
-    userRepository.findByEmail.mockResolvedValue(buildUser({ email: 'new@example.com' }));
+    userRepository.findByEmail.mockResolvedValue(
+      buildUser({ email: 'new@example.com' }),
+    );
 
     await expect(
       service.requestEmailChange(actor, 'new@example.com', 'AT'),
@@ -414,7 +435,7 @@ describe('UserService.confirmEmailChange', () => {
 
     userRepository.runInTransaction.mockImplementation(
       async <T>(fn: (txRepo: IUserRepository) => Promise<T>): Promise<T> =>
-        fn(userRepository as unknown as IUserRepository),
+        fn(userRepository),
     );
   });
 
@@ -422,7 +443,7 @@ describe('UserService.confirmEmailChange', () => {
     cognitoUser.getUserEmail.mockResolvedValue('new@example.com');
     userRepository.findByEmail.mockResolvedValue(null);
     userRepository.findById.mockResolvedValue(actor);
-    userRepository.save.mockImplementation(async (u: User) => u);
+    userRepository.save.mockImplementation((u: User) => u);
     cognitoUser.verifyUserEmail.mockResolvedValue(undefined);
 
     await service.confirmEmailChange(actor, '123456', 'AT');
@@ -435,9 +456,9 @@ describe('UserService.confirmEmailChange', () => {
   it('保留中 email が現状と同じなら BadRequestException', async () => {
     cognitoUser.getUserEmail.mockResolvedValue(actor.email);
 
-    await expect(service.confirmEmailChange(actor, '123', 'AT')).rejects.toBeInstanceOf(
-      BadRequestException,
-    );
+    await expect(
+      service.confirmEmailChange(actor, '123', 'AT'),
+    ).rejects.toBeInstanceOf(BadRequestException);
     expect(userRepository.runInTransaction).not.toHaveBeenCalled();
   });
 
@@ -445,7 +466,7 @@ describe('UserService.confirmEmailChange', () => {
     cognitoUser.getUserEmail.mockResolvedValue('new@example.com');
     userRepository.findByEmail.mockResolvedValue(null);
     userRepository.findById.mockResolvedValue(actor);
-    userRepository.save.mockImplementation(async (u: User) => u);
+    userRepository.save.mockImplementation((u: User) => u);
     cognitoUser.verifyUserEmail.mockRejectedValue(new Error('boom'));
     cognitoUser.isCodeMismatch.mockReturnValue(true);
 
@@ -459,7 +480,7 @@ describe('UserService.confirmEmailChange', () => {
     cognitoUser.getUserEmail.mockResolvedValue('new@example.com');
     userRepository.findByEmail.mockResolvedValue(null);
     userRepository.findById.mockResolvedValue(actor);
-    userRepository.save.mockImplementation(async (u: User) => u);
+    userRepository.save.mockImplementation((u: User) => u);
     cognitoUser.verifyUserEmail.mockRejectedValue(new Error('boom'));
     cognitoUser.isExpiredCode.mockReturnValue(true);
 
@@ -491,13 +512,13 @@ describe('UserService.remove', () => {
 
   it('softDelete → globalSignOut → disableUser の順で実行される', async () => {
     const calls: string[] = [];
-    userRepository.softDelete.mockImplementation(async () => {
+    userRepository.softDelete.mockImplementation(() => {
       calls.push('softDelete');
     });
-    cognitoUser.globalSignOut.mockImplementation(async () => {
+    cognitoUser.globalSignOut.mockImplementation(() => {
       calls.push('globalSignOut');
     });
-    cognitoUser.disableUser.mockImplementation(async () => {
+    cognitoUser.disableUser.mockImplementation(() => {
       calls.push('disableUser');
     });
 
@@ -589,7 +610,7 @@ describe('UserService の監査ログ連動', () => {
   it('create 成功で CREATE_USER が記録される', async () => {
     userRepository.findByEmail.mockResolvedValue(null);
     cognitoUser.createUser.mockResolvedValue({ sub: 'sub-new' });
-    userRepository.save.mockImplementation(async (u: User) => u);
+    userRepository.save.mockImplementation((u: User) => u);
 
     const result = await service.create(
       {
@@ -634,7 +655,7 @@ describe('UserService の監査ログ連動', () => {
   it('update で実際に変更があれば UPDATE_USER が記録される', async () => {
     const target = buildUser({ name: '旧名', role: UserRole.User });
     userRepository.findById.mockResolvedValue(target);
-    userRepository.save.mockImplementation(async (u: User) => u);
+    userRepository.save.mockImplementation((u: User) => u);
 
     await service.update(
       target.id,
@@ -643,7 +664,9 @@ describe('UserService の監査ログ連動', () => {
     );
 
     expect(auditLog.record).toHaveBeenCalledTimes(1);
-    const call = auditLog.record.mock.calls[0][0];
+    const call = (
+      auditLog.record.mock.calls as Array<[RecordAuditLogInput]>
+    )[0][0];
     expect(call.action).toBe(AuditAction.UpdateUser);
     expect(call.targetUserId).toBe(target.id);
     expect(call.metadata).toEqual({
@@ -657,7 +680,7 @@ describe('UserService の監査ログ連動', () => {
   it('update で何も変わらないなら監査ログを記録しない', async () => {
     const target = buildUser();
     userRepository.findById.mockResolvedValue(target);
-    userRepository.save.mockImplementation(async (u: User) => u);
+    userRepository.save.mockImplementation((u: User) => u);
 
     await service.update(target.id, {}, ACTOR_ID);
 
@@ -690,7 +713,9 @@ describe('UserService の監査ログ連動', () => {
 
     await service.remove(target.id, ACTOR_ID);
 
-    const call = auditLog.record.mock.calls[0][0];
+    const call = (
+      auditLog.record.mock.calls as Array<[RecordAuditLogInput]>
+    )[0][0];
     expect(call.metadata).toEqual({
       targetEmail: target.email,
       forcedLogout: false,

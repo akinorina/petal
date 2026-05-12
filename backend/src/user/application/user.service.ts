@@ -14,10 +14,7 @@ import { AuditAction } from '../../audit/domain/audit-action.enum';
 import { LastAdminConflictException } from '../../common/exceptions/last-admin-conflict.exception';
 import { User } from '../domain/user';
 import { UserRole } from '../domain/user-role.enum';
-import {
-  IUserRepository,
-  USER_REPOSITORY,
-} from '../domain/user.repository';
+import { IUserRepository, USER_REPOSITORY } from '../domain/user.repository';
 import { CognitoUserClient } from '../infra/cognito-user.client';
 import { CreateUserInput, UpdateUserInput } from './user.schemas';
 
@@ -225,9 +222,7 @@ export class UserService {
     accessToken: string,
   ): Promise<void> {
     if (actor.email === newEmail) {
-      throw new BadRequestException(
-        '現在のメールアドレスと同じです',
-      );
+      throw new BadRequestException('現在のメールアドレスと同じです');
     }
 
     const existing = await this.userRepository.findByEmail(newEmail);
@@ -248,9 +243,7 @@ export class UserService {
         `Cognito UpdateUserAttributes 失敗: user=${actor.id}`,
         err instanceof Error ? err.stack : String(err),
       );
-      throw new BadGatewayException(
-        'メールアドレス変更要求に失敗しました',
-      );
+      throw new BadGatewayException('メールアドレス変更要求に失敗しました');
     }
   }
 
@@ -279,9 +272,7 @@ export class UserService {
     }
 
     if (pendingEmail === actor.email) {
-      throw new BadRequestException(
-        '保留中のメールアドレス変更がありません',
-      );
+      throw new BadRequestException('保留中のメールアドレス変更がありません');
     }
 
     await this.userRepository.runInTransaction(async (txRepo) => {

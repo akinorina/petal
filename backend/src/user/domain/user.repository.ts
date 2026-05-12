@@ -22,7 +22,5 @@ export interface IUserRepository {
    * コールバックに渡されるリポジトリは同一トランザクションに紐づき、
    * コールバックが例外を throw すれば自動的にロールバックされる。
    */
-  runInTransaction<T>(
-    fn: (txRepo: IUserRepository) => Promise<T>,
-  ): Promise<T>;
+  runInTransaction<T>(fn: (txRepo: IUserRepository) => Promise<T>): Promise<T>;
 }

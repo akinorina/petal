@@ -1,15 +1,8 @@
-import {
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { User } from '../../user/domain/user';
 import { Image } from '../domain/image';
-import {
-  IImageRepository,
-  IMAGE_REPOSITORY,
-} from '../domain/image.repository';
+import { IImageRepository, IMAGE_REPOSITORY } from '../domain/image.repository';
 import { S3StorageClient } from '../infra/s3.client';
 import { CreateImageInput } from './image.schemas';
 

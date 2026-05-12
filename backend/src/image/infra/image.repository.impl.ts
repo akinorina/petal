@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ALLOWED_IMAGE_MIME_TYPES, Image, ImageMimeType } from '../domain/image';
+import {
+  ALLOWED_IMAGE_MIME_TYPES,
+  Image,
+  ImageMimeType,
+} from '../domain/image';
 import { IImageRepository } from '../domain/image.repository';
 import { ImageEntity } from './image.entity';
 

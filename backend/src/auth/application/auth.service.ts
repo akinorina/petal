@@ -58,9 +58,7 @@ export class AuthService {
         throw new BadRequestException('コードの有効期限が切れています');
       }
       if (this.cognitoAuth.isInvalidPassword(err)) {
-        throw new BadRequestException(
-          'パスワードがポリシーに合致していません',
-        );
+        throw new BadRequestException('パスワードがポリシーに合致していません');
       }
       this.logger.error(
         'ConfirmForgotPassword に失敗しました',

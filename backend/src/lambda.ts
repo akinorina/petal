@@ -25,5 +25,6 @@ export const handler: Handler = async (event, context, callback) => {
   if (!cachedHandler) {
     cachedHandler = await bootstrap();
   }
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   return cachedHandler(event, context, callback);
 };
