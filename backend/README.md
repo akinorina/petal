@@ -25,19 +25,32 @@ backend/
 ## セットアップ
 
 ```bash
+# install
+pnpm install
+
+# direnv 設定
+cp .envrc.example .envrc
+direnv allow
+
 # 環境変数を設定（.envs/ からコピーして値を埋め、symlink を作成）
 cp .envs/.env.local.example .envs/.env.local
+# Cognito ユーザープールの値 `COGNITO_USER_POOL_ID` `COGNITO_CLIENT_ID` `COGNITO_CLIENT_SECRET` を .envs/.env.local に設定
+# `ADMIN_EMAIL` `ADMIN_PASSWORD` を設定、これがADMINアカウントのID、PASSWORDになります。
+
 # .envs/.env.local を編集して DB / Cognito の設定値を埋める
 bash scripts/use-env.sh local
 
 # DB 起動（Docker）
-pnpm db:up
+docker compose up -d
 
 # マイグレーション
 pnpm migration:run
 
 # 初期 Admin ユーザーの作成
 pnpm create-admin
+
+# localstack S3バケット設定
+pnpm s3:setup
 ```
 
 ## 開発
@@ -56,9 +69,11 @@ pnpm test
 ## DB 操作
 
 ```bash
-# PostgreSQL 起動 / 停止 / ログ
-pnpm db:up
-pnpm db:down
+# Docker Compose 起動 / 停止
+docker compose up -d
+docker compose down
+
+# PostgreSQL ログ
 pnpm db:logs
 
 # マイグレーション

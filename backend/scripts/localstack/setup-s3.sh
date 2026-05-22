@@ -3,7 +3,7 @@
 # Localstack の S3 初期設定スクリプト。
 # .env の S3_BUCKET で指定されたバケットを冪等に作成する。
 #
-# 前提: pnpm db:up 等で Localstack コンテナ (petal_localstack) が
+# 前提: `docker compose up -d` 等で Localstack コンテナ (petal_localstack) が
 #       既に起動していること。docker-compose の init スクリプトが
 #       バケットを自動作成するため、通常は本スクリプトを明示実行する
 #       必要はない。バケットを誤って削除した等で再作成したい場合に使う。
