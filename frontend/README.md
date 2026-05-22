@@ -18,9 +18,20 @@ frontend/
 ## セットアップ
 
 ```bash
-# 環境変数を設定
-cp .env.local.example .env.local
+# install
+pnpm install
+
+# direnv 設定
+cp .envrc.example .envrc
+direnv allow
+
+# 環境変数を設定（.envs/ からコピーして値を埋め、symlink を作成）
+cp .envs/.env.local.example .envs/.env.local
 # .env.local を編集して NEXT_PUBLIC_API_URL を設定
+
+# .envs/.env.local を編集して DB / Cognito の設定値を埋める
+bash scripts/use-env.sh local
+
 ```
 
 ## 開発
