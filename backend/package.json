@@ -33,7 +33,9 @@
     "deploy": "nest build && pnpm run bundle:lambda && AWS_PROFILE=petal-deploy serverless deploy --region ap-northeast-1",
     "deploy:dev": "set -a && . ./.envs/.env.dev && set +a && nest build && pnpm run bundle:lambda && AWS_PROFILE=petal-deploy serverless deploy --region ap-northeast-1",
     "deploy:function": "nest build && pnpm run bundle:lambda && AWS_PROFILE=petal-deploy serverless deploy function --function backend --region ap-northeast-1",
-    "deploy:function:dev": "set -a && . ./.envs/.env.dev && set +a && nest build && pnpm run bundle:lambda && AWS_PROFILE=petal-deploy serverless deploy function --function backend --region ap-northeast-1"
+    "deploy:function:dev": "set -a && . ./.envs/.env.dev && set +a && nest build && pnpm run bundle:lambda && AWS_PROFILE=petal-deploy serverless deploy function --function backend --region ap-northeast-1",
+    "deploy:remove": "AWS_PROFILE=petal-deploy serverless remove --region ap-northeast-1",
+    "deploy:remove:dev": "set -a && . ./.envs/.env.dev && set +a && AWS_PROFILE=petal-deploy serverless remove --region ap-northeast-1"
   },
   "dependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.1041.0",

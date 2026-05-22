@@ -25,7 +25,7 @@ backend/
 ## セットアップ
 
 ```bash
-# install
+# 依存関係のインストール
 pnpm install
 
 # direnv 設定
