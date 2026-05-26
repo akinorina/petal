@@ -9,6 +9,7 @@
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx,json,css,md}\"",
     "openapi:gen": "openapi-typescript ../backend/openapi.json -o src/lib/openapi/schema.d.ts",
+    "design-system:sync": "DS_PATH=../../design-system DS_TARGET=src/design-system bash scripts/sync-design-system.sh all",
     "use-env": "bash scripts/use-env.sh"
   },
   "dependencies": {

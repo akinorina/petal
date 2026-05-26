@@ -1,0 +1,161 @@
+.ds-button {
+  /* per-variant 上書き対象の CSS 変数 */
+  --button-bg: transparent;
+  --button-fg: var(--text-primary);
+  --button-border: transparent;
+  --button-bg-hover: transparent;
+  --button-bg-active: transparent;
+
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+
+  border: 1px solid var(--button-border);
+  background: var(--button-bg);
+  color: var(--button-fg);
+  border-radius: var(--radius-md);
+
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+  white-space: nowrap;
+
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  appearance: none;
+
+  transition:
+    background var(--duration-instant) var(--easing-out),
+    border-color var(--duration-instant) var(--easing-out),
+    transform var(--duration-instant) var(--easing-out);
+}
+
+.ds-button:hover:not(:disabled) {
+  background: var(--button-bg-hover);
+}
+
+.ds-button:active:not(:disabled) {
+  background: var(--button-bg-active);
+  transform: scale(0.97);
+}
+
+.ds-button:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.ds-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ds-button--full-width {
+  width: 100%;
+}
+
+/* ── Sizes ── */
+.ds-button--sm {
+  height: 32px;
+  padding: 0 var(--space-3);
+  font-size: var(--font-size-sm);
+}
+.ds-button--md {
+  height: 40px;
+  padding: 0 var(--space-4);
+  font-size: var(--font-size-sm);
+}
+.ds-button--lg {
+  height: 48px;
+  padding: 0 var(--space-5);
+  font-size: var(--font-size-base);
+}
+
+/* ── Variants ── */
+.ds-button--primary {
+  --button-bg: var(--accent-default);
+  --button-fg: var(--accent-on-accent);
+  --button-bg-hover: var(--accent-hover);
+  --button-bg-active: var(--accent-active);
+}
+
+.ds-button--secondary {
+  --button-bg: var(--surface-raised);
+  --button-fg: var(--text-primary);
+  --button-border: var(--border-default);
+  --button-bg-hover: var(--surface-sunken);
+  --button-bg-active: var(--surface-sunken);
+}
+
+.ds-button--ghost {
+  --button-bg: transparent;
+  --button-fg: var(--text-primary);
+  --button-bg-hover: var(--surface-sunken);
+  --button-bg-active: var(--surface-sunken);
+}
+
+.ds-button--danger {
+  --button-bg: var(--feedback-danger-solid);
+  --button-fg: #ffffff;
+  --button-bg-hover: var(--feedback-danger-solid-hover);
+  --button-bg-active: var(--feedback-danger-solid-hover);
+}
+
+.ds-button--link {
+  --button-bg: transparent;
+  --button-fg: var(--text-link);
+  height: auto;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 3px;
+}
+.ds-button--link:hover:not(:disabled) {
+  background: transparent;
+  text-decoration-color: var(--text-primary);
+}
+.ds-button--link:active:not(:disabled) {
+  background: transparent;
+  transform: none;
+}
+
+/* ── Loading ── */
+.ds-button--loading .ds-button__content {
+  visibility: hidden;
+}
+.ds-button__spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1em;
+  height: 1em;
+  margin-top: -0.5em;
+  margin-left: -0.5em;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: ds-button-spin 800ms linear infinite;
+}
+@keyframes ds-button-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ds-button__content {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.ds-button__icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-button__spinner {
+    animation: none;
+  }
+}

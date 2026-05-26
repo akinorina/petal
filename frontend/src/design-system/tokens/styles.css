@@ -1,0 +1,244 @@
+/**
+ * @akinori/design-system - tokens
+ *
+ * このファイルは scripts/build-tokens.mjs によって自動生成されています。
+ * 直接編集せず、tokens/*.json を編集してから pnpm build:tokens を実行してください。
+ *
+ * セレクタ:
+ *   :root                       → ライトモード（デフォルト）
+ *   [data-theme="dark"], .dark  → ダークモード（要素に data-theme="dark" or class="dark" を付与）
+ */
+
+:root {
+  /* === COLOR PRIMITIVES === */
+  /* --- neutral --- */
+  --color-neutral-50: #FBFAF7;
+  --color-neutral-100: #F5F2EC;
+  --color-neutral-200: #ECE7DE;
+  --color-neutral-300: #DDD6CA;
+  --color-neutral-400: #C2BAAB;
+  --color-neutral-500: #9A9389;
+  --color-neutral-600: #6B6660;
+  --color-neutral-700: #4A4641;
+  --color-neutral-800: #2A2825;
+  --color-neutral-900: #1A1816;
+  --color-neutral-950: #100F0E;
+  /* --- coral --- */
+  --color-coral-50: #FDEEEA;
+  --color-coral-100: #FBD8CE;
+  --color-coral-200: #F6B4A0;
+  --color-coral-300: #EE8E73;
+  --color-coral-400: #E47A5F;
+  --color-coral-500: #D9624A;
+  --color-coral-600: #BD4C37;
+  --color-coral-700: #963B2B;
+  --color-coral-800: #702C21;
+  --color-coral-900: #4D1F18;
+  /* --- success --- */
+  --color-success-50: #EEF5EC;
+  --color-success-100: #D4E5CC;
+  --color-success-200: #A8C99B;
+  --color-success-300: #7DAD6B;
+  --color-success-400: #5B924A;
+  --color-success-500: #477A39;
+  --color-success-600: #3A6530;
+  --color-success-700: #2E4F26;
+  --color-success-800: #22391C;
+  --color-success-900: #172612;
+  /* --- warning --- */
+  --color-warning-50: #FCF3DC;
+  --color-warning-100: #F8E2A8;
+  --color-warning-200: #F0C660;
+  --color-warning-300: #E5AB2E;
+  --color-warning-400: #D4951A;
+  --color-warning-500: #B57B12;
+  --color-warning-600: #92620E;
+  --color-warning-700: #6E4A0B;
+  --color-warning-800: #4D3308;
+  --color-warning-900: #2F1F05;
+  /* --- danger --- */
+  --color-danger-50: #FBE9E9;
+  --color-danger-100: #F4C8C7;
+  --color-danger-200: #E89492;
+  --color-danger-300: #DC5F5D;
+  --color-danger-400: #CE3A37;
+  --color-danger-500: #B82723;
+  --color-danger-600: #9B1F1B;
+  --color-danger-700: #771816;
+  --color-danger-800: #541110;
+  --color-danger-900: #370B0A;
+  /* --- info --- */
+  --color-info-50: #E9F0F8;
+  --color-info-100: #C5D6EA;
+  --color-info-200: #8FB0D6;
+  --color-info-300: #5C8CC0;
+  --color-info-400: #386FAA;
+  --color-info-500: #285990;
+  --color-info-600: #1F4775;
+  --color-info-700: #17385C;
+  --color-info-800: #102742;
+  --color-info-900: #0A1B2D;
+
+  /* === SEMANTIC (LIGHT) === */
+  --surface-page: var(--color-neutral-50);
+  --surface-raised: #FFFFFF;
+  --surface-sunken: var(--color-neutral-100);
+  --surface-overlay: #FFFFFF;
+  --border-subtle: var(--color-neutral-200);
+  --border-default: var(--color-neutral-300);
+  --border-strong: var(--color-neutral-400);
+  --text-primary: var(--color-neutral-800);
+  --text-secondary: var(--color-neutral-600);
+  --text-tertiary: var(--color-neutral-500);
+  --text-inverse: var(--color-neutral-50);
+  --text-link: var(--color-neutral-800);
+  --accent-default: var(--color-coral-500);
+  --accent-hover: var(--color-coral-600);
+  --accent-active: var(--color-coral-700);
+  --accent-on-accent: #FFFFFF;
+  --accent-subtle-bg: var(--color-coral-50);
+  --accent-subtle-fg: var(--color-coral-700);
+  --focus-ring: var(--color-neutral-800);
+  --feedback-success-default: var(--color-success-500);
+  --feedback-success-subtle-bg: var(--color-success-50);
+  --feedback-success-subtle-fg: var(--color-success-700);
+  --feedback-warning-default: var(--color-warning-500);
+  --feedback-warning-subtle-bg: var(--color-warning-50);
+  --feedback-warning-subtle-fg: var(--color-warning-700);
+  --feedback-danger-default: var(--color-danger-500);
+  --feedback-danger-solid: var(--color-danger-600);
+  --feedback-danger-solid-hover: var(--color-danger-700);
+  --feedback-danger-subtle-bg: var(--color-danger-50);
+  --feedback-danger-subtle-fg: var(--color-danger-700);
+  --feedback-info-default: var(--color-info-500);
+  --feedback-info-subtle-bg: var(--color-info-50);
+  --feedback-info-subtle-fg: var(--color-info-700);
+
+  /* === TYPOGRAPHY === */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", Roboto, "Noto Sans JP", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 32px;
+  --font-size-4xl: 40px;
+  --line-height-tight: 1.2;
+  --line-height-snug: 1.3;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.7;
+  --letter-spacing-tighter: -0.025em;
+  --letter-spacing-tight: -0.015em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.02em;
+
+  /* === SPACING === */
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --space-32: 128px;
+  --space-0-5: 2px;
+  --space-1-5: 6px;
+
+  /* === RADIUS === */
+  --radius-none: 0;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-full: 9999px;
+
+  /* === ELEVATION (LIGHT) === */
+  --shadow-none: none;
+  --shadow-xs: 0 1px 2px 0 rgba(40, 30, 20, 0.05);
+  --shadow-sm: 0 1px 2px 0 rgba(40, 30, 20, 0.06), 0 1px 3px 0 rgba(40, 30, 20, 0.04);
+  --shadow-md: 0 2px 4px -1px rgba(40, 30, 20, 0.06), 0 4px 8px -2px rgba(40, 30, 20, 0.06);
+  --shadow-lg: 0 4px 8px -2px rgba(40, 30, 20, 0.08), 0 8px 16px -4px rgba(40, 30, 20, 0.08);
+  --shadow-xl: 0 8px 16px -4px rgba(40, 30, 20, 0.10), 0 16px 32px -8px rgba(40, 30, 20, 0.10);
+  --shadow-2xl: 0 16px 32px -8px rgba(40, 30, 20, 0.14), 0 32px 64px -16px rgba(40, 30, 20, 0.12);
+
+  /* === MOTION === */
+  --duration-instant: 75ms;
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --duration-slower: 500ms;
+  --easing-linear: linear;
+  --easing-out: cubic-bezier(0.0, 0.0, 0.2, 1);
+  --easing-in: cubic-bezier(0.4, 0.0, 1, 1);
+  --easing-in-out: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --easing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+[data-theme="dark"], .dark {
+  /* === SEMANTIC (DARK) === */
+  --surface-page: var(--color-neutral-950);
+  --surface-raised: var(--color-neutral-900);
+  --surface-sunken: #0A0908;
+  --surface-overlay: var(--color-neutral-800);
+  --border-subtle: var(--color-neutral-800);
+  --border-default: var(--color-neutral-700);
+  --border-strong: var(--color-neutral-600);
+  --text-primary: var(--color-neutral-50);
+  --text-secondary: var(--color-neutral-400);
+  --text-tertiary: var(--color-neutral-500);
+  --text-inverse: var(--color-neutral-900);
+  --text-link: var(--color-neutral-50);
+  --accent-default: var(--color-coral-400);
+  --accent-hover: var(--color-coral-300);
+  --accent-active: var(--color-coral-500);
+  --accent-on-accent: var(--color-neutral-950);
+  --accent-subtle-bg: var(--color-coral-900);
+  --accent-subtle-fg: var(--color-coral-200);
+  --focus-ring: var(--color-neutral-200);
+  --feedback-success-default: var(--color-success-300);
+  --feedback-success-subtle-bg: var(--color-success-900);
+  --feedback-success-subtle-fg: var(--color-success-200);
+  --feedback-warning-default: var(--color-warning-300);
+  --feedback-warning-subtle-bg: var(--color-warning-900);
+  --feedback-warning-subtle-fg: var(--color-warning-200);
+  --feedback-danger-default: var(--color-danger-300);
+  --feedback-danger-solid: var(--color-danger-500);
+  --feedback-danger-solid-hover: var(--color-danger-400);
+  --feedback-danger-subtle-bg: var(--color-danger-900);
+  --feedback-danger-subtle-fg: var(--color-danger-200);
+  --feedback-info-default: var(--color-info-300);
+  --feedback-info-subtle-bg: var(--color-info-900);
+  --feedback-info-subtle-fg: var(--color-info-200);
+
+  /* === ELEVATION (DARK) === */
+  --shadow-none: none;
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5), 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 2px 4px -1px rgba(0, 0, 0, 0.5), 0 4px 8px -2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 4px 8px -2px rgba(0, 0, 0, 0.6), 0 8px 16px -4px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 8px 16px -4px rgba(0, 0, 0, 0.7), 0 16px 32px -8px rgba(0, 0, 0, 0.6);
+  --shadow-2xl: 0 16px 32px -8px rgba(0, 0, 0, 0.8), 0 32px 64px -16px rgba(0, 0, 0, 0.7);
+}
+
+/* Reduced Motion 対応 (motion.json の方針) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
