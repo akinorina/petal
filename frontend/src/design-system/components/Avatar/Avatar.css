@@ -1,0 +1,76 @@
+/* セレクタは :where() でラップ済み。詳細度 0 で Tailwind utility に負けるようにしている。 */
+
+:where(.ds-avatar) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: var(--color-neutral-200);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  user-select: none;
+}
+
+/* Shape */
+:where(.ds-avatar--circle)  { border-radius: 50%; }
+:where(.ds-avatar--rounded) { border-radius: var(--radius-md); }
+
+/* Sizes */
+:where(.ds-avatar--xs) { width: 24px; height: 24px; font-size: 10px; }
+:where(.ds-avatar--sm) { width: 32px; height: 32px; font-size: 12px; }
+:where(.ds-avatar--md) { width: 40px; height: 40px; font-size: var(--font-size-sm); }
+:where(.ds-avatar--lg) { width: 48px; height: 48px; font-size: var(--font-size-base); }
+:where(.ds-avatar--xl) { width: 64px; height: 64px; font-size: var(--font-size-lg); }
+
+/* Image */
+:where(.ds-avatar__img) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Initials / Fallback */
+:where(.ds-avatar__initials),
+:where(.ds-avatar__fallback) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+:where(.ds-avatar__fallback) :where(svg) {
+  width: 60%;
+  height: 60%;
+  opacity: 0.6;
+}
+
+/* Tint palette — Warm neutral system に馴染む 6 色を巡回。
+   コントラスト確保のため subtle-bg + 該当色 700 を使用。 */
+:where(.ds-avatar--tint-0) { background: var(--color-coral-100);   color: var(--color-coral-700); }
+:where(.ds-avatar--tint-1) { background: var(--color-success-50);  color: var(--color-success-700); }
+:where(.ds-avatar--tint-2) { background: var(--color-info-50);     color: var(--color-info-700); }
+:where(.ds-avatar--tint-3) { background: var(--color-warning-50);  color: var(--color-warning-700); }
+:where(.ds-avatar--tint-4) { background: var(--color-danger-50);   color: var(--color-danger-700); }
+:where(.ds-avatar--tint-5) { background: var(--color-neutral-200); color: var(--color-neutral-700); }
+
+/* ── AvatarGroup ── */
+:where(.ds-avatar-group) {
+  display: inline-flex;
+  align-items: center;
+}
+:where(.ds-avatar-group__item) {
+  display: inline-flex;
+  margin-left: -8px;
+  border: 2px solid var(--surface-raised);
+  border-radius: 50%;
+}
+:where(.ds-avatar-group__item):first-child {
+  margin-left: 0;
+}
+/* rounded shape では Item の境界も rounded に */
+:where(.ds-avatar-group__item):has(.ds-avatar--rounded) {
+  border-radius: calc(var(--radius-md) + 2px);
+}

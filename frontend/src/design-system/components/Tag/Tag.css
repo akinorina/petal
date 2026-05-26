@@ -1,0 +1,118 @@
+/* セレクタは :where() でラップ済み。詳細度 0 で Tailwind utility に負けるようにしている。 */
+
+/* ── Tag ── */
+:where(.ds-tag) {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-snug);
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+/* Sizes */
+:where(.ds-tag--sm) {
+  font-size: 11px;
+  padding: 2px var(--space-2);
+}
+:where(.ds-tag--md) {
+  font-size: var(--font-size-xs);
+  padding: 2px var(--space-2-5, 10px);
+}
+
+/* Variants — subtle background pattern (neutral coral system) */
+:where(.ds-tag--neutral) {
+  background: var(--color-neutral-100);
+  color: var(--text-secondary);
+  border-color: var(--border-subtle);
+}
+:where(.ds-tag--success) {
+  background: var(--feedback-success-subtle-bg);
+  color: var(--feedback-success-subtle-fg);
+}
+:where(.ds-tag--warning) {
+  background: var(--feedback-warning-subtle-bg);
+  color: var(--feedback-warning-subtle-fg);
+}
+:where(.ds-tag--danger) {
+  background: var(--feedback-danger-subtle-bg);
+  color: var(--feedback-danger-subtle-fg);
+}
+:where(.ds-tag--info) {
+  background: var(--feedback-info-subtle-bg);
+  color: var(--feedback-info-subtle-fg);
+}
+:where(.ds-tag--accent) {
+  background: var(--accent-subtle-bg);
+  color: var(--accent-subtle-fg);
+}
+
+:where(.ds-tag__leading) {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+:where(.ds-tag__label) {
+  display: inline-block;
+}
+
+:where(.ds-tag__remove) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-left: 2px;
+  margin-right: -4px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: currentColor;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity var(--duration-fast) var(--easing-out), background var(--duration-fast) var(--easing-out);
+}
+:where(.ds-tag__remove):hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.08);
+}
+:where(.ds-tag__remove):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+  opacity: 1;
+}
+
+/* ── Badge ── */
+:where(.ds-badge) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  color: white;
+  border-radius: 9999px;
+  font-variant-numeric: tabular-nums;
+}
+
+:where(.ds-badge--dot) {
+  width: 8px;
+  min-width: 8px;
+  height: 8px;
+  padding: 0;
+}
+
+:where(.ds-badge--neutral) { background: var(--text-tertiary); }
+:where(.ds-badge--success) { background: var(--feedback-success-default); }
+:where(.ds-badge--warning) { background: var(--feedback-warning-default); color: var(--text-primary); }
+:where(.ds-badge--danger)  { background: var(--feedback-danger-default); }
+:where(.ds-badge--info)    { background: var(--feedback-info-default); }
+:where(.ds-badge--accent)  { background: var(--accent-default); }

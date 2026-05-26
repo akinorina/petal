@@ -1,0 +1,104 @@
+/* セレクタは :where() でラップ済み。詳細度 0 で Tailwind utility に負けるようにしている。 */
+
+:where(.ds-sheet__overlay) {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  background: rgba(20, 18, 16, 0.45);
+}
+
+:where(.ds-sheet) {
+  position: fixed;
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  box-shadow: var(--shadow-xl);
+  outline: none;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Side variants ── */
+:where(.ds-sheet--right) {
+  top: 0; right: 0; bottom: 0;
+  border-top-left-radius: var(--radius-lg);
+  border-bottom-left-radius: var(--radius-lg);
+}
+:where(.ds-sheet--left) {
+  top: 0; left: 0; bottom: 0;
+  border-top-right-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--radius-lg);
+}
+:where(.ds-sheet--top) {
+  top: 0; left: 0; right: 0;
+  border-bottom-left-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--radius-lg);
+}
+:where(.ds-sheet--bottom) {
+  bottom: 0; left: 0; right: 0;
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+}
+
+/* ── Size (horizontal sides) ── */
+:where(.ds-sheet--right.ds-sheet--size-sm),
+:where(.ds-sheet--left.ds-sheet--size-sm)  { width: 320px; max-width: 90vw; }
+:where(.ds-sheet--right.ds-sheet--size-md),
+:where(.ds-sheet--left.ds-sheet--size-md)  { width: 480px; max-width: 90vw; }
+:where(.ds-sheet--right.ds-sheet--size-lg),
+:where(.ds-sheet--left.ds-sheet--size-lg)  { width: 640px; max-width: 90vw; }
+:where(.ds-sheet--right.ds-sheet--size-full),
+:where(.ds-sheet--left.ds-sheet--size-full){ width: 100vw; }
+:where(.ds-sheet--right.ds-sheet--size-auto),
+:where(.ds-sheet--left.ds-sheet--size-auto){ width: auto; max-width: 90vw; }
+
+/* ── Size (vertical sides) ── */
+:where(.ds-sheet--top.ds-sheet--size-sm),
+:where(.ds-sheet--bottom.ds-sheet--size-sm) { height: 30vh; max-height: 320px; }
+:where(.ds-sheet--top.ds-sheet--size-md),
+:where(.ds-sheet--bottom.ds-sheet--size-md) { height: 50vh; max-height: 520px; }
+:where(.ds-sheet--top.ds-sheet--size-lg),
+:where(.ds-sheet--bottom.ds-sheet--size-lg) { height: 75vh; }
+:where(.ds-sheet--top.ds-sheet--size-full),
+:where(.ds-sheet--bottom.ds-sheet--size-full){ height: 100vh; }
+:where(.ds-sheet--top.ds-sheet--size-auto),
+:where(.ds-sheet--bottom.ds-sheet--size-auto) { height: auto; max-height: 90vh; }
+
+/* Compound parts (Dialog と同等) */
+:where(.ds-sheet__header) {
+  padding: var(--space-5) var(--space-5) var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+:where(.ds-sheet__title) {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-snug);
+  margin: 0;
+}
+:where(.ds-sheet__description) {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: var(--line-height-normal);
+  margin: var(--space-1) 0 0;
+}
+:where(.ds-sheet__body) {
+  padding: var(--space-5);
+  overflow: auto;
+  flex: 1;
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+}
+:where(.ds-sheet__footer) {
+  padding: var(--space-3) var(--space-5) var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(.ds-sheet) {
+    transition: none !important;
+  }
+}

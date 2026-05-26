@@ -1,0 +1,70 @@
+/* セレクタは :where() でラップ済み。詳細度 0 で Tailwind utility に負けるようにしている。 */
+
+:where(.ds-breadcrumb) {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  color: var(--text-tertiary);
+  line-height: var(--line-height-snug);
+}
+
+:where(.ds-breadcrumb__list) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 0;
+}
+
+:where(.ds-breadcrumb__item) {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+:where(.ds-breadcrumb__link) {
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  padding: 2px 4px;
+  margin: -2px -4px;
+  transition: color var(--duration-fast) var(--easing-out);
+}
+:where(.ds-breadcrumb__link):hover {
+  color: var(--text-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+:where(.ds-breadcrumb__link):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+:where(.ds-breadcrumb__current) {
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 32ch;
+}
+
+:where(.ds-breadcrumb__text) {
+  color: var(--text-secondary);
+}
+
+:where(.ds-breadcrumb__sep) {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-tertiary);
+  margin: 0 var(--space-1);
+  flex-shrink: 0;
+}
+
+:where(.ds-breadcrumb__ellipsis) {
+  color: var(--text-tertiary);
+  padding: 0 var(--space-1);
+  user-select: none;
+}

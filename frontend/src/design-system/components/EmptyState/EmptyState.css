@@ -1,0 +1,56 @@
+/* セレクタは :where() でラップ済み。詳細度 0 で Tailwind utility に負けるようにしている。 */
+
+:where(.ds-empty) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+}
+
+:where(.ds-empty--sm) {
+  padding: var(--space-6) var(--space-4);
+  gap: var(--space-3);
+}
+:where(.ds-empty--md) {
+  padding: var(--space-8) var(--space-5);
+  gap: var(--space-4);
+}
+:where(.ds-empty--lg) {
+  padding: var(--space-10) var(--space-6);
+  gap: var(--space-5);
+}
+
+:where(.ds-empty__illustration) {
+  color: var(--text-tertiary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+:where(.ds-empty--sm) :where(.ds-empty__illustration) :where(svg) { width: 32px; height: 32px; }
+:where(.ds-empty--md) :where(.ds-empty__illustration) :where(svg) { width: 48px; height: 48px; }
+:where(.ds-empty--lg) :where(.ds-empty__illustration) :where(svg) { width: 64px; height: 64px; }
+
+:where(.ds-empty__title) {
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-snug);
+}
+:where(.ds-empty--sm) :where(.ds-empty__title) { font-size: var(--font-size-base); }
+:where(.ds-empty--md) :where(.ds-empty__title) { font-size: var(--font-size-lg); }
+:where(.ds-empty--lg) :where(.ds-empty__title) { font-size: var(--font-size-xl); }
+
+:where(.ds-empty__description) {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: var(--line-height-relaxed);
+  max-width: 44ch;
+}
+
+:where(.ds-empty__actions) {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: var(--space-1);
+}

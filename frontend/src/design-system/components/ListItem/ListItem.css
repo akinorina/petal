@@ -1,0 +1,100 @@
+/* セレクタは :where() でラップ済み。詳細度 0 で Tailwind utility に負けるようにしている。 */
+
+:where(.ds-listitem) {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  background: transparent;
+  border: none;
+  margin: 0;
+  text-align: left;
+  text-decoration: none;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  cursor: default;
+  transition: background var(--duration-fast) var(--easing-out);
+  box-sizing: border-box;
+}
+
+/* Sizes */
+:where(.ds-listitem--sm) {
+  padding: var(--space-2) var(--space-3);
+  min-height: 40px;
+  font-size: var(--font-size-sm);
+}
+:where(.ds-listitem--md) {
+  padding: var(--space-3) var(--space-4);
+  min-height: 56px;
+  font-size: var(--font-size-sm);
+}
+
+/* Divider */
+:where(.ds-listitem--divider) {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* Interactive */
+:where(.ds-listitem--interactive) {
+  cursor: pointer;
+}
+:where(.ds-listitem--interactive):hover {
+  background: var(--surface-hover, var(--color-neutral-100));
+}
+:where(.ds-listitem--interactive):active {
+  background: var(--surface-active, var(--color-neutral-200));
+}
+:where(.ds-listitem--interactive):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+/* Selected */
+:where(.ds-listitem--selected) {
+  background: var(--accent-subtle-bg);
+  color: var(--accent-subtle-fg);
+}
+:where(.ds-listitem--selected.ds-listitem--interactive):hover {
+  background: var(--accent-subtle-bg);
+  filter: brightness(0.97);
+}
+
+/* Slots */
+:where(.ds-listitem__leading),
+:where(.ds-listitem__trailing) {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+}
+:where(.ds-listitem--selected) :where(.ds-listitem__leading),
+:where(.ds-listitem--selected) :where(.ds-listitem__trailing) {
+  color: inherit;
+}
+
+:where(.ds-listitem__content) {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+:where(.ds-listitem__title) {
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-snug);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:where(.ds-listitem__subtitle) {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  line-height: var(--line-height-normal);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:where(.ds-listitem--selected) :where(.ds-listitem__subtitle) {
+  color: inherit;
+  opacity: 0.8;
+}

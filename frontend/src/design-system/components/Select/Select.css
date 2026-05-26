@@ -1,0 +1,167 @@
+/* セレクタは :where() でラップ済み。詳細度 0 で Tailwind utility に負けるようにしている。 */
+
+/* ── Trigger (Input と似た見た目) ── */
+:where(.ds-select__trigger) {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color var(--duration-fast) var(--easing-out),
+    background var(--duration-fast) var(--easing-out);
+}
+
+:where(.ds-select__trigger--full-width) {
+  display: flex;
+  width: 100%;
+}
+
+:where(.ds-select__trigger):hover:not(:where(.ds-select__trigger--disabled, .ds-select__trigger--error)) {
+  border-color: var(--border-strong);
+}
+
+:where(.ds-select__trigger):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-color: var(--border-strong);
+}
+
+:where(.ds-select__trigger--error) {
+  border-color: var(--feedback-danger-default);
+}
+:where(.ds-select__trigger--error):focus-visible {
+  outline-color: var(--feedback-danger-default);
+}
+
+:where(.ds-select__trigger--disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--surface-sunken);
+}
+
+/* Sizes (Input と整合) */
+:where(.ds-select__trigger--sm) { height: 32px; padding: 0 var(--space-3); font-size: var(--font-size-sm); }
+:where(.ds-select__trigger--md) { height: 40px; padding: 0 var(--space-3); font-size: var(--font-size-sm); }
+:where(.ds-select__trigger--lg) { height: 48px; padding: 0 var(--space-4); font-size: var(--font-size-base); }
+
+:where(.ds-select__value) {
+  flex: 1;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:where(.ds-select__value--placeholder) {
+  color: var(--text-tertiary);
+}
+:where(.ds-select__value-leading) {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+}
+:where(.ds-select__chevron) {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  transition: transform var(--duration-fast) var(--easing-out);
+}
+:where(.ds-select__trigger[aria-expanded='true']) :where(.ds-select__chevron) {
+  transform: rotate(180deg);
+}
+
+/* ── Menu ── */
+:where(.ds-select__menu) {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-1);
+  margin: 0;
+  list-style: none;
+  overflow: auto;
+  outline: none;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  animation: ds-select-in var(--duration-fast) var(--easing-out);
+}
+
+:where(.ds-select__option) {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  scroll-margin: var(--space-1);
+}
+
+:where(.ds-select__option--active) {
+  background: var(--color-neutral-100);
+}
+:where(.ds-select__option--selected) {
+  color: var(--accent-default);
+}
+:where(.ds-select__option--selected.ds-select__option--active) {
+  background: var(--accent-subtle-bg);
+  color: var(--accent-subtle-fg);
+}
+:where(.ds-select__option--disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+:where(.ds-select__option-leading) {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--text-tertiary);
+}
+:where(.ds-select__option--selected) :where(.ds-select__option-leading) {
+  color: inherit;
+}
+:where(.ds-select__option-content) {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+:where(.ds-select__option-label) {
+  line-height: var(--line-height-snug);
+}
+:where(.ds-select__option-description) {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  line-height: var(--line-height-normal);
+}
+:where(.ds-select__option--selected) :where(.ds-select__option-description) {
+  opacity: 0.8;
+}
+:where(.ds-select__check) {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: currentColor;
+}
+
+@keyframes ds-select-in {
+  from { opacity: 0; transform: translateY(-2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.ds-select__menu) { animation-duration: 1ms; }
+  :where(.ds-select__chevron) { transition-duration: 1ms; }
+}

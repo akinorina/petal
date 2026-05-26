@@ -1,0 +1,62 @@
+/* セレクタは :where() でラップ済み。詳細度 0 で Tailwind utility に負けるようにしている。 */
+
+:where(.ds-skeleton) {
+  display: inline-block;
+  background: var(--color-neutral-200);
+  border-radius: var(--radius-sm);
+  vertical-align: middle;
+}
+
+:where(.ds-skeleton--line) {
+  border-radius: var(--radius-sm);
+}
+:where(.ds-skeleton--circle) {
+  border-radius: 50%;
+}
+:where(.ds-skeleton--rect) {
+  display: block;
+  border-radius: var(--radius-md);
+}
+
+/* Pulse */
+:where(.ds-skeleton--pulse) {
+  animation: ds-skeleton-pulse 1.6s var(--easing-in-out, ease-in-out) infinite;
+}
+@keyframes ds-skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
+}
+
+/* Shimmer */
+:where(.ds-skeleton--shimmer) {
+  position: relative;
+  overflow: hidden;
+}
+:where(.ds-skeleton--shimmer)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: ds-skeleton-shimmer 1.4s linear infinite;
+}
+@keyframes ds-skeleton-shimmer {
+  100% { transform: translateX(100%); }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  :where(.ds-skeleton--pulse),
+  :where(.ds-skeleton--shimmer) {
+    animation: none;
+  }
+  :where(.ds-skeleton--shimmer)::after {
+    animation: none;
+    display: none;
+  }
+}

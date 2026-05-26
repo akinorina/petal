@@ -1,0 +1,121 @@
+/* セレクタは :where() でラップ済み。詳細度 0 で Tailwind utility に負けるようにしている。 */
+
+:where(.ds-tabs) {
+  display: flex;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+}
+:where(.ds-tabs--horizontal) { flex-direction: column; }
+:where(.ds-tabs--vertical)   { flex-direction: row; align-items: stretch; gap: var(--space-4); }
+
+:where(.ds-tabs__list) {
+  display: flex;
+  align-items: stretch;
+  flex-shrink: 0;
+}
+:where(.ds-tabs--horizontal) :where(.ds-tabs__list) {
+  flex-direction: row;
+}
+:where(.ds-tabs--vertical) :where(.ds-tabs__list) {
+  flex-direction: column;
+}
+
+/* line variant: 下に underline */
+:where(.ds-tabs--line) :where(.ds-tabs__list) {
+  border-bottom: 1px solid var(--border-subtle);
+  gap: var(--space-4);
+}
+:where(.ds-tabs--line.ds-tabs--vertical) :where(.ds-tabs__list) {
+  border-bottom: none;
+  border-right: 1px solid var(--border-subtle);
+  gap: 0;
+}
+
+/* pill variant: 個別 pill */
+:where(.ds-tabs--pill) :where(.ds-tabs__list) {
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background: var(--color-neutral-100);
+  border-radius: var(--radius-md);
+}
+
+/* Tab base */
+:where(.ds-tabs__tab) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    color var(--duration-fast) var(--easing-out),
+    background var(--duration-fast) var(--easing-out),
+    border-color var(--duration-fast) var(--easing-out);
+}
+:where(.ds-tabs__tab):hover:not(:where(.ds-tabs__tab--disabled, .ds-tabs__tab--active)) {
+  color: var(--text-primary);
+}
+:where(.ds-tabs__tab):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+:where(.ds-tabs__tab--disabled) {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── line variant tab ── */
+:where(.ds-tabs--line) :where(.ds-tabs__tab) {
+  padding: var(--space-3) var(--space-1);
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+}
+:where(.ds-tabs--line) :where(.ds-tabs__tab--active) {
+  color: var(--accent-default);
+  border-bottom-color: var(--accent-default);
+}
+:where(.ds-tabs--line.ds-tabs--vertical) :where(.ds-tabs__tab) {
+  padding: var(--space-2) var(--space-4);
+  margin-bottom: 0;
+  margin-right: -1px;
+  border-bottom: none;
+  border-right: 2px solid transparent;
+  justify-content: flex-start;
+}
+:where(.ds-tabs--line.ds-tabs--vertical) :where(.ds-tabs__tab--active) {
+  border-right-color: var(--accent-default);
+}
+
+/* ── pill variant tab ── */
+:where(.ds-tabs--pill) :where(.ds-tabs__tab) {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+}
+:where(.ds-tabs--pill) :where(.ds-tabs__tab--active) {
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Panel */
+:where(.ds-tabs__panel) {
+  outline: none;
+  padding-top: var(--space-4);
+}
+:where(.ds-tabs--vertical) :where(.ds-tabs__panel) {
+  padding-top: 0;
+  flex: 1;
+  min-width: 0;
+}
+:where(.ds-tabs__panel):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}

@@ -1,0 +1,24 @@
+/* セレクタは :where() でラップ済み。詳細度 0 で Tailwind utility に負けるようにしている。 */
+
+:where(.ds-tooltip) {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1100;
+  background: var(--color-neutral-900);
+  color: var(--surface-raised);
+  border-radius: var(--radius-sm);
+  padding: 4px var(--space-2);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-snug);
+  font-weight: var(--font-weight-medium);
+  max-width: 260px;
+  word-wrap: break-word;
+  pointer-events: none;
+  box-shadow: var(--shadow-md);
+}
+
+:where(.ds-tooltip__arrow) :where(path) {
+  fill: var(--color-neutral-900);
+}

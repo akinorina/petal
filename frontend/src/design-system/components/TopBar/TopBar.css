@@ -1,0 +1,50 @@
+/* セレクタは :where() でラップ済み。詳細度 0 で Tailwind utility に負けるようにしている。 */
+
+:where(.ds-topbar) {
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border-subtle);
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  width: 100%;
+  z-index: 100;
+}
+
+:where(.ds-topbar--sticky) {
+  position: sticky;
+  top: 0;
+}
+
+:where(.ds-topbar--transparent) {
+  background: transparent;
+  border-bottom-color: transparent;
+}
+
+:where(.ds-topbar__inner) {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  height: 56px;
+  padding: 0 var(--space-5);
+  max-width: 100%;
+}
+
+:where(.ds-topbar__start),
+:where(.ds-topbar__end) {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+:where(.ds-topbar__center) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+/* 中央が無くても grid-column が崩れないように center は空でも 1fr を消費 */
+:where(.ds-topbar__inner):not(:has(.ds-topbar__center)) {
+  grid-template-columns: auto 1fr auto;
+}

@@ -1,0 +1,116 @@
+/* セレクタは :where() でラップ済み。詳細度 0 で Tailwind utility に負けるようにしている。 */
+
+:where(.ds-switch) {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  cursor: pointer;
+  user-select: none;
+  line-height: var(--line-height-snug);
+}
+:where(.ds-switch--disabled) {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+:where(.ds-switch--label-left) {
+  justify-content: space-between;
+}
+
+/* Sizes */
+:where(.ds-switch--sm) {
+  --ds-sw-track-w: 32px;
+  --ds-sw-track-h: 18px;
+  --ds-sw-thumb: 14px;
+  font-size: var(--font-size-sm);
+}
+:where(.ds-switch--md) {
+  --ds-sw-track-w: 40px;
+  --ds-sw-track-h: 22px;
+  --ds-sw-thumb: 18px;
+  font-size: var(--font-size-sm);
+}
+
+:where(.ds-switch__control) {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  width: var(--ds-sw-track-w);
+  height: var(--ds-sw-track-h);
+}
+
+:where(.ds-switch__input) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+:where(.ds-switch__track) {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--border-strong);
+  border-radius: 9999px;
+  transition: background var(--duration-fast) var(--easing-out);
+}
+
+:where(.ds-switch__thumb) {
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  width: var(--ds-sw-thumb);
+  height: var(--ds-sw-thumb);
+  background: var(--surface-raised);
+  border-radius: 50%;
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-50%);
+  transition: left var(--duration-fast) var(--easing-out);
+}
+
+/* Hover */
+:where(.ds-switch:hover:not(.ds-switch--disabled) .ds-switch__track) {
+  background: var(--text-tertiary);
+}
+
+/* Focus-visible */
+:where(.ds-switch__input):focus-visible + :where(.ds-switch__track) {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Checked */
+:where(.ds-switch__input):checked + :where(.ds-switch__track) {
+  background: var(--accent-default);
+}
+:where(.ds-switch__input):checked + :where(.ds-switch__track) :where(.ds-switch__thumb) {
+  left: calc(100% - var(--ds-sw-thumb) - 2px);
+}
+:where(.ds-switch:hover:not(.ds-switch--disabled) .ds-switch__input:checked + .ds-switch__track) {
+  background: var(--accent-hover);
+}
+
+/* Text */
+:where(.ds-switch__text) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+:where(.ds-switch__description) {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  line-height: var(--line-height-normal);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  :where(.ds-switch__track),
+  :where(.ds-switch__thumb) {
+    transition-duration: 1ms;
+  }
+}

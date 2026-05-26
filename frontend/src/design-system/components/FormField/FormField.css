@@ -1,0 +1,45 @@
+/* セレクタは :where() でラップ済み。詳細度 0 で Tailwind utility に負けるようにしている。 */
+
+:where(.ds-formfield) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-family: var(--font-sans);
+}
+
+:where(.ds-formfield__label) {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  line-height: var(--line-height-snug);
+}
+
+:where(.ds-formfield__required) {
+  color: var(--feedback-danger-default);
+  margin-left: var(--space-1);
+}
+
+:where(.ds-formfield__helper) {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  line-height: var(--line-height-normal);
+}
+
+:where(.ds-formfield__error) {
+  font-size: var(--font-size-xs);
+  color: var(--feedback-danger-default);
+  line-height: var(--line-height-normal);
+}
+
+/* sr-only: 視覚的に隠すが SR には伝える */
+:where(.ds-formfield__label--sr-only) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

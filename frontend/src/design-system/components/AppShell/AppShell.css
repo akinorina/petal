@@ -1,0 +1,99 @@
+/* セレクタは :where() でラップ済み。詳細度 0 で Tailwind utility に負けるようにしている。 */
+
+:where(.ds-appshell) {
+  display: grid;
+  min-height: 100vh;
+  background: var(--surface-base, var(--surface-raised));
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  grid-template-areas:
+    'top  top'
+    'side main'
+    'side footer';
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: auto 1fr;
+}
+
+/* SideNav 無し */
+:where(.ds-appshell:not(.ds-appshell--with-side)) {
+  grid-template-areas:
+    'top'
+    'main'
+    'footer';
+  grid-template-columns: 1fr;
+}
+
+/* TopBar 無し */
+:where(.ds-appshell--no-top) {
+  grid-template-areas:
+    'side main'
+    'side footer';
+  grid-template-rows: 1fr auto;
+}
+:where(.ds-appshell--no-top:not(.ds-appshell--with-side)) {
+  grid-template-areas:
+    'main'
+    'footer';
+  grid-template-columns: 1fr;
+}
+
+/* Footer 無し */
+:where(.ds-appshell--no-footer) {
+  grid-template-areas:
+    'top  top'
+    'side main';
+  grid-template-rows: auto 1fr;
+}
+:where(.ds-appshell--no-footer:not(.ds-appshell--with-side)) {
+  grid-template-areas:
+    'top'
+    'main';
+  grid-template-columns: 1fr;
+}
+:where(.ds-appshell--no-top.ds-appshell--no-footer) {
+  grid-template-areas: 'side main';
+  grid-template-rows: 1fr;
+}
+:where(.ds-appshell--no-top.ds-appshell--no-footer:not(.ds-appshell--with-side)) {
+  grid-template-areas: 'main';
+  grid-template-rows: 1fr;
+  grid-template-columns: 1fr;
+}
+
+:where(.ds-appshell__top)    { grid-area: top; min-width: 0; }
+:where(.ds-appshell__side)   { grid-area: side; min-width: 0; }
+:where(.ds-appshell__main)   {
+  grid-area: main;
+  min-width: 0;
+  outline: none;
+  overflow: auto;
+}
+:where(.ds-appshell__footer) { grid-area: footer; min-width: 0; }
+
+/* Skip link: 非表示だが Tab で focus したら可視 */
+:where(.ds-appshell__skip-link) {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: 9999;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  border: 2px solid var(--focus-ring);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+  transform: translateY(-200%);
+  transition: transform var(--duration-fast) var(--easing-out);
+}
+:where(.ds-appshell__skip-link):focus-visible {
+  transform: translateY(0);
+}
+
+/* Mobile: SideNav を畳む想定 (消費側で variant 切替) */
+@media (max-width: 768px) {
+  :where(.ds-appshell--with-side) {
+    /* 消費側で sideNav を Sheet (drawer) に置き換える運用を想定 */
+  }
+}

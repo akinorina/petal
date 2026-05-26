@@ -1,0 +1,116 @@
+/* セレクタは :where() でラップ済み。詳細度 0 で Tailwind utility に負けるようにしている。 */
+
+:where(.ds-pagination) {
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+:where(.ds-pagination__list) {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+:where(.ds-pagination__btn) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--easing-out),
+    color var(--duration-fast) var(--easing-out),
+    border-color var(--duration-fast) var(--easing-out);
+}
+
+:where(.ds-pagination--sm) :where(.ds-pagination__btn) {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 var(--space-2);
+  font-size: var(--font-size-xs);
+}
+:where(.ds-pagination--md) :where(.ds-pagination__btn) {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 var(--space-2);
+  font-size: var(--font-size-sm);
+}
+
+:where(.ds-pagination__btn):hover:not(:disabled) {
+  background: var(--color-neutral-100);
+  color: var(--text-primary);
+}
+:where(.ds-pagination__btn):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+:where(.ds-pagination__btn):disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+:where(.ds-pagination__btn--current) {
+  background: var(--accent-default);
+  color: var(--surface-raised);
+  border-color: var(--accent-default);
+  font-weight: var(--font-weight-semibold);
+}
+:where(.ds-pagination__btn--current):hover:not(:disabled) {
+  background: var(--accent-hover);
+  color: var(--surface-raised);
+}
+
+:where(.ds-pagination__dots) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  color: var(--text-tertiary);
+  user-select: none;
+}
+
+:where(.ds-pagination__status) {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  padding: 0 var(--space-2);
+}
+
+/* load-more */
+:where(.ds-pagination__load-more) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2) var(--space-5);
+  background: transparent;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--easing-out);
+}
+:where(.ds-pagination__load-more):hover:not(:disabled) {
+  background: var(--color-neutral-100);
+}
+:where(.ds-pagination__load-more):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+:where(.ds-pagination__load-more):disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

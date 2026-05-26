@@ -1,0 +1,118 @@
+/* セレクタは :where() でラップ済み。詳細度 0 で Tailwind utility に負けるようにしている。 */
+
+:where(.ds-checkbox) {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  cursor: pointer;
+  user-select: none;
+  line-height: var(--line-height-snug);
+}
+
+:where(.ds-checkbox--disabled) {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Sizes */
+:where(.ds-checkbox--sm) {
+  --ds-cb-size: 16px;
+  font-size: var(--font-size-sm);
+}
+:where(.ds-checkbox--md) {
+  --ds-cb-size: 18px;
+  font-size: var(--font-size-sm);
+}
+
+/* Control = input (visually hidden) + box */
+:where(.ds-checkbox__control) {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  width: var(--ds-cb-size);
+  height: var(--ds-cb-size);
+  /* align with first line of label */
+  margin-top: 2px;
+}
+
+:where(.ds-checkbox__input) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+:where(.ds-checkbox__box) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: var(--surface-raised);
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: transparent;
+  transition:
+    background var(--duration-fast) var(--easing-out),
+    border-color var(--duration-fast) var(--easing-out),
+    color var(--duration-fast) var(--easing-out);
+}
+
+:where(.ds-checkbox__icon) {
+  width: 100%;
+  height: 100%;
+}
+
+/* Hover */
+:where(.ds-checkbox:hover:not(.ds-checkbox--disabled) .ds-checkbox__box) {
+  border-color: var(--accent-default);
+}
+
+/* Focus-visible (key nav) */
+:where(.ds-checkbox__input):focus-visible + :where(.ds-checkbox__box) {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Checked / Indeterminate */
+:where(.ds-checkbox__input):checked + :where(.ds-checkbox__box),
+:where(.ds-checkbox__input):indeterminate + :where(.ds-checkbox__box) {
+  background: var(--accent-default);
+  border-color: var(--accent-default);
+  color: var(--surface-raised);
+}
+
+/* Error */
+:where(.ds-checkbox--error) :where(.ds-checkbox__box) {
+  border-color: var(--feedback-danger-default);
+}
+:where(.ds-checkbox--error) :where(.ds-checkbox__input):checked + :where(.ds-checkbox__box),
+:where(.ds-checkbox--error) :where(.ds-checkbox__input):indeterminate + :where(.ds-checkbox__box) {
+  background: var(--feedback-danger-default);
+  border-color: var(--feedback-danger-default);
+}
+
+/* Disabled */
+:where(.ds-checkbox--disabled) :where(.ds-checkbox__input) {
+  cursor: not-allowed;
+}
+
+/* Text block */
+:where(.ds-checkbox__text) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+:where(.ds-checkbox__label) {
+  font-weight: var(--font-weight-regular);
+}
+:where(.ds-checkbox__description) {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  line-height: var(--line-height-normal);
+}

@@ -1,0 +1,99 @@
+/* セレクタは :where() でラップ済み。詳細度 0 で Tailwind utility に負けるようにしている。 */
+
+:where(.ds-toast-viewport) {
+  position: fixed;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  pointer-events: none;
+  max-width: 100vw;
+  max-height: 100vh;
+}
+
+:where(.ds-toast-viewport--top-right)    { top: 0; right: 0; align-items: flex-end; }
+:where(.ds-toast-viewport--top-center)   { top: 0; left: 50%; transform: translateX(-50%); align-items: center; }
+:where(.ds-toast-viewport--top-left)     { top: 0; left: 0; align-items: flex-start; }
+:where(.ds-toast-viewport--bottom-right) { bottom: 0; right: 0; align-items: flex-end; flex-direction: column-reverse; }
+:where(.ds-toast-viewport--bottom-center){ bottom: 0; left: 50%; transform: translateX(-50%); align-items: center; flex-direction: column-reverse; }
+:where(.ds-toast-viewport--bottom-left)  { bottom: 0; left: 0; align-items: flex-start; flex-direction: column-reverse; }
+
+:where(.ds-toast) {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+  min-width: 280px;
+  max-width: 420px;
+  animation: ds-toast-in var(--duration-normal) var(--easing-out);
+}
+
+:where(.ds-toast--info)    { border-left: 3px solid var(--feedback-info-default); }
+:where(.ds-toast--success) { border-left: 3px solid var(--feedback-success-default); }
+:where(.ds-toast--warning) { border-left: 3px solid var(--feedback-warning-default); }
+:where(.ds-toast--danger)  { border-left: 3px solid var(--feedback-danger-default); }
+
+:where(.ds-toast__content) { flex: 1; min-width: 0; }
+:where(.ds-toast__title) {
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-snug);
+  margin-bottom: 2px;
+}
+:where(.ds-toast__description) {
+  color: var(--text-secondary);
+}
+
+:where(.ds-toast__action) { flex-shrink: 0; align-self: center; }
+:where(.ds-toast__close) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  margin: -2px -4px -2px 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity var(--duration-fast) var(--easing-out), background var(--duration-fast) var(--easing-out);
+}
+:where(.ds-toast__close):hover {
+  opacity: 1;
+  background: var(--color-neutral-100);
+}
+:where(.ds-toast__close):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+  opacity: 1;
+}
+
+@keyframes ds-toast-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+:where(.ds-toast-viewport--bottom-right) :where(.ds-toast),
+:where(.ds-toast-viewport--bottom-center) :where(.ds-toast),
+:where(.ds-toast-viewport--bottom-left) :where(.ds-toast) {
+  animation: ds-toast-in-bottom var(--duration-normal) var(--easing-out);
+}
+@keyframes ds-toast-in-bottom {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(.ds-toast) { animation-duration: 1ms; }
+}
