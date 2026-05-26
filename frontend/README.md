@@ -6,13 +6,16 @@ Petal のフロントエンド。Next.js + React + Tailwind CSS。
 
 ```text
 frontend/
-  app/                # Next.js App Router
-    login/            # ログイン画面
-    (admin)/          # 認証必須のルートグループ
-      users/          # ユーザー管理画面
-  contexts/           # React Context（認証状態など）
-  lib/                # API クライアント・認証ヘルパー
-  types/              # 型定義
+  src/
+    app/              # Next.js App Router
+      login/          # ログイン画面
+      (admin)/        # 認証必須のルートグループ
+        users/        # ユーザー管理画面
+    components/       # 共有コンポーネント
+    contexts/         # React Context（認証状態など）
+    lib/              # API クライアント・認証ヘルパー
+  public/             # 静的ファイル
+  scripts/            # 運用スクリプト
 ```
 
 ## セットアップ

@@ -127,7 +127,7 @@ cd ../backend && pnpm openapi:export
 # frontend/ で型を再生成
 cd ../frontend && pnpm openapi:gen
 
-git add lib/openapi/schema.d.ts ../backend/openapi.json
+git add src/lib/openapi/schema.d.ts ../backend/openapi.json
 git commit -m "chore: regenerate openapi types"
 git push origin main
 ```

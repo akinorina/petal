@@ -8,7 +8,7 @@
     "build": "next build",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx,json,css,md}\"",
-    "openapi:gen": "openapi-typescript ../backend/openapi.json -o lib/openapi/schema.d.ts",
+    "openapi:gen": "openapi-typescript ../backend/openapi.json -o src/lib/openapi/schema.d.ts",
     "use-env": "bash scripts/use-env.sh"
   },
   "dependencies": {
