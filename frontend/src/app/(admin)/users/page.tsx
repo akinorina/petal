@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/design-system/components/Button/Button';
-import { Input } from '@/design-system/components/Input/Input';
-import { Text } from '@/design-system/components/Text/Text';
+import { Button } from '@/design-system/components/Button';
+import { Input } from '@/design-system/components/Input';
+import { Text } from '@/design-system/components/Text';
 import type { Schemas } from '@/lib/openapi/client';
 import { useUsersPage } from './use-users-page';
 

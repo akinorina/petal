@@ -1,9 +1,9 @@
 'use client';
 
 import NextLink from 'next/link';
-import { Button } from '@/design-system/components/Button/Button';
-import { Input } from '@/design-system/components/Input/Input';
-import { Text } from '@/design-system/components/Text/Text';
+import { Button } from '@/design-system/components/Button';
+import { Input } from '@/design-system/components/Input';
+import { Text } from '@/design-system/components/Text';
 import { PasswordPolicyChecklist } from '@/components/PasswordPolicyChecklist';
 import { useLoginPage } from './use-login-page';
 

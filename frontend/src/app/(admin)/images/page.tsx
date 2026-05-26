@@ -2,10 +2,9 @@
 
 import NextLink from 'next/link';
 import { useState } from 'react';
-import { Button } from '@/design-system/components/Button/Button';
-import { Input } from '@/design-system/components/Input/Input';
-import { Textarea } from '@/design-system/components/Input/Textarea';
-import { Text } from '@/design-system/components/Text/Text';
+import { Button } from '@/design-system/components/Button';
+import { Input, Textarea } from '@/design-system/components/Input';
+import { Text } from '@/design-system/components/Text';
 import {
   ALLOWED_IMAGE_MIME_TYPES,
   type ImageMimeType,

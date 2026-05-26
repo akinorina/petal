@@ -1,8 +1,8 @@
 'use client';
 
-import { Button } from '@/design-system/components/Button/Button';
-import { Input } from '@/design-system/components/Input/Input';
-import { Text } from '@/design-system/components/Text/Text';
+import { Button } from '@/design-system/components/Button';
+import { Input } from '@/design-system/components/Input';
+import { Text } from '@/design-system/components/Text';
 import { useMeEmailPage } from './use-me-email-page';
 
 export default function MeEmailPage() {

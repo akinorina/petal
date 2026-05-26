@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from '@/design-system/components/Button/Button';
-import { Text } from '@/design-system/components/Text/Text';
+import { Button } from '@/design-system/components/Button';
+import { Text } from '@/design-system/components/Text';
 import { useAuditLogsPage } from './use-audit-logs-page';
 
 export default function AuditLogsPage() {

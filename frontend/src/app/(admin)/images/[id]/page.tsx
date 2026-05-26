@@ -1,7 +1,7 @@
 'use client';
 
 import NextLink from 'next/link';
-import { Button } from '@/design-system/components/Button/Button';
+import { Button } from '@/design-system/components/Button';
 import { useImageDetailPage } from './use-image-detail-page';
 
 export default function ImageDetailPage() {

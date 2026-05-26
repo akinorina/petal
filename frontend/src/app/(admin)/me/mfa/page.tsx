@@ -1,9 +1,9 @@
 'use client';
 
 import { QRCodeSVG } from 'qrcode.react';
-import { Button } from '@/design-system/components/Button/Button';
-import { Input } from '@/design-system/components/Input/Input';
-import { Text } from '@/design-system/components/Text/Text';
+import { Button } from '@/design-system/components/Button';
+import { Input } from '@/design-system/components/Input';
+import { Text } from '@/design-system/components/Text';
 import { useMeMfaPage } from './use-me-mfa-page';
 
 export default function MeMfaPage() {
