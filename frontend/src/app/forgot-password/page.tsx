@@ -1,6 +1,9 @@
 'use client';
 
-import Link from 'next/link';
+import NextLink from 'next/link';
+import { Button } from '@/design-system/components/Button/Button';
+import { Input } from '@/design-system/components/Input/Input';
+import { Text } from '@/design-system/components/Text/Text';
 import { PasswordPolicyChecklist } from '@/components/PasswordPolicyChecklist';
 import { useForgotPasswordPage } from './use-forgot-password-page';
 
@@ -26,9 +29,9 @@ export default function ForgotPasswordPage() {
   return (
     <div className="flex min-h-full items-center justify-center py-12 px-4">
       <div className="w-full max-w-sm">
-        <h1 className="mb-8 text-center text-2xl font-semibold tracking-tight">
+        <Text as="h1" variant="heading-lg" align="center" className="mb-8">
           Petal
-        </h1>
+        </Text>
 
         {step.kind === 'request' ? (
           <form onSubmit={handleRequest} className="space-y-4">
@@ -37,32 +40,24 @@ export default function ForgotPasswordPage() {
             </p>
 
             <Field label="メールアドレス">
-              <input
+              <Input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className={inputClass}
               />
             </Field>
 
             {error && <ErrorBanner message={error} />}
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className={primaryBtnClass}
-            >
+            <Button type="submit" isFullWidth isLoading={isLoading}>
               {isLoading ? '送信中...' : 'コードを送信'}
-            </button>
+            </Button>
 
             <p className="text-center text-sm">
-              <Link
-                href="/login"
-                className="text-zinc-500 hover:text-zinc-900"
-              >
+              <NextLink href="/login" className="ds-link ds-link--inline">
                 ログイン画面へ戻る
-              </Link>
+              </NextLink>
             </p>
           </form>
         ) : (
@@ -72,34 +67,31 @@ export default function ForgotPasswordPage() {
             </p>
 
             <Field label="検証コード">
-              <input
+              <Input
                 type="text"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 required
-                className={inputClass}
               />
             </Field>
 
             <Field label="新しいパスワード">
-              <input
+              <Input
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
                 minLength={8}
-                className={inputClass}
               />
             </Field>
 
             <Field label="新しいパスワード（確認）">
-              <input
+              <Input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 minLength={8}
-                className={inputClass}
               />
             </Field>
 
@@ -110,19 +102,20 @@ export default function ForgotPasswordPage() {
 
             {error && <ErrorBanner message={error} />}
 
-            <button
+            <Button
               type="submit"
-              disabled={isLoading || !newPasswordCheck.canSubmit}
-              className={primaryBtnClass}
+              isFullWidth
+              isLoading={isLoading}
+              disabled={!newPasswordCheck.canSubmit}
             >
               {isLoading ? '設定中...' : 'パスワードを設定'}
-            </button>
+            </Button>
 
             <p className="text-center text-sm">
               <button
                 type="button"
                 onClick={backToRequest}
-                className="text-zinc-500 hover:text-zinc-900"
+                className="ds-link ds-link--inline"
               >
                 メールアドレスを入力し直す
               </button>
@@ -158,8 +151,3 @@ function ErrorBanner({ message }: { message: string }) {
     </p>
   );
 }
-
-const inputClass =
-  'w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500';
-const primaryBtnClass =
-  'w-full rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-50';

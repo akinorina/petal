@@ -1,6 +1,9 @@
 'use client';
 
 import { QRCodeSVG } from 'qrcode.react';
+import { Button } from '@/design-system/components/Button/Button';
+import { Input } from '@/design-system/components/Input/Input';
+import { Text } from '@/design-system/components/Text/Text';
 import { useMeMfaPage } from './use-me-mfa-page';
 
 export default function MeMfaPage() {
@@ -22,15 +25,12 @@ export default function MeMfaPage() {
   return (
     <div className="mx-auto max-w-md space-y-4">
       <nav className="flex gap-3 text-xs">
-        <a
-          href="/me/email"
-          className="text-zinc-500 hover:text-zinc-900"
-        >
+        <a href="/me/email" className="ds-link ds-link--inline">
           メールアドレス変更
         </a>
         <span className="font-medium text-zinc-900">2 段階認証</span>
       </nav>
-      <h1 className="text-lg font-semibold">2 段階認証 (MFA)</h1>
+      <Text as="h1" variant="heading-md">2 段階認証 (MFA)</Text>
 
       {isLoading ? (
         <p className="text-sm text-zinc-500">読み込み中...</p>
@@ -54,14 +54,14 @@ export default function MeMfaPage() {
                 <p className="text-xs text-zinc-500">
                   解除すると次回ログイン以降パスワードのみで認証されます。
                 </p>
-                <button
-                  type="button"
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={disable}
-                  disabled={isSubmitting}
-                  className="rounded border border-zinc-300 px-3 py-1 text-xs hover:bg-zinc-50 disabled:opacity-40"
+                  isLoading={isSubmitting}
                 >
                   {isSubmitting ? '解除中...' : '解除する'}
-                </button>
+                </Button>
               </div>
             ) : (
               <div className="space-y-3">
@@ -69,14 +69,13 @@ export default function MeMfaPage() {
                 <p className="text-xs text-zinc-500">
                   Authenticator アプリ（Google Authenticator、1Password 等）でコードを生成し、ログイン時に追加で入力します。
                 </p>
-                <button
-                  type="button"
+                <Button
+                  size="sm"
                   onClick={startSetup}
-                  disabled={isSubmitting}
-                  className="rounded bg-zinc-900 px-3 py-1 text-xs font-medium text-white hover:bg-zinc-700 disabled:opacity-40"
+                  isLoading={isSubmitting}
                 >
                   {isSubmitting ? '準備中...' : '有効にする'}
-                </button>
+                </Button>
               </div>
             ))}
 
@@ -103,7 +102,7 @@ export default function MeMfaPage() {
                 <label className="mb-1 block text-xs font-medium text-zinc-700">
                   認証コード
                 </label>
-                <input
+                <Input
                   type="text"
                   inputMode="numeric"
                   pattern="[0-9]{6}"
@@ -115,26 +114,28 @@ export default function MeMfaPage() {
                   }
                   required
                   autoFocus
-                  className="w-full rounded border border-zinc-300 px-3 py-2 text-center font-mono tracking-[0.5em] outline-none focus:border-zinc-500"
+                  className="text-center font-mono tracking-[0.5em]"
                 />
               </div>
 
               <div className="flex items-center gap-2">
-                <button
+                <Button
                   type="submit"
-                  disabled={isSubmitting || code.length !== 6}
-                  className="rounded bg-zinc-900 px-3 py-1 text-xs font-medium text-white hover:bg-zinc-700 disabled:opacity-40"
+                  size="sm"
+                  isLoading={isSubmitting}
+                  disabled={code.length !== 6}
                 >
                   {isSubmitting ? '確認中...' : '有効化を確定'}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={cancelSetup}
                   disabled={isSubmitting}
-                  className="rounded border border-zinc-300 px-3 py-1 text-xs hover:bg-zinc-50 disabled:opacity-40"
                 >
                   キャンセル
-                </button>
+                </Button>
               </div>
             </form>
           )}

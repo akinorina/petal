@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { Button } from '@/design-system/components/Button/Button';
+import { Input } from '@/design-system/components/Input/Input';
+import { Text } from '@/design-system/components/Text/Text';
 import type { Schemas } from '@/lib/openapi/client';
 import { useUsersPage } from './use-users-page';
 
@@ -26,14 +29,11 @@ export default function UsersPage() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">ユーザー管理</h1>
+        <Text as="h1" variant="heading-md">ユーザー管理</Text>
         {tab === 'active' && (
-          <button
-            onClick={() => setModal({ type: 'create' })}
-            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
-          >
+          <Button onClick={() => setModal({ type: 'create' })}>
             ユーザーを追加
-          </button>
+          </Button>
         )}
       </div>
 
@@ -116,13 +116,13 @@ export default function UsersPage() {
                           <>
                             <button
                               onClick={() => setModal({ type: 'edit', user })}
-                              className="text-zinc-500 hover:text-zinc-900"
+                              className="ds-link ds-link--inline"
                             >
                               編集
                             </button>
                             <button
                               onClick={() => setModal({ type: 'delete', user })}
-                              className="text-red-400 hover:text-red-600"
+                              className="ds-link ds-link--inline text-red-500"
                             >
                               削除
                             </button>
@@ -130,7 +130,7 @@ export default function UsersPage() {
                         ) : (
                           <button
                             onClick={() => setModal({ type: 'restore', user })}
-                            className="text-emerald-600 hover:text-emerald-800"
+                            className="ds-link ds-link--inline text-emerald-700"
                           >
                             復活
                           </button>
@@ -176,7 +176,7 @@ export default function UsersPage() {
         <ConfirmModal
           message={`「${modal.user.name}」を復活させますか？`}
           confirmLabel="復活する"
-          confirmColor="emerald"
+          variant="primary"
           onCancel={() => setModal(null)}
           onConfirm={() => handleRestore(modal.user)}
         />
@@ -253,38 +253,35 @@ function UserFormModal({
       <form onSubmit={handleSubmit} className="space-y-4">
         {isCreate && (
           <Field label="メールアドレス">
-            <input
+            <Input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className={inputClass}
             />
           </Field>
         )}
         <Field label="氏名">
-          <input
+          <Input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className={inputClass}
           />
         </Field>
         <Field label="ふりがな">
-          <input
+          <Input
             type="text"
             value={nameKana}
             onChange={(e) => setNameKana(e.target.value)}
             required
-            className={inputClass}
           />
         </Field>
         <Field label="ロール">
           <select
             value={role}
             onChange={(e) => setRole(e.target.value as 'admin' | 'user')}
-            className={inputClass}
+            className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
           >
             <option value="user">ユーザー</option>
             <option value="admin">管理者</option>
@@ -298,12 +295,12 @@ function UserFormModal({
         )}
 
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onClose} className={secondaryBtnClass}>
+          <Button type="button" variant="secondary" onClick={onClose}>
             キャンセル
-          </button>
-          <button type="submit" disabled={isSaving} className={primaryBtnClass}>
+          </Button>
+          <Button type="submit" isLoading={isSaving}>
             {isSaving ? '保存中...' : '保存'}
-          </button>
+          </Button>
         </div>
       </form>
     </Overlay>
@@ -317,31 +314,24 @@ function ConfirmModal({
   onCancel,
   onConfirm,
   confirmLabel = '削除する',
-  confirmColor = 'red',
+  variant = 'danger',
 }: {
   message: string;
   onCancel: () => void;
   onConfirm: () => void;
   confirmLabel?: string;
-  confirmColor?: 'red' | 'emerald';
+  variant?: 'danger' | 'primary';
 }) {
-  const colorClass =
-    confirmColor === 'emerald'
-      ? 'bg-emerald-600 hover:bg-emerald-700'
-      : 'bg-red-600 hover:bg-red-700';
   return (
     <Overlay onClose={onCancel}>
       <p className="mb-6 text-sm">{message}</p>
       <div className="flex justify-end gap-2">
-        <button onClick={onCancel} className={secondaryBtnClass}>
+        <Button variant="secondary" onClick={onCancel}>
           キャンセル
-        </button>
-        <button
-          onClick={onConfirm}
-          className={`rounded-md px-4 py-2 text-sm font-medium text-white ${colorClass}`}
-        >
+        </Button>
+        <Button variant={variant} onClick={onConfirm}>
           {confirmLabel}
-        </button>
+        </Button>
       </div>
     </Overlay>
   );
@@ -382,10 +372,3 @@ function Field({
     </div>
   );
 }
-
-const inputClass =
-  'w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500';
-const primaryBtnClass =
-  'rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50';
-const secondaryBtnClass =
-  'rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50';

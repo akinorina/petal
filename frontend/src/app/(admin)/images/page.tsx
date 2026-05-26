@@ -1,7 +1,11 @@
 'use client';
 
-import Link from 'next/link';
+import NextLink from 'next/link';
 import { useState } from 'react';
+import { Button } from '@/design-system/components/Button/Button';
+import { Input } from '@/design-system/components/Input/Input';
+import { Textarea } from '@/design-system/components/Input/Textarea';
+import { Text } from '@/design-system/components/Text/Text';
 import {
   ALLOWED_IMAGE_MIME_TYPES,
   type ImageMimeType,
@@ -24,13 +28,10 @@ export default function ImagesPage() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">画像管理</h1>
-        <button
-          onClick={() => setModal({ type: 'upload' })}
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
-        >
+        <Text as="h1" variant="heading-md">画像管理</Text>
+        <Button onClick={() => setModal({ type: 'upload' })}>
           画像をアップロード
-        </button>
+        </Button>
       </div>
 
       {error && (
@@ -53,12 +54,12 @@ export default function ImagesPage() {
               className="overflow-hidden rounded-lg border border-zinc-200 bg-white"
             >
               <div className="border-b border-zinc-100 p-4">
-                <Link
+                <NextLink
                   href={`/images/${image.id}`}
                   className="block text-sm font-medium hover:underline"
                 >
                   {image.title || image.originalFilename}
-                </Link>
+                </NextLink>
                 <p className="mt-1 truncate text-xs text-zinc-500">
                   {image.originalFilename}
                 </p>
@@ -68,15 +69,15 @@ export default function ImagesPage() {
                 </p>
               </div>
               <div className="flex justify-end gap-3 px-4 py-2 text-sm">
-                <Link
+                <NextLink
                   href={`/images/${image.id}`}
-                  className="text-zinc-500 hover:text-zinc-900"
+                  className="ds-link ds-link--inline"
                 >
                   詳細
-                </Link>
+                </NextLink>
                 <button
                   onClick={() => setModal({ type: 'delete', image })}
-                  className="text-red-400 hover:text-red-600"
+                  className="ds-link ds-link--inline text-red-500"
                 >
                   削除
                 </button>
@@ -172,19 +173,17 @@ function UploadModal({
           )}
         </Field>
         <Field label="タイトル（任意）">
-          <input
+          <Input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className={inputClass}
           />
         </Field>
         <Field label="説明（任意）">
-          <textarea
+          <Textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className={inputClass}
           />
         </Field>
 
@@ -195,12 +194,12 @@ function UploadModal({
         )}
 
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onClose} className={secondaryBtnClass}>
+          <Button type="button" variant="secondary" onClick={onClose}>
             キャンセル
-          </button>
-          <button type="submit" disabled={isSaving} className={primaryBtnClass}>
+          </Button>
+          <Button type="submit" isLoading={isSaving}>
             {isSaving ? 'アップロード中...' : 'アップロード'}
-          </button>
+          </Button>
         </div>
       </form>
     </Overlay>
@@ -222,15 +221,12 @@ function ConfirmModal({
     <Overlay onClose={onCancel}>
       <p className="mb-6 text-sm">{message}</p>
       <div className="flex justify-end gap-2">
-        <button onClick={onCancel} className={secondaryBtnClass}>
+        <Button variant="secondary" onClick={onCancel}>
           キャンセル
-        </button>
-        <button
-          onClick={onConfirm}
-          className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
-        >
+        </Button>
+        <Button variant="danger" onClick={onConfirm}>
           削除する
-        </button>
+        </Button>
       </div>
     </Overlay>
   );
@@ -277,10 +273,3 @@ function formatSize(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
-
-const inputClass =
-  'w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500';
-const primaryBtnClass =
-  'rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50';
-const secondaryBtnClass =
-  'rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50';

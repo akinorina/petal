@@ -1,5 +1,7 @@
 'use client';
 
+import { Button } from '@/design-system/components/Button/Button';
+import { Text } from '@/design-system/components/Text/Text';
 import { useAuditLogsPage } from './use-audit-logs-page';
 
 export default function AuditLogsPage() {
@@ -19,7 +21,7 @@ export default function AuditLogsPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">監査ログ</h1>
+        <Text as="h1" variant="heading-md">監査ログ</Text>
         <p className="text-xs text-zinc-500">
           {total} 件中 {page * pageSize + 1}–{page * pageSize + items.length}
         </p>
@@ -77,22 +79,22 @@ export default function AuditLogsPage() {
       )}
 
       <div className="flex items-center justify-end gap-2">
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="sm"
           disabled={!hasPrev}
           onClick={prev}
-          className="rounded border border-zinc-300 px-3 py-1 text-xs disabled:opacity-40"
         >
           前へ
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
           disabled={!hasNext}
           onClick={next}
-          className="rounded border border-zinc-300 px-3 py-1 text-xs disabled:opacity-40"
         >
           次へ
-        </button>
+        </Button>
       </div>
     </div>
   );
