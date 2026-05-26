@@ -17,7 +17,7 @@
 #   DS_TARGET  アプリ側の取り込み先 (default: src/design-system)
 #
 # 配布されるもの:
-#   - tokens/: styles.css (CSS変数) + index.js + index.d.ts
+#   - tokens/: styles.css (CSS変数) + tailwind-theme.css (Tailwind v4 @theme) + index.js + index.d.ts
 #   - components/<Name>/: .tsx + .css + index.ts + SPEC.md
 #
 # 配布されないもの (design-system 内部用):
@@ -27,6 +27,16 @@
 
 set -euo pipefail
 
+# DS_PATH の自動検出: env で指定が無ければ ../design-system → ../../design-system の順に探す。
+# monorepo 配下 (apps/web/scripts/sync.sh から実行) などにも対応。
+if [ -z "${DS_PATH:-}" ]; then
+  for candidate in "../design-system" "../../design-system" "../../../design-system"; do
+    if [ -d "$candidate" ]; then
+      DS_PATH="$candidate"
+      break
+    fi
+  done
+fi
 DS_PATH="${DS_PATH:-../design-system}"
 DS_TARGET="${DS_TARGET:-src/design-system}"
 
@@ -44,6 +54,7 @@ sync_tokens() {
   (cd "$DS_PATH" && pnpm build:tokens > /dev/null)
   mkdir -p "$DS_TARGET/tokens"
   cp "$DS_PATH/dist/styles.css" "$DS_TARGET/tokens/styles.css"
+  cp "$DS_PATH/dist/tailwind-theme.css" "$DS_TARGET/tokens/tailwind-theme.css"
   cp "$DS_PATH/dist/tokens.js" "$DS_TARGET/tokens/index.js"
   cp "$DS_PATH/dist/tokens.d.ts" "$DS_TARGET/tokens/index.d.ts"
   echo "  ✓ $DS_TARGET/tokens/"

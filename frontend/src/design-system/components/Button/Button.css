@@ -1,4 +1,10 @@
-.ds-button {
+/*
+ * セレクタは :where() でラップして詳細度を 0 にしている。
+ * これにより className 経由で Tailwind ユーティリティを後ろに重ねた場合、
+ * 確実にユーティリティ側が勝つ。
+ */
+
+:where(.ds-button) {
   /* per-variant 上書き対象の CSS 変数 */
   --button-bg: transparent;
   --button-fg: var(--text-primary);
@@ -33,55 +39,55 @@
     transform var(--duration-instant) var(--easing-out);
 }
 
-.ds-button:hover:not(:disabled) {
+:where(.ds-button):hover:not(:disabled) {
   background: var(--button-bg-hover);
 }
 
-.ds-button:active:not(:disabled) {
+:where(.ds-button):active:not(:disabled) {
   background: var(--button-bg-active);
   transform: scale(0.97);
 }
 
-.ds-button:focus-visible {
+:where(.ds-button):focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
-.ds-button:disabled {
+:where(.ds-button):disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.ds-button--full-width {
+:where(.ds-button--full-width) {
   width: 100%;
 }
 
 /* ── Sizes ── */
-.ds-button--sm {
+:where(.ds-button--sm) {
   height: 32px;
   padding: 0 var(--space-3);
   font-size: var(--font-size-sm);
 }
-.ds-button--md {
+:where(.ds-button--md) {
   height: 40px;
   padding: 0 var(--space-4);
   font-size: var(--font-size-sm);
 }
-.ds-button--lg {
+:where(.ds-button--lg) {
   height: 48px;
   padding: 0 var(--space-5);
   font-size: var(--font-size-base);
 }
 
 /* ── Variants ── */
-.ds-button--primary {
+:where(.ds-button--primary) {
   --button-bg: var(--accent-default);
   --button-fg: var(--accent-on-accent);
   --button-bg-hover: var(--accent-hover);
   --button-bg-active: var(--accent-active);
 }
 
-.ds-button--secondary {
+:where(.ds-button--secondary) {
   --button-bg: var(--surface-raised);
   --button-fg: var(--text-primary);
   --button-border: var(--border-default);
@@ -89,21 +95,21 @@
   --button-bg-active: var(--surface-sunken);
 }
 
-.ds-button--ghost {
+:where(.ds-button--ghost) {
   --button-bg: transparent;
   --button-fg: var(--text-primary);
   --button-bg-hover: var(--surface-sunken);
   --button-bg-active: var(--surface-sunken);
 }
 
-.ds-button--danger {
+:where(.ds-button--danger) {
   --button-bg: var(--feedback-danger-solid);
   --button-fg: #ffffff;
   --button-bg-hover: var(--feedback-danger-solid-hover);
   --button-bg-active: var(--feedback-danger-solid-hover);
 }
 
-.ds-button--link {
+:where(.ds-button--link) {
   --button-bg: transparent;
   --button-fg: var(--text-link);
   height: auto;
@@ -112,20 +118,20 @@
   text-decoration-color: var(--border-strong);
   text-underline-offset: 3px;
 }
-.ds-button--link:hover:not(:disabled) {
+:where(.ds-button--link):hover:not(:disabled) {
   background: transparent;
   text-decoration-color: var(--text-primary);
 }
-.ds-button--link:active:not(:disabled) {
+:where(.ds-button--link):active:not(:disabled) {
   background: transparent;
   transform: none;
 }
 
 /* ── Loading ── */
-.ds-button--loading .ds-button__content {
+:where(.ds-button--loading) .ds-button__content {
   visibility: hidden;
 }
-.ds-button__spinner {
+:where(.ds-button__spinner) {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -144,18 +150,18 @@
   }
 }
 
-.ds-button__content {
+:where(.ds-button__content) {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
 }
-.ds-button__icon {
+:where(.ds-button__icon) {
   display: inline-flex;
   align-items: center;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ds-button__spinner {
+  :where(.ds-button__spinner) {
     animation: none;
   }
 }

@@ -1,4 +1,6 @@
-.ds-icon {
+/* セレクタは :where() でラップ済み。詳細度 0 で Tailwind utility に負けるようにしている。 */
+
+:where(.ds-icon) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -7,26 +9,26 @@
   color: currentColor;
 }
 
-.ds-icon > svg {
+:where(.ds-icon) > svg {
   width: 100%;
   height: 100%;
   display: block;
 }
 
 /* Sizes */
-.ds-icon--xs { width: 12px; height: 12px; }
-.ds-icon--sm { width: 16px; height: 16px; }
-.ds-icon--md { width: 20px; height: 20px; }
-.ds-icon--lg { width: 24px; height: 24px; }
-.ds-icon--xl { width: 32px; height: 32px; }
+:where(.ds-icon--xs) { width: 12px; height: 12px; }
+:where(.ds-icon--sm) { width: 16px; height: 16px; }
+:where(.ds-icon--md) { width: 20px; height: 20px; }
+:where(.ds-icon--lg) { width: 24px; height: 24px; }
+:where(.ds-icon--xl) { width: 32px; height: 32px; }
 
 /* Colors */
-.ds-icon--color-current   { color: currentColor; }
-.ds-icon--color-primary   { color: var(--text-primary); }
-.ds-icon--color-secondary { color: var(--text-secondary); }
-.ds-icon--color-tertiary  { color: var(--text-tertiary); }
-.ds-icon--color-accent    { color: var(--accent-default); }
-.ds-icon--color-danger    { color: var(--feedback-danger-default); }
-.ds-icon--color-success   { color: var(--feedback-success-default); }
-.ds-icon--color-warning   { color: var(--feedback-warning-default); }
-.ds-icon--color-info      { color: var(--feedback-info-default); }
+:where(.ds-icon--color-current)   { color: currentColor; }
+:where(.ds-icon--color-primary)   { color: var(--text-primary); }
+:where(.ds-icon--color-secondary) { color: var(--text-secondary); }
+:where(.ds-icon--color-tertiary)  { color: var(--text-tertiary); }
+:where(.ds-icon--color-accent)    { color: var(--accent-default); }
+:where(.ds-icon--color-danger)    { color: var(--feedback-danger-default); }
+:where(.ds-icon--color-success)   { color: var(--feedback-success-default); }
+:where(.ds-icon--color-warning)   { color: var(--feedback-warning-default); }
+:where(.ds-icon--color-info)      { color: var(--feedback-info-default); }

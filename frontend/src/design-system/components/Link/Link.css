@@ -1,4 +1,6 @@
-.ds-link {
+/* セレクタは :where() でラップ済み。詳細度 0 で Tailwind utility に負けるようにしている。 */
+
+:where(.ds-link) {
   display: inline;
   color: var(--text-link);
   text-decoration: underline;
@@ -10,29 +12,29 @@
   border-radius: 2px;
 }
 
-.ds-link:hover:not([aria-disabled="true"]) {
+:where(.ds-link):hover:not([aria-disabled="true"]) {
   text-decoration-color: var(--text-primary);
 }
 
-.ds-link:focus-visible {
+:where(.ds-link):focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
-.ds-link[aria-disabled="true"] {
+:where(.ds-link)[aria-disabled="true"] {
   opacity: 0.5;
   cursor: not-allowed;
   pointer-events: none;
 }
 
-.ds-link--standalone {
+:where(.ds-link--standalone) {
   font-weight: var(--font-weight-medium);
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
 }
 
-.ds-link__external-icon {
+:where(.ds-link__external-icon) {
   display: inline-flex;
   align-items: center;
   margin-left: var(--space-1);

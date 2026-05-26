@@ -1,71 +1,73 @@
-.ds-text {
+/* セレクタは :where() でラップ済み。詳細度 0 で Tailwind utility に負けるようにしている。 */
+
+:where(.ds-text) {
   margin: 0;
   font-family: var(--font-sans);
   color: var(--text-primary);
 }
 
 /* ── Variants (composites) ── */
-.ds-text--display-lg {
+:where(.ds-text--display-lg) {
   font-size: var(--font-size-4xl);
   line-height: var(--line-height-tight);
   letter-spacing: var(--letter-spacing-tighter);
   font-weight: var(--font-weight-semibold);
 }
-.ds-text--display-md {
+:where(.ds-text--display-md) {
   font-size: var(--font-size-3xl);
   line-height: var(--line-height-tight);
   letter-spacing: var(--letter-spacing-tight);
   font-weight: var(--font-weight-semibold);
 }
-.ds-text--heading-lg {
+:where(.ds-text--heading-lg) {
   font-size: var(--font-size-2xl);
   line-height: var(--line-height-snug);
   letter-spacing: var(--letter-spacing-tight);
   font-weight: var(--font-weight-semibold);
 }
-.ds-text--heading-md {
+:where(.ds-text--heading-md) {
   font-size: var(--font-size-xl);
   line-height: var(--line-height-snug);
   letter-spacing: var(--letter-spacing-normal);
   font-weight: var(--font-weight-semibold);
 }
-.ds-text--heading-sm {
+:where(.ds-text--heading-sm) {
   font-size: var(--font-size-lg);
   line-height: var(--line-height-normal);
   letter-spacing: var(--letter-spacing-normal);
   font-weight: var(--font-weight-semibold);
 }
-.ds-text--body-lg {
+:where(.ds-text--body-lg) {
   font-size: var(--font-size-lg);
   line-height: var(--line-height-relaxed);
   letter-spacing: var(--letter-spacing-normal);
   font-weight: var(--font-weight-regular);
 }
-.ds-text--body-md {
+:where(.ds-text--body-md) {
   font-size: var(--font-size-base);
   line-height: var(--line-height-relaxed);
   letter-spacing: var(--letter-spacing-normal);
   font-weight: var(--font-weight-regular);
 }
-.ds-text--body-sm {
+:where(.ds-text--body-sm) {
   font-size: var(--font-size-sm);
   line-height: var(--line-height-normal);
   letter-spacing: var(--letter-spacing-normal);
   font-weight: var(--font-weight-regular);
 }
-.ds-text--label {
+:where(.ds-text--label) {
   font-size: var(--font-size-sm);
   line-height: var(--line-height-normal);
   letter-spacing: var(--letter-spacing-normal);
   font-weight: var(--font-weight-medium);
 }
-.ds-text--caption {
+:where(.ds-text--caption) {
   font-size: var(--font-size-xs);
   line-height: var(--line-height-normal);
   letter-spacing: var(--letter-spacing-wide);
   font-weight: var(--font-weight-regular);
 }
-.ds-text--overline {
+:where(.ds-text--overline) {
   font-size: var(--font-size-xs);
   line-height: var(--line-height-normal);
   letter-spacing: 0.06em;
@@ -74,25 +76,25 @@
 }
 
 /* ── Color ── */
-.ds-text--color-primary { color: var(--text-primary); }
-.ds-text--color-secondary { color: var(--text-secondary); }
-.ds-text--color-tertiary { color: var(--text-tertiary); }
-.ds-text--color-inverse { color: var(--text-inverse); }
+:where(.ds-text--color-primary) { color: var(--text-primary); }
+:where(.ds-text--color-secondary) { color: var(--text-secondary); }
+:where(.ds-text--color-tertiary) { color: var(--text-tertiary); }
+:where(.ds-text--color-inverse) { color: var(--text-inverse); }
 
 /* ── Align ── */
-.ds-text--align-left { text-align: left; }
-.ds-text--align-center { text-align: center; }
-.ds-text--align-right { text-align: right; }
+:where(.ds-text--align-left) { text-align: left; }
+:where(.ds-text--align-center) { text-align: center; }
+:where(.ds-text--align-right) { text-align: right; }
 
 /* ── Truncate (single line) ── */
-.ds-text--truncate {
+:where(.ds-text--truncate) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 /* ── Line clamp (multi line) ── */
-.ds-text--line-clamp {
+:where(.ds-text--line-clamp) {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   overflow: hidden;
