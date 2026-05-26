@@ -1,6 +1,9 @@
 'use client';
 
-import { Button } from '@/design-system/components/Button';
+import { Alert } from '@/design-system/components/Alert';
+import { Card } from '@/design-system/components/Card';
+import { EmptyState } from '@/design-system/components/EmptyState';
+import { Pagination } from '@/design-system/components/Pagination';
 import { Text } from '@/design-system/components/Text';
 import { useAuditLogsPage } from './use-audit-logs-page';
 
@@ -18,6 +21,9 @@ export default function AuditLogsPage() {
     prev,
   } = useAuditLogsPage();
 
+  const currentPage = page + 1; // 1-indexed for Pagination
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -27,18 +33,19 @@ export default function AuditLogsPage() {
         </p>
       </div>
 
-      {error && (
-        <p className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          {error}
-        </p>
-      )}
+      {error && <Alert variant="danger">{error}</Alert>}
 
       {isLoading ? (
         <p className="text-sm text-zinc-500">読み込み中...</p>
       ) : items.length === 0 ? (
-        <p className="text-sm text-zinc-500">監査ログはまだありません。</p>
+        <Card padding="none">
+          <EmptyState
+            title="監査ログはまだありません"
+            description="ユーザー管理操作が行われると、ここに履歴が記録されます。"
+          />
+        </Card>
       ) : (
-        <div className="overflow-x-auto rounded border border-zinc-200">
+        <Card padding="none" className="overflow-x-auto">
           <table className="min-w-full divide-y divide-zinc-200 text-sm">
             <thead className="bg-zinc-50 text-xs uppercase tracking-wider text-zinc-500">
               <tr>
@@ -75,27 +82,23 @@ export default function AuditLogsPage() {
               ))}
             </tbody>
           </table>
-        </div>
+        </Card>
       )}
 
-      <div className="flex items-center justify-end gap-2">
-        <Button
-          variant="secondary"
-          size="sm"
-          disabled={!hasPrev}
-          onClick={prev}
-        >
-          前へ
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          disabled={!hasNext}
-          onClick={next}
-        >
-          次へ
-        </Button>
-      </div>
+      {(hasPrev || hasNext) && (
+        <div className="flex justify-end">
+          <Pagination
+            variant="simple"
+            page={currentPage}
+            totalPages={totalPages}
+            ariaLabel="監査ログのページ"
+            onChange={(p) => {
+              if (p > currentPage) next();
+              else if (p < currentPage) prev();
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

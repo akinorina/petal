@@ -1,7 +1,9 @@
 'use client';
 
 import NextLink from 'next/link';
+import { Alert } from '@/design-system/components/Alert';
 import { Button } from '@/design-system/components/Button';
+import { FormField } from '@/design-system/components/FormField';
 import { Input } from '@/design-system/components/Input';
 import { Text } from '@/design-system/components/Text';
 import { PasswordPolicyChecklist } from '@/components/PasswordPolicyChecklist';
@@ -37,25 +39,23 @@ export default function LoginPage() {
 
         {step.kind === 'login' && (
           <form onSubmit={handleLogin} className="space-y-4">
-            <Field label="メールアドレス">
+            <FormField label="メールアドレス" isRequired>
               <Input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required
               />
-            </Field>
+            </FormField>
 
-            <Field label="パスワード">
+            <FormField label="パスワード" isRequired>
               <Input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required
               />
-            </Field>
+            </FormField>
 
-            {error && <ErrorBanner message={error} />}
+            {error && <Alert variant="danger">{error}</Alert>}
 
             <Button type="submit" isFullWidth isLoading={isLoading}>
               {isLoading ? 'ログイン中...' : 'ログイン'}
@@ -74,40 +74,38 @@ export default function LoginPage() {
 
         {step.kind === 'new-password' && (
           <form onSubmit={handleNewPassword} className="space-y-4">
-            <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700">
+            <Alert variant="warning">
               初回ログインです。新しいパスワードを設定してください。
-            </p>
+            </Alert>
 
-            <Field label="メールアドレス">
+            <FormField label="メールアドレス">
               <Input type="email" value={step.email} disabled />
-            </Field>
+            </FormField>
 
-            <Field label="新しいパスワード">
+            <FormField label="新しいパスワード" isRequired>
               <Input
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                required
                 minLength={8}
               />
-            </Field>
+            </FormField>
 
-            <Field label="新しいパスワード（確認）">
+            <FormField label="新しいパスワード（確認）" isRequired>
               <Input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                required
                 minLength={8}
               />
-            </Field>
+            </FormField>
 
             <PasswordPolicyChecklist
               password={newPassword}
               confirm={confirmPassword}
             />
 
-            {error && <ErrorBanner message={error} />}
+            {error && <Alert variant="danger">{error}</Alert>}
 
             <Button
               type="submit"
@@ -122,15 +120,15 @@ export default function LoginPage() {
 
         {step.kind === 'mfa' && (
           <form onSubmit={handleMfa} className="space-y-4">
-            <p className="rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">
+            <Alert variant="info">
               認証アプリに表示されている 6 桁のコードを入力してください。
-            </p>
+            </Alert>
 
-            <Field label="メールアドレス">
+            <FormField label="メールアドレス">
               <Input type="email" value={step.email} disabled />
-            </Field>
+            </FormField>
 
-            <Field label="認証コード">
+            <FormField label="認証コード" isRequired>
               <Input
                 type="text"
                 inputMode="numeric"
@@ -139,13 +137,12 @@ export default function LoginPage() {
                 onChange={(e) =>
                   setMfaCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))
                 }
-                required
                 autoFocus
                 className="text-center font-mono tracking-[0.5em]"
               />
-            </Field>
+            </FormField>
 
-            {error && <ErrorBanner message={error} />}
+            {error && <Alert variant="danger">{error}</Alert>}
 
             <Button
               type="submit"
@@ -159,30 +156,5 @@ export default function LoginPage() {
         )}
       </div>
     </div>
-  );
-}
-
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <label className="mb-1 block text-sm font-medium text-zinc-700">
-        {label}
-      </label>
-      {children}
-    </div>
-  );
-}
-
-function ErrorBanner({ message }: { message: string }) {
-  return (
-    <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
-      {message}
-    </p>
   );
 }

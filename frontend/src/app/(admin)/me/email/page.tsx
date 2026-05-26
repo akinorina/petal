@@ -1,6 +1,9 @@
 'use client';
 
+import { Alert } from '@/design-system/components/Alert';
 import { Button } from '@/design-system/components/Button';
+import { Card } from '@/design-system/components/Card';
+import { FormField } from '@/design-system/components/FormField';
 import { Input } from '@/design-system/components/Input';
 import { Text } from '@/design-system/components/Text';
 import { useMeEmailPage } from './use-me-email-page';
@@ -31,20 +34,20 @@ export default function MeEmailPage() {
       </nav>
       <Text as="h1" variant="heading-md">メールアドレス変更</Text>
 
-      <div className="mt-4 rounded border border-zinc-200 bg-white p-4 text-sm">
+      <Card padding="md" className="mt-4 text-sm">
         <div className="text-zinc-500">現在のメールアドレス</div>
         <div className="mt-1 font-medium">{currentEmail ?? '-'}</div>
-      </div>
+      </Card>
 
       {successMessage && (
-        <p className="mt-4 rounded border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+        <Alert variant="success" className="mt-4">
           {successMessage}
-        </p>
+        </Alert>
       )}
       {error && (
-        <p className="mt-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+        <Alert variant="danger" className="mt-4">
           {error}
-        </p>
+        </Alert>
       )}
 
       {step.kind === 'request' ? (
@@ -55,28 +58,15 @@ export default function MeEmailPage() {
             void submitRequest();
           }}
         >
-          <div>
-            <label
-              htmlFor="newEmail"
-              className="block text-sm font-medium text-zinc-700"
-            >
-              新しいメールアドレス
-            </label>
+          <FormField label="新しいメールアドレス" isRequired>
             <Input
-              id="newEmail"
               type="email"
-              required
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
               placeholder="new@example.com"
-              className="mt-1"
             />
-          </div>
-          <Button
-            type="submit"
-            isLoading={isSubmitting}
-            disabled={!newEmail}
-          >
+          </FormField>
+          <Button type="submit" isLoading={isSubmitting} disabled={!newEmail}>
             {isSubmitting ? '送信中...' : 'コードを送信'}
           </Button>
         </form>
@@ -92,29 +82,16 @@ export default function MeEmailPage() {
             <span className="font-medium">{step.pendingEmail}</span>{' '}
             に送信した検証コードを入力してください。
           </p>
-          <div>
-            <label
-              htmlFor="code"
-              className="block text-sm font-medium text-zinc-700"
-            >
-              検証コード
-            </label>
+          <FormField label="検証コード" isRequired>
             <Input
-              id="code"
               type="text"
-              required
               value={code}
               onChange={(e) => setCode(e.target.value)}
               autoComplete="one-time-code"
-              className="mt-1"
             />
-          </div>
+          </FormField>
           <div className="flex items-center gap-3">
-            <Button
-              type="submit"
-              isLoading={isSubmitting}
-              disabled={!code}
-            >
+            <Button type="submit" isLoading={isSubmitting} disabled={!code}>
               {isSubmitting ? '確定中...' : '確定する'}
             </Button>
             <button

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { TopBar } from '@/design-system/components/TopBar';
 import { useAdminLayout } from './use-admin-layout';
 
 export default function AdminLayout({
@@ -23,8 +24,8 @@ export default function AdminLayout({
 
   return (
     <div className="min-h-full">
-      <header className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+      <TopBar
+        start={
           <div className="flex items-center gap-6">
             <span className="text-sm font-semibold">Petal</span>
             <nav className="flex items-center gap-4 text-sm">
@@ -42,11 +43,10 @@ export default function AdminLayout({
               </NavLink>
             </nav>
           </div>
+        }
+        end={
           <div className="flex items-center gap-4">
-            <Link
-              href="/me/email"
-              className="ds-link ds-link--inline text-xs"
-            >
+            <Link href="/me/email" className="ds-link ds-link--inline text-xs">
               {email}
             </Link>
             <button
@@ -56,8 +56,8 @@ export default function AdminLayout({
               ログアウト
             </button>
           </div>
-        </div>
-      </header>
+        }
+      />
       <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
     </div>
   );

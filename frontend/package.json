@@ -13,6 +13,7 @@
     "use-env": "bash scripts/use-env.sh"
   },
   "dependencies": {
+    "@floating-ui/react": "^0.27.19",
     "next": "16.2.4",
     "openapi-fetch": "^0.17.0",
     "qrcode.react": "^4.2.0",

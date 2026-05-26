@@ -1,8 +1,16 @@
 'use client';
 
 import { useState } from 'react';
+import { Alert } from '@/design-system/components/Alert';
 import { Button } from '@/design-system/components/Button';
+import { Card } from '@/design-system/components/Card';
+import { Dialog } from '@/design-system/components/Dialog';
+import { EmptyState } from '@/design-system/components/EmptyState';
+import { FormField } from '@/design-system/components/FormField';
 import { Input } from '@/design-system/components/Input';
+import { Select } from '@/design-system/components/Select';
+import { Tabs } from '@/design-system/components/Tabs';
+import { Tag } from '@/design-system/components/Tag';
 import { Text } from '@/design-system/components/Text';
 import type { Schemas } from '@/lib/openapi/client';
 import { useUsersPage } from './use-users-page';
@@ -37,28 +45,38 @@ export default function UsersPage() {
         )}
       </div>
 
-      <div className="mb-4 flex gap-1 border-b border-zinc-200">
-        <TabButton active={tab === 'active'} onClick={() => setTab('active')}>
-          アクティブ
-        </TabButton>
-        <TabButton
-          active={tab === 'deleted'}
-          onClick={() => setTab('deleted')}
-        >
-          削除済み
-        </TabButton>
-      </div>
+      <Tabs
+        value={tab}
+        onChange={(value) => setTab(value as 'active' | 'deleted')}
+        className="mb-4"
+      >
+        <Tabs.List ariaLabel="ユーザーの状態">
+          <Tabs.Tab value="active">アクティブ</Tabs.Tab>
+          <Tabs.Tab value="deleted">削除済み</Tabs.Tab>
+        </Tabs.List>
+      </Tabs>
 
       {error && (
-        <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
+        <Alert variant="danger" className="mb-4">
           {error}
-        </p>
+        </Alert>
       )}
 
       {isLoading ? (
         <p className="text-sm text-zinc-500">読み込み中...</p>
+      ) : users.length === 0 ? (
+        <Card padding="none">
+          <EmptyState
+            title="ユーザーがいません"
+            description={
+              tab === 'active'
+                ? 'まだユーザーが登録されていません。「ユーザーを追加」から最初のユーザーを登録しましょう。'
+                : '削除済みのユーザーはありません。'
+            }
+          />
+        </Card>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
+        <Card padding="none" className="overflow-hidden">
           <table className="w-full text-sm">
             <thead className="border-b border-zinc-200 bg-zinc-50">
               <tr>
@@ -81,68 +99,54 @@ export default function UsersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
-              {users.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-4 py-8 text-center text-zinc-400"
-                  >
-                    ユーザーがいません
+              {users.map((user) => (
+                <tr key={user.id} className="hover:bg-zinc-50">
+                  <td className="px-4 py-3 font-medium">{user.name}</td>
+                  <td className="px-4 py-3 text-zinc-500">{user.nameKana}</td>
+                  <td className="px-4 py-3 text-zinc-500">{user.email}</td>
+                  <td className="px-4 py-3">
+                    <Tag
+                      variant={user.role === 'admin' ? 'accent' : 'neutral'}
+                      size="sm"
+                    >
+                      {user.role === 'admin' ? '管理者' : 'ユーザー'}
+                    </Tag>
+                  </td>
+                  <td className="px-4 py-3 text-zinc-500">
+                    {new Date(user.createdAt).toLocaleDateString('ja-JP')}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-3">
+                      {tab === 'active' ? (
+                        <>
+                          <button
+                            onClick={() => setModal({ type: 'edit', user })}
+                            className="ds-link ds-link--inline"
+                          >
+                            編集
+                          </button>
+                          <button
+                            onClick={() => setModal({ type: 'delete', user })}
+                            className="ds-link ds-link--inline text-red-500"
+                          >
+                            削除
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => setModal({ type: 'restore', user })}
+                          className="ds-link ds-link--inline text-emerald-700"
+                        >
+                          復活
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
-              ) : (
-                users.map((user) => (
-                  <tr key={user.id} className="hover:bg-zinc-50">
-                    <td className="px-4 py-3 font-medium">{user.name}</td>
-                    <td className="px-4 py-3 text-zinc-500">{user.nameKana}</td>
-                    <td className="px-4 py-3 text-zinc-500">{user.email}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                          user.role === 'admin'
-                            ? 'bg-zinc-900 text-white'
-                            : 'bg-zinc-100 text-zinc-600'
-                        }`}
-                      >
-                        {user.role === 'admin' ? '管理者' : 'ユーザー'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-zinc-500">
-                      {new Date(user.createdAt).toLocaleDateString('ja-JP')}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-end gap-3">
-                        {tab === 'active' ? (
-                          <>
-                            <button
-                              onClick={() => setModal({ type: 'edit', user })}
-                              className="ds-link ds-link--inline"
-                            >
-                              編集
-                            </button>
-                            <button
-                              onClick={() => setModal({ type: 'delete', user })}
-                              className="ds-link ds-link--inline text-red-500"
-                            >
-                              削除
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            onClick={() => setModal({ type: 'restore', user })}
-                            className="ds-link ds-link--inline text-emerald-700"
-                          >
-                            復活
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
+              ))}
             </tbody>
           </table>
-        </div>
+        </Card>
       )}
 
       {modal?.type === 'create' && (
@@ -166,6 +170,7 @@ export default function UsersPage() {
 
       {modal?.type === 'delete' && (
         <ConfirmModal
+          title="ユーザーを削除"
           message={`「${modal.user.name}」を削除しますか？`}
           onCancel={() => setModal(null)}
           onConfirm={() => handleDelete(modal.user)}
@@ -174,6 +179,7 @@ export default function UsersPage() {
 
       {modal?.type === 'restore' && (
         <ConfirmModal
+          title="ユーザーを復活"
           message={`「${modal.user.name}」を復活させますか？`}
           confirmLabel="復活する"
           variant="primary"
@@ -182,29 +188,6 @@ export default function UsersPage() {
         />
       )}
     </div>
-  );
-}
-
-function TabButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
-        active
-          ? 'border-zinc-900 text-zinc-900'
-          : 'border-transparent text-zinc-500 hover:text-zinc-900'
-      }`}
-    >
-      {children}
-    </button>
   );
 }
 
@@ -248,74 +231,76 @@ function UserFormModal({
   }
 
   return (
-    <Overlay onClose={onClose}>
-      <h2 className="mb-4 text-base font-semibold">{title}</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {isCreate && (
-          <Field label="メールアドレス">
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </Field>
-        )}
-        <Field label="氏名">
-          <Input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-        </Field>
-        <Field label="ふりがな">
-          <Input
-            type="text"
-            value={nameKana}
-            onChange={(e) => setNameKana(e.target.value)}
-            required
-          />
-        </Field>
-        <Field label="ロール">
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value as 'admin' | 'user')}
-            className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
-          >
-            <option value="user">ユーザー</option>
-            <option value="admin">管理者</option>
-          </select>
-        </Field>
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <Dialog.Content>
+        <Dialog.Header>
+          <Dialog.Title>{title}</Dialog.Title>
+        </Dialog.Header>
+        <form onSubmit={handleSubmit}>
+          <Dialog.Body>
+            <div className="space-y-4">
+              {isCreate && (
+                <FormField label="メールアドレス" isRequired>
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </FormField>
+              )}
+              <FormField label="氏名" isRequired>
+                <Input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </FormField>
+              <FormField label="ふりがな" isRequired>
+                <Input
+                  type="text"
+                  value={nameKana}
+                  onChange={(e) => setNameKana(e.target.value)}
+                />
+              </FormField>
+              <FormField label="ロール" isRequired>
+                <Select
+                  options={[
+                    { value: 'user', label: 'ユーザー' },
+                    { value: 'admin', label: '管理者' },
+                  ]}
+                  value={role}
+                  onChange={(v) => setRole(v as 'admin' | 'user')}
+                />
+              </FormField>
 
-        {error && (
-          <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
-            {error}
-          </p>
-        )}
-
-        <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            キャンセル
-          </Button>
-          <Button type="submit" isLoading={isSaving}>
-            {isSaving ? '保存中...' : '保存'}
-          </Button>
-        </div>
-      </form>
-    </Overlay>
+              {error && <Alert variant="danger">{error}</Alert>}
+            </div>
+          </Dialog.Body>
+          <Dialog.Footer>
+            <Button type="button" variant="secondary" onClick={onClose}>
+              キャンセル
+            </Button>
+            <Button type="submit" isLoading={isSaving}>
+              {isSaving ? '保存中...' : '保存'}
+            </Button>
+          </Dialog.Footer>
+        </form>
+      </Dialog.Content>
+    </Dialog>
   );
 }
 
 // ---- ConfirmModal ----
 
 function ConfirmModal({
+  title,
   message,
   onCancel,
   onConfirm,
   confirmLabel = '削除する',
   variant = 'danger',
 }: {
+  title: string;
   message: string;
   onCancel: () => void;
   onConfirm: () => void;
@@ -323,52 +308,23 @@ function ConfirmModal({
   variant?: 'danger' | 'primary';
 }) {
   return (
-    <Overlay onClose={onCancel}>
-      <p className="mb-6 text-sm">{message}</p>
-      <div className="flex justify-end gap-2">
-        <Button variant="secondary" onClick={onCancel}>
-          キャンセル
-        </Button>
-        <Button variant={variant} onClick={onConfirm}>
-          {confirmLabel}
-        </Button>
-      </div>
-    </Overlay>
-  );
-}
-
-// ---- Shared UI ----
-
-function Overlay({
-  children,
-  onClose,
-}: {
-  children: React.ReactNode;
-  onClose: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
-      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
-        {children}
-      </div>
-      <div className="absolute inset-0 -z-10" onClick={onClose} />
-    </div>
-  );
-}
-
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <label className="mb-1 block text-sm font-medium text-zinc-700">
-        {label}
-      </label>
-      {children}
-    </div>
+    <Dialog open onOpenChange={(o) => !o && onCancel()} size="sm">
+      <Dialog.Content>
+        <Dialog.Header>
+          <Dialog.Title>{title}</Dialog.Title>
+        </Dialog.Header>
+        <Dialog.Body>
+          <p className="text-sm">{message}</p>
+        </Dialog.Body>
+        <Dialog.Footer>
+          <Button variant="secondary" onClick={onCancel}>
+            キャンセル
+          </Button>
+          <Button variant={variant} onClick={onConfirm}>
+            {confirmLabel}
+          </Button>
+        </Dialog.Footer>
+      </Dialog.Content>
+    </Dialog>
   );
 }

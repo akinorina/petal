@@ -2,7 +2,12 @@
 
 import NextLink from 'next/link';
 import { useState } from 'react';
+import { Alert } from '@/design-system/components/Alert';
 import { Button } from '@/design-system/components/Button';
+import { Card } from '@/design-system/components/Card';
+import { Dialog } from '@/design-system/components/Dialog';
+import { EmptyState } from '@/design-system/components/EmptyState';
+import { FormField } from '@/design-system/components/FormField';
 import { Input, Textarea } from '@/design-system/components/Input';
 import { Text } from '@/design-system/components/Text';
 import {
@@ -34,53 +39,58 @@ export default function ImagesPage() {
       </div>
 
       {error && (
-        <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
+        <Alert variant="danger" className="mb-4">
           {error}
-        </p>
+        </Alert>
       )}
 
       {isLoading ? (
         <p className="text-sm text-zinc-500">読み込み中...</p>
       ) : images.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-zinc-300 px-4 py-12 text-center text-sm text-zinc-400">
-          画像はまだありません。右上のボタンからアップロードしてください。
-        </p>
+        <EmptyState
+          title="画像はまだありません"
+          description="右上の「画像をアップロード」から最初の画像を登録しましょう。"
+          primaryAction={
+            <Button onClick={() => setModal({ type: 'upload' })}>
+              画像をアップロード
+            </Button>
+          }
+        />
       ) : (
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {images.map((image) => (
-            <li
-              key={image.id}
-              className="overflow-hidden rounded-lg border border-zinc-200 bg-white"
-            >
-              <div className="border-b border-zinc-100 p-4">
-                <NextLink
-                  href={`/images/${image.id}`}
-                  className="block text-sm font-medium hover:underline"
-                >
-                  {image.title || image.originalFilename}
-                </NextLink>
-                <p className="mt-1 truncate text-xs text-zinc-500">
-                  {image.originalFilename}
-                </p>
-                <p className="mt-1 text-xs text-zinc-400">
-                  {formatSize(image.sizeBytes)} ・{' '}
-                  {new Date(image.createdAt).toLocaleString('ja-JP')}
-                </p>
-              </div>
-              <div className="flex justify-end gap-3 px-4 py-2 text-sm">
-                <NextLink
-                  href={`/images/${image.id}`}
-                  className="ds-link ds-link--inline"
-                >
-                  詳細
-                </NextLink>
-                <button
-                  onClick={() => setModal({ type: 'delete', image })}
-                  className="ds-link ds-link--inline text-red-500"
-                >
-                  削除
-                </button>
-              </div>
+            <li key={image.id}>
+              <Card padding="none">
+                <Card.Body className="border-b border-zinc-100 p-4">
+                  <NextLink
+                    href={`/images/${image.id}`}
+                    className="block text-sm font-medium hover:underline"
+                  >
+                    {image.title || image.originalFilename}
+                  </NextLink>
+                  <p className="mt-1 truncate text-xs text-zinc-500">
+                    {image.originalFilename}
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-400">
+                    {formatSize(image.sizeBytes)} ・{' '}
+                    {new Date(image.createdAt).toLocaleString('ja-JP')}
+                  </p>
+                </Card.Body>
+                <Card.Footer className="flex justify-end gap-3 px-4 py-2 text-sm">
+                  <NextLink
+                    href={`/images/${image.id}`}
+                    className="ds-link ds-link--inline"
+                  >
+                    詳細
+                  </NextLink>
+                  <button
+                    onClick={() => setModal({ type: 'delete', image })}
+                    className="ds-link ds-link--inline text-red-500"
+                  >
+                    削除
+                  </button>
+                </Card.Footer>
+              </Card>
             </li>
           ))}
         </ul>
@@ -154,54 +164,57 @@ function UploadModal({
   }
 
   return (
-    <Overlay onClose={onClose}>
-      <h2 className="mb-4 text-base font-semibold">画像をアップロード</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Field label="ファイル">
-          <input
-            type="file"
-            accept={ALLOWED_IMAGE_MIME_TYPES.join(',')}
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            required
-            className="block w-full text-sm"
-          />
-          {file && (
-            <p className="mt-1 text-xs text-zinc-500">
-              {file.name} ・ {formatSize(file.size)}
-            </p>
-          )}
-        </Field>
-        <Field label="タイトル（任意）">
-          <Input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-        </Field>
-        <Field label="説明（任意）">
-          <Textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-          />
-        </Field>
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <Dialog.Content>
+        <Dialog.Header>
+          <Dialog.Title>画像をアップロード</Dialog.Title>
+        </Dialog.Header>
+        <form onSubmit={handleSubmit}>
+          <Dialog.Body>
+            <div className="space-y-4">
+              <FormField
+                label="ファイル"
+                isRequired
+                helperText={
+                  file ? `${file.name} ・ ${formatSize(file.size)}` : undefined
+                }
+              >
+                <input
+                  type="file"
+                  accept={ALLOWED_IMAGE_MIME_TYPES.join(',')}
+                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  className="block w-full text-sm"
+                />
+              </FormField>
+              <FormField label="タイトル（任意）">
+                <Input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
+              </FormField>
+              <FormField label="説明（任意）">
+                <Textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                />
+              </FormField>
 
-        {error && (
-          <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
-            {error}
-          </p>
-        )}
-
-        <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            キャンセル
-          </Button>
-          <Button type="submit" isLoading={isSaving}>
-            {isSaving ? 'アップロード中...' : 'アップロード'}
-          </Button>
-        </div>
-      </form>
-    </Overlay>
+              {error && <Alert variant="danger">{error}</Alert>}
+            </div>
+          </Dialog.Body>
+          <Dialog.Footer>
+            <Button type="button" variant="secondary" onClick={onClose}>
+              キャンセル
+            </Button>
+            <Button type="submit" isLoading={isSaving}>
+              {isSaving ? 'アップロード中...' : 'アップロード'}
+            </Button>
+          </Dialog.Footer>
+        </form>
+      </Dialog.Content>
+    </Dialog>
   );
 }
 
@@ -217,53 +230,24 @@ function ConfirmModal({
   onConfirm: () => void;
 }) {
   return (
-    <Overlay onClose={onCancel}>
-      <p className="mb-6 text-sm">{message}</p>
-      <div className="flex justify-end gap-2">
-        <Button variant="secondary" onClick={onCancel}>
-          キャンセル
-        </Button>
-        <Button variant="danger" onClick={onConfirm}>
-          削除する
-        </Button>
-      </div>
-    </Overlay>
-  );
-}
-
-// ---- Shared UI ----
-
-function Overlay({
-  children,
-  onClose,
-}: {
-  children: React.ReactNode;
-  onClose: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
-      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
-        {children}
-      </div>
-      <div className="absolute inset-0 -z-10" onClick={onClose} />
-    </div>
-  );
-}
-
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <label className="mb-1 block text-sm font-medium text-zinc-700">
-        {label}
-      </label>
-      {children}
-    </div>
+    <Dialog open onOpenChange={(o) => !o && onCancel()} size="sm">
+      <Dialog.Content>
+        <Dialog.Header>
+          <Dialog.Title>画像を削除</Dialog.Title>
+        </Dialog.Header>
+        <Dialog.Body>
+          <p className="text-sm">{message}</p>
+        </Dialog.Body>
+        <Dialog.Footer>
+          <Button variant="secondary" onClick={onCancel}>
+            キャンセル
+          </Button>
+          <Button variant="danger" onClick={onConfirm}>
+            削除する
+          </Button>
+        </Dialog.Footer>
+      </Dialog.Content>
+    </Dialog>
   );
 }
 

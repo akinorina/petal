@@ -1,7 +1,9 @@
 'use client';
 
 import NextLink from 'next/link';
+import { Alert } from '@/design-system/components/Alert';
 import { Button } from '@/design-system/components/Button';
+import { Card } from '@/design-system/components/Card';
 import { useImageDetailPage } from './use-image-detail-page';
 
 export default function ImageDetailPage() {
@@ -25,9 +27,9 @@ export default function ImageDetailPage() {
         <NextLink href="/images" className="ds-link ds-link--inline text-sm">
           ← 一覧に戻る
         </NextLink>
-        <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
+        <Alert variant="danger" className="mt-4">
           {error}
-        </p>
+        </Alert>
       </div>
     );
   }
@@ -54,42 +56,40 @@ export default function ImageDetailPage() {
         </div>
       </div>
 
-      {error && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
-          {error}
-        </p>
-      )}
+      {error && <Alert variant="danger">{error}</Alert>}
 
       {previewUrl && (
-        <div className="overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50">
+        <Card padding="none" className="overflow-hidden bg-zinc-50">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={previewUrl}
             alt={image.title || image.originalFilename}
             className="mx-auto max-h-[60vh] w-auto"
           />
-        </div>
+        </Card>
       )}
 
-      <dl className="grid grid-cols-1 gap-3 rounded-lg border border-zinc-200 bg-white p-4 text-sm sm:grid-cols-2">
-        <Row label="タイトル" value={image.title || '—'} />
-        <Row label="ファイル名" value={image.originalFilename} />
-        <Row label="形式" value={image.mimeType} />
-        <Row label="サイズ" value={formatSize(image.sizeBytes)} />
-        <Row
-          label="アップロード日時"
-          value={new Date(image.createdAt).toLocaleString('ja-JP')}
-        />
-        <Row
-          label="更新日時"
-          value={new Date(image.updatedAt).toLocaleString('ja-JP')}
-        />
-        <Row
-          label="説明"
-          value={image.description || '—'}
-          className="sm:col-span-2"
-        />
-      </dl>
+      <Card padding="md">
+        <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+          <Row label="タイトル" value={image.title || '—'} />
+          <Row label="ファイル名" value={image.originalFilename} />
+          <Row label="形式" value={image.mimeType} />
+          <Row label="サイズ" value={formatSize(image.sizeBytes)} />
+          <Row
+            label="アップロード日時"
+            value={new Date(image.createdAt).toLocaleString('ja-JP')}
+          />
+          <Row
+            label="更新日時"
+            value={new Date(image.updatedAt).toLocaleString('ja-JP')}
+          />
+          <Row
+            label="説明"
+            value={image.description || '—'}
+            className="sm:col-span-2"
+          />
+        </dl>
+      </Card>
     </div>
   );
 }
