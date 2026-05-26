@@ -6,10 +6,13 @@
     "node": ">=20.0.0",
     "pnpm": ">=9.0.0"
   },
-  "scripts": {
-  },
-  "packageManager": "pnpm@10.33.0",
+  "scripts": {},
+  "packageManager": "pnpm@11.3.0",
   "pnpm": {
-    "onlyBuiltDependencies": ["@nestjs/core", "sharp", "unrs-resolver"]
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "sharp",
+      "unrs-resolver"
+    ]
   }
 }
