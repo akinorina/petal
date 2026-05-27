@@ -47,12 +47,8 @@ export function useImagesPage() {
   async function handleUpload(input: UploadInput) {
     await api.upload(input);
     setModal(null);
-    // 新規画像は配列末尾に追加されるため、最終ページへ遷移
-    const nextTotalPages = Math.max(
-      1,
-      Math.ceil((api.images.length + 1) / IMAGES_PAGE_SIZE),
-    );
-    setCurrentPage(nextTotalPages);
+    // 新規画像は一覧先頭に表示されるため、1 ページ目を表示
+    setCurrentPage(1);
   }
 
   function handlePageDragOver(e: React.DragEvent<HTMLDivElement>) {
