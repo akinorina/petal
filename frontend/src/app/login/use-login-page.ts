@@ -43,7 +43,7 @@ export function useLoginPage() {
         });
         setPassword('');
       } else {
-        router.push('/users');
+        router.push('/images');
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'ログインに失敗しました');
@@ -65,7 +65,7 @@ export function useLoginPage() {
     setIsLoading(true);
     try {
       await respondMfaChallenge(step.email, mfaCode, step.session);
-      router.push('/users');
+      router.push('/images');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'MFA 認証に失敗しました');
       setMfaCode('');
@@ -93,7 +93,7 @@ export function useLoginPage() {
     setIsLoading(true);
     try {
       await completeNewPassword(step.email, newPassword, step.session);
-      router.push('/users');
+      router.push('/images');
     } catch (err: unknown) {
       setError(
         err instanceof Error ? err.message : 'パスワード設定に失敗しました',
