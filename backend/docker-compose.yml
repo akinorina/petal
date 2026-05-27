@@ -24,6 +24,7 @@ services:
       SERVICES: s3
       DEBUG: 0
       S3_BUCKET: ${S3_BUCKET}
+      FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost:3001}
     ports:
       - "4566:4566"
     volumes:
