@@ -1,7 +1,7 @@
 'use client';
 
 import NextLink from 'next/link';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Alert } from '@/design-system/components/Alert';
 import { Button } from '@/design-system/components/Button';
 import { Card } from '@/design-system/components/Card';
@@ -128,9 +128,51 @@ function UploadModal({
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   function isAllowedMime(value: string): value is ImageMimeType {
     return (ALLOWED_IMAGE_MIME_TYPES as readonly string[]).includes(value);
+  }
+
+  function handleFiles(list: FileList | null) {
+    setError(null);
+    if (!list || list.length === 0) return;
+    const picked = list[0];
+    if (!isAllowedMime(picked.type)) {
+      setError(
+        `対応していないファイル形式です: ${picked.type || '不明'}（JPEG/PNG/GIF/WebP のみ）`,
+      );
+      return;
+    }
+    if (picked.size > MAX_IMAGE_SIZE_BYTES) {
+      setError(
+        `ファイルサイズが上限 (${formatSize(MAX_IMAGE_SIZE_BYTES)}) を超えています`,
+      );
+      return;
+    }
+    setFile(picked);
+  }
+
+  function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setIsDragOver(true);
+  }
+
+  function handleDragLeave(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+    setIsDragOver(false);
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setIsDragOver(false);
+    handleFiles(e.dataTransfer.files);
+  }
+
+  function openFileDialog() {
+    fileInputRef.current?.click();
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -163,6 +205,15 @@ function UploadModal({
     }
   }
 
+  const dropZoneClass = [
+    'flex flex-col items-center justify-center rounded-md border-2 border-dashed px-4 py-8 text-center transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400',
+    isDragOver
+      ? 'border-blue-400 bg-blue-50'
+      : file
+        ? 'border-zinc-400 bg-zinc-50'
+        : 'border-zinc-300 hover:border-zinc-400',
+  ].join(' ');
+
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <Dialog.Content>
@@ -172,19 +223,51 @@ function UploadModal({
         <form onSubmit={handleSubmit}>
           <Dialog.Body>
             <div className="space-y-4">
-              <FormField
-                label="ファイル"
-                isRequired
-                helperText={
-                  file ? `${file.name} ・ ${formatSize(file.size)}` : undefined
-                }
-              >
-                <input
-                  type="file"
-                  accept={ALLOWED_IMAGE_MIME_TYPES.join(',')}
-                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                  className="block w-full text-sm"
-                />
+              <FormField label="ファイル" isRequired>
+                <div
+                  role="button"
+                  tabIndex={0}
+                  aria-label="画像ファイルをドラッグ＆ドロップまたはクリックして選択"
+                  onClick={openFileDialog}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      openFileDialog();
+                    }
+                  }}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={dropZoneClass}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept={ALLOWED_IMAGE_MIME_TYPES.join(',')}
+                    onChange={(e) => handleFiles(e.target.files)}
+                    className="hidden"
+                  />
+                  {file ? (
+                    <>
+                      <p className="text-sm font-medium">{file.name}</p>
+                      <p className="mt-1 text-xs text-zinc-500">
+                        {formatSize(file.size)}
+                      </p>
+                      <p className="mt-2 text-xs text-zinc-400">
+                        クリックまたはドロップで別のファイルに差し替え
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm">
+                        ここに画像をドラッグ＆ドロップ
+                      </p>
+                      <p className="mt-1 text-xs text-zinc-500">
+                        またはクリックしてファイルを選択（JPEG/PNG/GIF/WebP）
+                      </p>
+                    </>
+                  )}
+                </div>
               </FormField>
               <FormField label="タイトル（任意）">
                 <Input

@@ -43,6 +43,7 @@
 | [docs/41_github-actions-cd.md](docs/41_github-actions-cd.md) | GitHub Actions CD ワークフロー設計（TSK-41：DB マイグレーション→Lambda コード更新） |
 | [docs/42_operational-jobs.md](docs/42_operational-jobs.md) | 運用ジョブ設計（TSK-42：週次 pg_dump → S3 バックアップ・週次 keep-alive） |
 | [docs/43_frontend-auth-refactor.md](docs/43_frontend-auth-refactor.md) | フロントエンド認証リファクタリング設計（TSK-43：`lib/cognito.ts` を `auth-session.ts` と `use-auth-api.ts` へ責務分割） |
+| [docs/44_image-upload-drag-drop.md](docs/44_image-upload-drag-drop.md) | 画像アップロード UI ドラッグ＆ドロップ対応 設計（PRJ-8：UploadModal にドロップゾーンを追加し既存ファイル選択と統合） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 
