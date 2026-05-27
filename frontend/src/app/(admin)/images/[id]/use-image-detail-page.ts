@@ -12,6 +12,7 @@ export function useImageDetailPage() {
 
   const api = useImageDetailApi(id);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   async function handleDownload() {
     try {
@@ -24,8 +25,15 @@ export function useImageDetailPage() {
     }
   }
 
-  async function handleDelete() {
-    if (!confirm('この画像を削除しますか？')) return;
+  function requestDelete() {
+    setIsConfirmingDelete(true);
+  }
+
+  function cancelDelete() {
+    setIsConfirmingDelete(false);
+  }
+
+  async function confirmDelete() {
     setIsDeleting(true);
     try {
       await api.remove();
@@ -33,6 +41,7 @@ export function useImageDetailPage() {
     } catch (e) {
       api.setError(e instanceof ApiError ? e.message : '削除に失敗しました');
       setIsDeleting(false);
+      setIsConfirmingDelete(false);
     }
   }
 
@@ -42,7 +51,10 @@ export function useImageDetailPage() {
     isLoading: api.isLoading,
     error: api.error,
     isDeleting,
+    isConfirmingDelete,
     handleDownload,
-    handleDelete,
+    requestDelete,
+    cancelDelete,
+    confirmDelete,
   };
 }
