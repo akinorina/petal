@@ -206,12 +206,12 @@ function UploadModal({
   }
 
   const dropZoneClass = [
-    'flex flex-col items-center justify-center rounded-md border-2 border-dashed px-4 py-8 text-center transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400',
+    'flex flex-col items-center justify-center rounded-md border-2 border-dashed px-4 py-8 text-center transition-colors',
     isDragOver
       ? 'border-blue-400 bg-blue-50'
       : file
         ? 'border-zinc-400 bg-zinc-50'
-        : 'border-zinc-300 hover:border-zinc-400',
+        : 'border-zinc-300',
   ].join(' ');
 
   return (
@@ -225,16 +225,6 @@ function UploadModal({
             <div className="space-y-4">
               <FormField label="ファイル" isRequired>
                 <div
-                  role="button"
-                  tabIndex={0}
-                  aria-label="画像ファイルをドラッグ＆ドロップまたはクリックして選択"
-                  onClick={openFileDialog}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      openFileDialog();
-                    }
-                  }}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
@@ -248,24 +238,40 @@ function UploadModal({
                     className="hidden"
                   />
                   {file ? (
-                    <>
+                    <div className="flex flex-col items-center gap-2">
                       <p className="text-sm font-medium">{file.name}</p>
-                      <p className="mt-1 text-xs text-zinc-500">
+                      <p className="text-xs text-zinc-500">
                         {formatSize(file.size)}
                       </p>
-                      <p className="mt-2 text-xs text-zinc-400">
-                        クリックまたはドロップで別のファイルに差し替え
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={openFileDialog}
+                      >
+                        ファイルを変更
+                      </Button>
+                      <p className="text-xs text-zinc-400">
+                        またはここに別の画像をドロップ
                       </p>
-                    </>
+                    </div>
                   ) : (
-                    <>
+                    <div className="flex flex-col items-center gap-3">
                       <p className="text-sm">
                         ここに画像をドラッグ＆ドロップ
                       </p>
-                      <p className="mt-1 text-xs text-zinc-500">
-                        またはクリックしてファイルを選択（JPEG/PNG/GIF/WebP）
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={openFileDialog}
+                      >
+                        ファイルを選択
+                      </Button>
+                      <p className="text-xs text-zinc-500">
+                        JPEG / PNG / GIF / WebP（10 MiB まで）
                       </p>
-                    </>
+                    </div>
                   )}
                 </div>
               </FormField>

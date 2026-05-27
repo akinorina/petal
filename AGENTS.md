@@ -44,6 +44,7 @@
 | [docs/42_operational-jobs.md](docs/42_operational-jobs.md) | 運用ジョブ設計（TSK-42：週次 pg_dump → S3 バックアップ・週次 keep-alive） |
 | [docs/43_frontend-auth-refactor.md](docs/43_frontend-auth-refactor.md) | フロントエンド認証リファクタリング設計（TSK-43：`lib/cognito.ts` を `auth-session.ts` と `use-auth-api.ts` へ責務分割） |
 | [docs/44_image-upload-drag-drop.md](docs/44_image-upload-drag-drop.md) | 画像アップロード UI ドラッグ＆ドロップ対応 設計（PRJ-8：UploadModal にドロップゾーンを追加し既存ファイル選択と統合） |
+| [docs/45_image-upload-file-select-button.md](docs/45_image-upload-file-select-button.md) | 画像アップロード ファイル選択ボタン整備 設計（PRJ-8：D&D ゾーン内に design-system Button を内包し意味的に分離） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 
