@@ -1,36 +1,54 @@
 'use client';
 
 import NextLink from 'next/link';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert } from '@/design-system/components/Alert';
 import { Button } from '@/design-system/components/Button';
-import { Card } from '@/design-system/components/Card';
 import { Dialog } from '@/design-system/components/Dialog';
 import { EmptyState } from '@/design-system/components/EmptyState';
 import { FormField } from '@/design-system/components/FormField';
 import { Input, Textarea } from '@/design-system/components/Input';
+import { Pagination } from '@/design-system/components/Pagination';
 import { Text } from '@/design-system/components/Text';
+import { ApiError, imageApi } from '@/lib/api';
 import {
   ALLOWED_IMAGE_MIME_TYPES,
-  type ImageMimeType,
-  MAX_IMAGE_SIZE_BYTES,
+  formatImageSize,
+  validateImageFile,
 } from '@/lib/image-constants';
 import type { UploadInput } from '@/lib/api-hooks/use-images-api';
+import type { Schemas } from '@/lib/openapi/client';
 import { useImagesPage } from './use-images-page';
+
+type ImageItem = Schemas['ImageResponseDto'];
 
 export default function ImagesPage() {
   const {
     images,
+    pagedImages,
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    pageSize,
     isLoading,
     error,
     modal,
     setModal,
     handleDelete,
     handleUpload,
+    isPageDragOver,
+    handlePageDragOver,
+    handlePageDragLeave,
+    handlePageDrop,
   } = useImagesPage();
 
   return (
-    <div>
+    <div
+      onDragOver={handlePageDragOver}
+      onDragLeave={handlePageDragLeave}
+      onDrop={handlePageDrop}
+      className="relative"
+    >
       <div className="mb-6 flex items-center justify-between">
         <Text as="h1" variant="heading-md">画像管理</Text>
         <Button onClick={() => setModal({ type: 'upload' })}>
@@ -49,7 +67,7 @@ export default function ImagesPage() {
       ) : images.length === 0 ? (
         <EmptyState
           title="画像はまだありません"
-          description="右上の「画像をアップロード」から最初の画像を登録しましょう。"
+          description="「画像をアップロード」、またはこのページに画像をドラッグ＆ドロップで登録できます。"
           primaryAction={
             <Button onClick={() => setModal({ type: 'upload' })}>
               画像をアップロード
@@ -57,47 +75,41 @@ export default function ImagesPage() {
           }
         />
       ) : (
-        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {images.map((image) => (
-            <li key={image.id}>
-              <Card padding="none">
-                <Card.Body className="border-b border-zinc-100 p-4">
-                  <NextLink
-                    href={`/images/${image.id}`}
-                    className="block text-sm font-medium hover:underline"
-                  >
-                    {image.title || image.originalFilename}
-                  </NextLink>
-                  <p className="mt-1 truncate text-xs text-zinc-500">
-                    {image.originalFilename}
-                  </p>
-                  <p className="mt-1 text-xs text-zinc-400">
-                    {formatSize(image.sizeBytes)} ・{' '}
-                    {new Date(image.createdAt).toLocaleString('ja-JP')}
-                  </p>
-                </Card.Body>
-                <Card.Footer className="flex justify-end gap-3 px-4 py-2 text-sm">
-                  <NextLink
-                    href={`/images/${image.id}`}
-                    className="ds-link ds-link--inline"
-                  >
-                    詳細
-                  </NextLink>
-                  <button
-                    onClick={() => setModal({ type: 'delete', image })}
-                    className="ds-link ds-link--inline text-red-500"
-                  >
-                    削除
-                  </button>
-                </Card.Footer>
-              </Card>
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-3">
+            {pagedImages.map((image) => (
+              <li key={image.id}>
+                <ImageThumbnail
+                  image={image}
+                  onDelete={() => setModal({ type: 'delete', image })}
+                />
+              </li>
+            ))}
+          </ul>
+
+          {images.length > pageSize && (
+            <div className="mt-6 flex justify-center">
+              <Pagination
+                page={currentPage}
+                totalPages={totalPages}
+                onChange={setCurrentPage}
+              />
+            </div>
+          )}
+        </>
+      )}
+
+      {isPageDragOver && (
+        <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-blue-500/10 backdrop-blur-sm">
+          <div className="rounded-lg border-2 border-dashed border-blue-400 bg-white/90 px-6 py-4 text-sm font-medium text-blue-700 shadow">
+            ここに画像をドロップしてアップロード
+          </div>
+        </div>
       )}
 
       {modal?.type === 'upload' && (
         <UploadModal
+          initialFile={modal.initialFile}
           onClose={() => setModal(null)}
           onUpload={handleUpload}
         />
@@ -114,16 +126,109 @@ export default function ImagesPage() {
   );
 }
 
+// ---- ImageThumbnail ----
+
+function ImageThumbnail({
+  image,
+  onDelete,
+}: {
+  image: ImageItem;
+  onDelete: () => void;
+}) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    setUrl(null);
+    setLoadError(false);
+    imageApi
+      .getDownloadUrl(image.id)
+      .then((res) => {
+        if (!cancelled) setUrl(res.url);
+      })
+      .catch(() => {
+        if (!cancelled) setLoadError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [image.id, reloadKey]);
+
+  const label = image.title || image.originalFilename;
+
+  return (
+    <div className="group relative overflow-hidden rounded-md border border-zinc-200 bg-white">
+      <NextLink
+        href={`/images/${image.id}`}
+        className="block"
+        aria-label={`${label} の詳細を開く`}
+      >
+        <div className="relative aspect-square bg-zinc-100">
+          {loadError ? (
+            <div className="flex h-full flex-col items-center justify-center gap-2 text-xs text-zinc-500">
+              <span>読み込みに失敗しました</span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setReloadKey((k) => k + 1);
+                }}
+                className="ds-link ds-link--inline"
+              >
+                再読込
+              </button>
+            </div>
+          ) : url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={url}
+              alt={label}
+              className="h-full w-full object-cover"
+              onError={() => setLoadError(true)}
+            />
+          ) : (
+            <div className="h-full w-full animate-pulse bg-zinc-200" />
+          )}
+        </div>
+        <div className="border-t border-zinc-100 px-3 py-2">
+          <p className="line-clamp-2 text-sm font-medium" title={label}>
+            {label}
+          </p>
+          <p className="mt-1 text-xs text-zinc-400">
+            {formatImageSize(image.sizeBytes)}
+          </p>
+        </div>
+      </NextLink>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onDelete();
+        }}
+        aria-label={`${label} を削除`}
+        className="absolute right-2 top-2 rounded-md bg-white/90 px-2 py-1 text-xs text-red-600 opacity-0 shadow transition-opacity hover:bg-white group-hover:opacity-100 focus:opacity-100"
+      >
+        削除
+      </button>
+    </div>
+  );
+}
+
 // ---- UploadModal ----
 
 function UploadModal({
+  initialFile,
   onClose,
   onUpload,
 }: {
+  initialFile?: File;
   onClose: () => void;
   onUpload: (input: UploadInput) => Promise<void>;
 }) {
-  const [file, setFile] = useState<File | null>(null);
+  const [file, setFile] = useState<File | null>(initialFile ?? null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -131,27 +236,15 @@ function UploadModal({
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  function isAllowedMime(value: string): value is ImageMimeType {
-    return (ALLOWED_IMAGE_MIME_TYPES as readonly string[]).includes(value);
-  }
-
   function handleFiles(list: FileList | null) {
     setError(null);
     if (!list || list.length === 0) return;
-    const picked = list[0];
-    if (!isAllowedMime(picked.type)) {
-      setError(
-        `対応していないファイル形式です: ${picked.type || '不明'}（JPEG/PNG/GIF/WebP のみ）`,
-      );
+    const result = validateImageFile(list[0]);
+    if (!result.ok) {
+      setError(result.message);
       return;
     }
-    if (picked.size > MAX_IMAGE_SIZE_BYTES) {
-      setError(
-        `ファイルサイズが上限 (${formatSize(MAX_IMAGE_SIZE_BYTES)}) を超えています`,
-      );
-      return;
-    }
-    setFile(picked);
+    setFile(result.file);
   }
 
   function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
@@ -182,24 +275,28 @@ function UploadModal({
       setError('ファイルを選択してください');
       return;
     }
-    if (!isAllowedMime(file.type)) {
-      setError(
-        `対応していないファイル形式です: ${file.type || '不明'}（JPEG/PNG/GIF/WebP のみ）`,
-      );
-      return;
-    }
-    if (file.size > MAX_IMAGE_SIZE_BYTES) {
-      setError(
-        `ファイルサイズが上限 (${formatSize(MAX_IMAGE_SIZE_BYTES)}) を超えています`,
-      );
+    const result = validateImageFile(file);
+    if (!result.ok) {
+      setError(result.message);
       return;
     }
 
     setIsSaving(true);
     try {
-      await onUpload({ file, mimeType: file.type, title, description });
+      await onUpload({
+        file: result.file,
+        mimeType: result.mimeType,
+        title,
+        description,
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'アップロードに失敗しました');
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : 'アップロードに失敗しました',
+      );
     } finally {
       setIsSaving(false);
     }
@@ -241,7 +338,7 @@ function UploadModal({
                     <div className="flex flex-col items-center gap-2">
                       <p className="text-sm font-medium">{file.name}</p>
                       <p className="text-xs text-zinc-500">
-                        {formatSize(file.size)}
+                        {formatImageSize(file.size)}
                       </p>
                       <Button
                         type="button"
@@ -338,10 +435,4 @@ function ConfirmModal({
       </Dialog.Content>
     </Dialog>
   );
-}
-
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
