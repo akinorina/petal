@@ -1,5 +1,8 @@
 import type { Schemas } from './openapi/client';
 
+export const MAX_UPLOAD_LONG_EDGE = 2048;
+export const UPLOAD_JPEG_QUALITY = 0.85;
+
 export const ALLOWED_IMAGE_MIME_TYPES = [
   'image/jpeg',
   'image/png',
