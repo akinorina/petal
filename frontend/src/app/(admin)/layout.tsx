@@ -29,11 +29,11 @@ export default function AdminLayout({
           <div className="flex items-center gap-6">
             <span className="text-sm font-semibold">Petal</span>
             <nav className="flex items-center gap-4 text-sm">
-              <NavLink href="/users" active={pathname.startsWith('/users')}>
-                ユーザー
-              </NavLink>
               <NavLink href="/images" active={pathname.startsWith('/images')}>
                 画像
+              </NavLink>
+              <NavLink href="/users" active={pathname.startsWith('/users')}>
+                ユーザー
               </NavLink>
               <NavLink
                 href="/audit-logs"
