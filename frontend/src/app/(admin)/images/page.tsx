@@ -16,6 +16,7 @@ import {
   formatImageSize,
   validateImageFile,
 } from '@/lib/image-constants';
+import { processImageFile } from '@/lib/image-process';
 import type { UploadInput } from '@/lib/api-hooks/use-images-api';
 import type { Schemas } from '@/lib/openapi/client';
 import { useImagesPage } from './use-images-page';
@@ -234,17 +235,32 @@ function UploadModal({
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  function handleFiles(list: FileList | null) {
+  async function handleFilesWithProcess(list: FileList | null) {
     setError(null);
     if (!list || list.length === 0) return;
-    const result = validateImageFile(list[0]);
-    if (!result.ok) {
-      setError(result.message);
+    const pre = validateImageFile(list[0]);
+    if (!pre.ok) {
+      setError(pre.message);
       return;
     }
-    setFile(result.file);
+    setIsProcessing(true);
+    try {
+      const processed = await processImageFile(pre.file);
+      const post = validateImageFile(processed);
+      if (!post.ok) {
+        setError(post.message);
+        return;
+      }
+      setFile(post.file);
+    } catch {
+      setError('画像の処理に失敗しました');
+    } finally {
+      setIsProcessing(false);
+    }
   }
 
   function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
@@ -261,11 +277,15 @@ function UploadModal({
   function handleDrop(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault();
     setIsDragOver(false);
-    handleFiles(e.dataTransfer.files);
+    void handleFilesWithProcess(e.dataTransfer.files);
   }
 
   function openFileDialog() {
     fileInputRef.current?.click();
+  }
+
+  function openCameraDialog() {
+    cameraInputRef.current?.click();
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -331,7 +351,15 @@ function UploadModal({
                     ref={fileInputRef}
                     type="file"
                     accept={ALLOWED_IMAGE_MIME_TYPES.join(',')}
-                    onChange={(e) => handleFiles(e.target.files)}
+                    onChange={(e) => void handleFilesWithProcess(e.target.files)}
+                    className="hidden"
+                  />
+                  <input
+                    ref={cameraInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={(e) => void handleFilesWithProcess(e.target.files)}
                     className="hidden"
                   />
                   {file ? (
@@ -340,14 +368,26 @@ function UploadModal({
                       <p className="text-xs text-zinc-500">
                         {formatImageSize(file.size)}
                       </p>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={openFileDialog}
-                      >
-                        ファイルを変更
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={openFileDialog}
+                          isLoading={isProcessing}
+                        >
+                          ファイルを変更
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={openCameraDialog}
+                          isLoading={isProcessing}
+                        >
+                          カメラで再撮影
+                        </Button>
+                      </div>
                       <p className="text-xs text-zinc-400">
                         またはここに別の画像をドロップ
                       </p>
@@ -357,14 +397,26 @@ function UploadModal({
                       <p className="text-sm">
                         ここに画像をドラッグ＆ドロップ
                       </p>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={openFileDialog}
-                      >
-                        ファイルを選択
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={openFileDialog}
+                          isLoading={isProcessing}
+                        >
+                          ファイルを選択
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={openCameraDialog}
+                          isLoading={isProcessing}
+                        >
+                          カメラで撮影
+                        </Button>
+                      </div>
                       <p className="text-xs text-zinc-500">
                         JPEG / PNG / GIF / WebP（10 MiB まで）
                       </p>

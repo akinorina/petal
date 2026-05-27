@@ -52,7 +52,7 @@ DB スキーマ・API 仕様・トランザクション境界に変更なし（[
 
 ファイル未選択状態の D&D ゾーン内に「ファイルを選択」と「カメラで撮影」を横並びに配置する。
 
-```
+```text
 [ ここに画像をドラッグ＆ドロップ ]
 [ ファイルを選択 ]  [ カメラで撮影 ]
 JPEG / PNG / GIF / WebP（10 MiB まで）
@@ -64,7 +64,7 @@ JPEG / PNG / GIF / WebP（10 MiB まで）
 
 新規ファイル `frontend/src/lib/image-process.ts` を作成する。
 
-```
+```ts
 processImageFile(file: File): Promise<File>
 ```
 
