@@ -129,7 +129,8 @@ AI は指示を受けたら **`notion-update-page` で Notion タスクのステ
 1. `git push -u origin <branch>` でリモートへ push
 2. `gh pr create --base main --title "..." --body "$(cat <<'EOF' ... EOF)"` で PR 作成
 3. PR にラベル `author: ai` を付与（運用上の Reviewee マーカー）
-4. PR URL をユーザーへ報告
+4. **`notion-update-page` で Notion タスクページの `PR` プロパティ（URL 型）に PR URL を書き込む**
+5. PR URL をユーザーへ報告
 
 PR タイトル: `<type>(tsk-N): <要約>`（例: `feat(tsk-9): メールアドレス変更フローを実装`）。日本語可。
 
