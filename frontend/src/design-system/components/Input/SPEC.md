@@ -10,7 +10,7 @@
 
 ## Anatomy
 
-```
+```text
 [prefix?]  [input element]  [suffix?]
 ```
 

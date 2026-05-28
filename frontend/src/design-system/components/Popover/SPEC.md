@@ -14,7 +14,7 @@
 
 ## Anatomy
 
-```
+```text
 <Popover>
   <Popover.Trigger>
     <Button>開く</Button>

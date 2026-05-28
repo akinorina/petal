@@ -9,7 +9,7 @@
 
 ## Anatomy
 
-```
+```text
 RadioGroup
   ├── legend (label)
   └── items

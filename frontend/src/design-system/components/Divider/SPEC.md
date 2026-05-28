@@ -14,7 +14,7 @@ vertical の場合、親が flex で `align-items: stretch` だと自動で高�
 
 ## Anatomy
 
-```
+```text
 horizontal:        ──────────────
 horizontal+label:  ───── ラベル ─────
 vertical:          │

@@ -64,6 +64,7 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(function Radio(
   return (
     <label className={wrapClass} htmlFor={id}>
       <span className="ds-radio__control">
+        {/* eslint-disable-next-line jsx-a11y/role-supports-aria-props */}
         <input
           ref={ref}
           id={id}

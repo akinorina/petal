@@ -15,7 +15,7 @@ API は Dialog と意図的に揃えてある。
 
 ## Anatomy
 
-```
+```text
 <Sheet side="right" size="md">
   <Sheet.Trigger><Button>...</Button></Sheet.Trigger>
   <Sheet.Content>

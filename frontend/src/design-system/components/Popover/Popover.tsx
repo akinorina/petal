@@ -136,9 +136,9 @@ export interface PopoverTriggerProps {
 const Trigger = ({ children }: PopoverTriggerProps) => {
   const ctx = usePopoverContext();
   const child = isValidElement(children) ? children : null;
-  if (!child) return null;
-  const childRef = (child as unknown as { ref?: Ref<HTMLElement> }).ref;
+  const childRef = (child as unknown as { ref?: Ref<HTMLElement> } | null)?.ref;
   const mergedRef = useMergeRefs([ctx.refs.setReference, childRef ?? null]);
+  if (!child) return null;
 
   return cloneElement(child as ReactElement<Record<string, unknown>>, {
     ref: mergedRef,
@@ -161,9 +161,9 @@ const Content = forwardRef<HTMLDivElement, PopoverContentProps>(function Popover
   ref,
 ) {
   const ctx = usePopoverContext();
+  const mergedRef = useMergeRefs([ctx.refs.setFloating, ref]);
   if (!ctx.open) return null;
 
-  const mergedRef = useMergeRefs([ctx.refs.setFloating, ref]);
   const classes = ['ds-popover', className].filter(Boolean).join(' ');
 
   const inner = (
@@ -194,6 +194,7 @@ const PopoverArrow = () => {
   return (
     <svg
       ref={(el) => {
+        // eslint-disable-next-line react-hooks/immutability
         ctx.arrowRef.current = el;
       }}
       className="ds-popover__arrow"

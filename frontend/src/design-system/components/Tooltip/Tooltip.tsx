@@ -81,10 +81,9 @@ export const Tooltip = ({
   });
 
   const child = isValidElement(children) ? children : null;
-  if (!child) return children as unknown as ReactElement;
-
-  const childRef = (child as unknown as { ref?: Ref<HTMLElement> }).ref;
+  const childRef = (child as unknown as { ref?: Ref<HTMLElement> } | null)?.ref;
   const mergedRef = useMergeRefs([data.refs.setReference, childRef ?? null]);
+  if (!child) return children as unknown as ReactElement;
 
   const triggerEl = cloneElement(child as ReactElement<Record<string, unknown>>, {
     ref: mergedRef,
@@ -101,8 +100,10 @@ export const Tooltip = ({
       {!disabled && isMounted && (
         <FloatingPortal>
           <div
+            // eslint-disable-next-line react-hooks/refs
             ref={data.refs.setFloating}
             className="ds-tooltip"
+            // eslint-disable-next-line react-hooks/refs
             style={{ ...data.floatingStyles, ...transitionStyles }}
             {...interactions.getFloatingProps()}
           >
@@ -110,6 +111,7 @@ export const Tooltip = ({
             {hasArrow && (
               <svg
                 ref={(el) => {
+                  // eslint-disable-next-line react-hooks/immutability
                   arrowRef.current = el;
                 }}
                 className="ds-tooltip__arrow"

@@ -14,7 +14,7 @@
 
 ## Anatomy
 
-```
+```text
 [icon]  [title]               [action]  [×]
         [body (children)]
 ```

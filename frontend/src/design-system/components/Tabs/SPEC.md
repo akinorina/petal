@@ -4,7 +4,7 @@
 
 ## Anatomy
 
-```
+```text
 <Tabs defaultValue="a">
   <Tabs.List ariaLabel="...">
     <Tabs.Tab value="a">A</Tabs.Tab>

@@ -62,6 +62,7 @@ export const Avatar = ({
   return (
     <span className={classes} {...rest}>
       {showImage ? (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           className="ds-avatar__img"
           src={src}

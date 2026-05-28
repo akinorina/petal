@@ -4,7 +4,7 @@
 
 ## Anatomy
 
-```
+```text
 [start: logo/title]    [center: nav/search]    [end: actions/avatar]
 ```
 

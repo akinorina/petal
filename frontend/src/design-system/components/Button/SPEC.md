@@ -8,7 +8,7 @@
 
 ## Anatomy
 
-```
+```text
 [leftIcon?] [label] [rightIcon?]
 ```
 

@@ -11,7 +11,7 @@
 
 ## Anatomy
 
-```
+```text
 [illustration: icon または画像]
 [title]
 [description]

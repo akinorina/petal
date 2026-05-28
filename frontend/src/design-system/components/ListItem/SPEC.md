@@ -10,7 +10,7 @@
 
 ## Anatomy
 
-```
+```text
 [leading: icon / avatar / checkbox]  [content: title + subtitle]  [trailing: chevron / badge / action]
 ```
 

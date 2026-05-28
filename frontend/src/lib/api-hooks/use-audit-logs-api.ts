@@ -29,6 +29,7 @@ export function useAuditLogsApi(limit: number, offset: number) {
   }, [limit, offset]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void reload();
   }, [reload]);
 

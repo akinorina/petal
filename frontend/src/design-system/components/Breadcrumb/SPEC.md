@@ -4,7 +4,7 @@
 
 ## Anatomy
 
-```
+```text
 [ホーム] › [プロジェクト] › [design-system]
                                 ↑ 最後は aria-current="page"
 ```

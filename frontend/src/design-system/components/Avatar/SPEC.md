@@ -10,7 +10,7 @@
 
 ## Anatomy
 
-```
+```text
 <Avatar>          → 単独表示
 <AvatarGroup>     → 複数を重ね合わせ、残りは +N
   <Avatar />

@@ -4,7 +4,7 @@
 
 ## Anatomy
 
-```
+```text
 <SideNav header={...} footer={...}>
   <SideNav.Section title="メイン">
     <SideNav.Item icon={...} label="..." isActive />

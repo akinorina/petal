@@ -10,7 +10,7 @@
 
 ## Anatomy
 
-```
+```text
 <Skeleton shape="line"   width="60%" />
 <Skeleton shape="circle" size={40} />
 <Skeleton shape="rect"   height={120} />

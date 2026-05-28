@@ -100,9 +100,9 @@ export const Dialog = ({
 const Trigger = ({ children }: { children: ReactElement }) => {
   const ctx = useDialogContext();
   const child = isValidElement(children) ? children : null;
-  if (!child) return null;
-  const childRef = (child as unknown as { ref?: Ref<HTMLElement> }).ref;
+  const childRef = (child as unknown as { ref?: Ref<HTMLElement> } | null)?.ref;
   const mergedRef = useMergeRefs([ctx.refs.setReference, childRef ?? null]);
+  if (!child) return null;
   return cloneElement(child as ReactElement<Record<string, unknown>>, {
     ref: mergedRef,
     ...ctx.getReferenceProps(child.props as Record<string, unknown>),

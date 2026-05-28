@@ -10,7 +10,7 @@ Label + 入力要素 + HelperText + ErrorMessage の標準ラッパー。
 
 ## Anatomy
 
-```
+```text
 [label (required mark?)]
 [input element (child)]
 [helper-text]   ← errorMessage が無いときのみ

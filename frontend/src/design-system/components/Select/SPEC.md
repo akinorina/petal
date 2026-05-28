@@ -5,17 +5,19 @@
 ## 実装方針（決定）
 
 **カスタム版**を採用。理由:
+
 - デザイン一貫性が最優先（OS ピッカーは見た目が制御できない）
 - アイコン / description / 任意レンダリングを許容したい
 - Phase 3 で Popover を実装済み、Floating UI 基盤を流用できる
 
 トレードオフ:
+
 - モバイルでは OS ピッカーより操作性は劣る（要許容）
 - 大量項目（数百〜）には Combobox（Phase 5）を別途用意する
 
 ## Anatomy
 
-```
+```text
 [trigger button: value/placeholder + chevron]
         ↓ (click / Enter / Space / ArrowDown)
 [menu (Popover): list of options]

@@ -10,7 +10,7 @@
 
 ## Anatomy
 
-```
+```text
 [control (box + check icon)]  [label]
                               [description?]
 ```

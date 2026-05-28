@@ -2,7 +2,6 @@ import {
   forwardRef,
   useCallback,
   useEffect,
-  useId,
   useMemo,
   useRef,
   useState,
@@ -180,6 +179,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps<string>>(functio
     <>
       {/* Native hidden input for form submission */}
       {name && <input type="hidden" name={name} value={value ?? ''} required={required} />}
+      {/* eslint-disable-next-line jsx-a11y/role-supports-aria-props */}
       <button
         type="button"
         ref={(node) => {
@@ -221,10 +221,13 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps<string>>(functio
 
       {open && (
         <FloatingPortal>
+          {/* eslint-disable-next-line react-hooks/refs */}
           <FloatingFocusManager context={data.context} modal={false}>
             <ul
+              // eslint-disable-next-line react-hooks/refs
               ref={data.refs.setFloating}
               className="ds-select__menu"
+              // eslint-disable-next-line react-hooks/refs
               style={data.floatingStyles}
               {...interactions.getFloatingProps()}
             >

@@ -14,7 +14,7 @@ hover / focus 時に短い補助説明を表示する Overlay。**インタラ�
 
 ## Anatomy
 
-```
+```text
 <Tooltip content="...">
   <Button>...</Button>  ← 単一要素
 </Tooltip>

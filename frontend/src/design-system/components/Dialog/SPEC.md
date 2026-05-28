@@ -13,7 +13,7 @@
 
 ## Anatomy
 
-```
+```text
 <Dialog>
   <Dialog.Trigger><Button>...</Button></Dialog.Trigger>
   <Dialog.Content>

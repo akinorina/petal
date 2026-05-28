@@ -11,7 +11,7 @@
 
 ## Anatomy
 
-```
+```text
 <Card>
   <Card.Header>...</Card.Header>
   <Card.Body>...</Card.Body>

@@ -19,7 +19,7 @@ ON / OFF を **即時切り替え**するためのトグル。設定画面に最
 
 ## Anatomy
 
-```
+```text
 labelPosition="right" (default):
   [track + thumb]  [label]
                    [description?]
