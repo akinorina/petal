@@ -178,9 +178,9 @@ UA で iOS 判定、かつスタンドアロン未起動、かつ localStorage �
 - 既存の `(admin)` 認証ガード等、業務 UI には介入しない。バナー / モーダルは認証状態に
   関わらず表示する（インストール導線は誰でも見せて良い）。
 - backend / migrations / `.env.example` の変更なし。
-- design-system: `Button` 既存コンポーネントを再利用。Modal が design-system に未整備なら、
-  本コンポーネント内でローカルに `<div role="dialog" aria-modal="true">` を組む（範囲超過を
-  避けるため共通化はしない）。
+- design-system: `Button` / `Dialog` 既存コンポーネントを再利用する。iOS 案内モーダルは
+  `Dialog` の compound API（`Dialog.Content` / `Header` / `Title` / `Body` / `Footer`）を
+  controlled mode（`open` / `onOpenChange`）で使用する。
 
 ## 完了条件
 
