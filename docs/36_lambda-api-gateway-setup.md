@@ -84,7 +84,7 @@ async function bootstrap(): Promise<Handler> {
   const expressApp = express();
   const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp));
   app.enableCors({
-    origin: process.env.CORS_ORIGIN ?? '*',
+    origin: process.env.CORS_ORIGINS ?? '*',
     credentials: true,
   });
   await app.init();
@@ -124,7 +124,7 @@ provider:
     COGNITO_CLIENT_SECRET: ${env:COGNITO_CLIENT_SECRET}
     S3_BUCKET: ${env:S3_BUCKET}
     AWS_REGION_APP: ${env:AWS_REGION, 'ap-northeast-1'}
-    CORS_ORIGIN: ${env:CORS_ORIGIN}
+    CORS_ORIGINS: ${env:CORS_ORIGINS}
     SKIP_AUTH: ${env:SKIP_AUTH, 'false'}
   iam:
     role:
@@ -187,7 +187,7 @@ functions:
 | `COGNITO_CLIENT_ID` | 本番 Cognito App Client ID |
 | `COGNITO_CLIENT_SECRET` | 本番 Cognito App Client Secret |
 | `S3_BUCKET` | 本番 S3 バケット名（TSK-39 で作成） |
-| `CORS_ORIGIN` | 本番フロントエンド URL（TSK-37 完了後に設定） |
+| `CORS_ORIGINS` | 本番フロントエンド URL（カンマ区切りで複数指定可。TSK-37 完了後に設定） |
 | `SKIP_AUTH` | `false` |
 
 > Lambda 実行ロールに IAM 権限が付与されるため `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` は Lambda 環境では不要。

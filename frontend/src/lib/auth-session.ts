@@ -1,4 +1,6 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3000';
+import { resolveApiBaseUrl } from './api-base-url';
+
+const BASE_URL = resolveApiBaseUrl();
 
 const ACCESS_TOKEN_KEY = 'petal_access_token';
 const REFRESH_TOKEN_KEY = 'petal_refresh_token';

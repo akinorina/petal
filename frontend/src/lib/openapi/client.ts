@@ -1,8 +1,9 @@
 import createClient, { type Middleware } from 'openapi-fetch';
+import { resolveApiBaseUrl } from '../api-base-url';
 import { getAccessToken, refreshAccessToken } from '../auth-session';
 import type { components, paths } from './schema';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3000';
+const BASE_URL = resolveApiBaseUrl();
 
 const RETRY_HEADER = 'X-Petal-Retry';
 

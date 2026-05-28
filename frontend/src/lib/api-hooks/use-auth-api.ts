@@ -1,13 +1,14 @@
 'use client';
 
 import { useMemo } from 'react';
+import { resolveApiBaseUrl } from '@/lib/api-base-url';
 import {
   clearSession,
   getStoredAccessToken,
   persistSession,
 } from '@/lib/auth-session';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3000';
+const BASE_URL = resolveApiBaseUrl();
 
 type AuthenticatedResponse = {
   status: 'AUTHENTICATED';

@@ -5,8 +5,12 @@ import { buildOpenApiConfig } from './openapi.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const origins = (process.env.CORS_ORIGINS ?? 'http://localhost:3001')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
   app.enableCors({
-    origin: process.env.CORS_ORIGIN ?? 'http://localhost:3001',
+    origin: origins,
     credentials: true,
   });
 

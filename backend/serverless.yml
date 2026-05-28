@@ -17,7 +17,7 @@ provider:
     COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
     COGNITO_CLIENT_SECRET: ${env:COGNITO_CLIENT_SECRET}
     S3_BUCKET: ${env:S3_BUCKET}
-    CORS_ORIGIN: ${env:CORS_ORIGIN}
+    CORS_ORIGINS: ${env:CORS_ORIGINS}
     SKIP_AUTH: ${env:SKIP_AUTH, 'false'}
   iam:
     role:
