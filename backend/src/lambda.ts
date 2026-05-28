@@ -13,8 +13,16 @@ async function bootstrap(): Promise<Handler> {
     AppModule,
     new ExpressAdapter(expressApp),
   );
+  const corsOrigins = process.env.CORS_ORIGINS ?? '*';
+  const origins =
+    corsOrigins === '*'
+      ? '*'
+      : corsOrigins
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
   nestApp.enableCors({
-    origin: process.env.CORS_ORIGIN ?? '*',
+    origin: origins,
     credentials: true,
   });
   await nestApp.init();

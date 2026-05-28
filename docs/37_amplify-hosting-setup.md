@@ -109,7 +109,7 @@ Amplify Console の「アプリの設定」→「環境変数」で §4.3 の変
 
 ### 5.3 CORS 設定（バックエンド側）
 
-Amplify の URL（`https://xxxx.amplifyapp.com`）を `backend/.envs/.env.production` の `CORS_ORIGIN` に設定し、`cd backend && pnpm deploy` で Lambda を再デプロイする。
+Amplify の URL（`https://xxxx.amplifyapp.com`）を `backend/.envs/.env.production` の `CORS_ORIGINS` に設定し、`cd backend && pnpm deploy` で Lambda を再デプロイする。
 
 ### 5.4 動作確認
 

@@ -108,7 +108,7 @@ Amplify が `main` ブランチへの push を検知して自動ビルド・デ�
 ### 3.3 デプロイ後の URL
 
 Amplify が払い出すホスト名（例: `https://main.xxxxxxxxxx.amplifyapp.com`）が DEV 環境の URL。
-バックエンドの `CORS_ORIGIN` にこの URL を設定する（[../backend/README.dev.md](../backend/README.dev.md) §2.1）。
+バックエンドの `CORS_ORIGINS` にこの URL を設定する（[../backend/README.dev.md](../backend/README.dev.md) §2.1）。
 
 ## 4. 動作確認
 
@@ -147,7 +147,7 @@ DEV 環境を削除する場合：
 | ---- | -------------- |
 | ビルドが `pnpm: command not found` で失敗 | `amplify.yml` の preBuild に `corepack enable` を入れる（§1.3 参照） |
 | `pnpm install` が遅い / 失敗する | `pnpm install --frozen-lockfile` を使う。Node バージョンが想定と違う場合は Amplify Console → 「ビルド設定」→ Live package updates で Node を指定 |
-| デプロイ後に API 呼び出しが CORS で失敗 | バックエンドの `CORS_ORIGIN` が Amplify の URL と一致していない。バックエンドを `pnpm deploy:dev` で再デプロイ |
+| デプロイ後に API 呼び出しが CORS で失敗 | バックエンドの `CORS_ORIGINS` が Amplify の URL と一致していない。バックエンドを `pnpm deploy:dev` で再デプロイ |
 | 環境変数を変えたのに反映されない | `NEXT_PUBLIC_*` はビルド時埋め込み。Amplify Console から再デプロイが必要 |
 | ログインできない / 401 が返る | バックエンド側 Cognito 設定（`COGNITO_*`）の不整合。バックエンドの CloudWatch Logs で詳細を確認 |
 | SSR が動かず静的ページとして配信される | Amplify Console の「ホスティングタイプ」が SSR (Compute) になっているか確認 |

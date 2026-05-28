@@ -228,7 +228,7 @@ cp .envs/.env.dev.example .envs/.env.dev
 | `DATABASE_URL_DIRECT` | Neon の Direct 接続文字列（マイグレーション用） |
 | `COGNITO_REGION` / `COGNITO_USER_POOL_ID` / `COGNITO_CLIENT_ID` / `COGNITO_CLIENT_SECRET` | Cognito（DEV） |
 | `SKIP_AUTH` / `SKIP_AUTH_USER_ID` | DEV では `SKIP_AUTH=false` |
-| `CORS_ORIGIN` | Amplify の DEV URL（例: `https://main.xxxxxxxxxx.amplifyapp.com`） |
+| `CORS_ORIGINS` | Amplify の DEV URL（カンマ区切りで複数指定可。例: `https://main.xxxxxxxxxx.amplifyapp.com`） |
 | `S3_BUCKET` | `petal-images-dev` |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_NAME` / `ADMIN_NAME_KANA` | 初期 Admin 作成スクリプト用 |
 
@@ -345,5 +345,5 @@ pnpm deploy:remove:dev
 | `serverless deploy` / `remove` で `is not authorized to perform: s3:...` | `petal-deploy` の IAM ポリシー不足。1.1 のポリシー一覧を確認（特に `ListBucketVersions` / `DeleteObjectVersion`）。 |
 | `migration:run` が Pooler 経由でハング・失敗 | `DATABASE_URL_DIRECT` が未設定 / 反映されていない。`pnpm use-env dev` を再実行し direnv を reload。 |
 | Lambda から 5xx・タイムアウト | CloudWatch Logs を確認。`DATABASE_URL`（Pooler）や Cognito 認証情報の値ずれが多い。 |
-| CORS エラー | `CORS_ORIGIN` が Amplify の現行 URL と一致しているか確認。変更後は `pnpm deploy:dev` でスタック反映。 |
+| CORS エラー | `CORS_ORIGINS` が Amplify の現行 URL と一致しているか確認。変更後は `pnpm deploy:dev` でスタック反映。 |
 | `deploy:function:dev` 後に環境変数が反映されない | `provider.environment` の変更は `deploy:function` では反映されない。`pnpm deploy:dev` を使う。 |

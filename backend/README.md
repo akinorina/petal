@@ -93,7 +93,7 @@ pnpm migration:show                                   # 適用状況の確認
 | `DB_*` | PostgreSQL 接続情報 |
 | `COGNITO_REGION` / `COGNITO_USER_POOL_ID` / `COGNITO_CLIENT_ID` / `COGNITO_CLIENT_SECRET` | AWS Cognito |
 | `SKIP_AUTH` | テスト時のみ `true` で認証ガードをスキップ |
-| `CORS_ORIGIN` | フロントエンドのオリジン |
+| `CORS_ORIGINS` | フロントエンドのオリジン（カンマ区切りで複数指定可） |
 | `ADMIN_*` | `pnpm create-admin` で使用する初期 Admin ユーザー情報 |
 
 ## アーキテクチャ

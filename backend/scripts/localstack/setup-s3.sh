@@ -50,15 +50,17 @@ else
   echo "    作成完了"
 fi
 
-ALLOWED_ORIGIN="${CORS_ORIGIN:-http://localhost:3001}"
-echo "==> S3 バケットに CORS 設定: origin=$ALLOWED_ORIGIN"
+ALLOWED_ORIGINS="${FRONTEND_ORIGINS:-http://localhost:3001}"
+# カンマ区切りを JSON 配列に変換
+ORIGINS_JSON=$(echo "$ALLOWED_ORIGINS" | tr ',' '\n' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//' | awk 'NF{print "\"" $0 "\""}' | paste -sd ',' -)
+echo "==> S3 バケットに CORS 設定: origins=$ALLOWED_ORIGINS"
 CORS_JSON=$(cat <<EOF
 {
   "CORSRules": [
     {
       "AllowedHeaders": ["*"],
       "AllowedMethods": ["GET", "PUT", "HEAD"],
-      "AllowedOrigins": ["$ALLOWED_ORIGIN"],
+      "AllowedOrigins": [$ORIGINS_JSON],
       "ExposeHeaders": ["ETag"],
       "MaxAgeSeconds": 300
     }
