@@ -50,6 +50,7 @@
 | [docs/48_image-detail-page.md](docs/48_image-detail-page.md) | 画像詳細ページ 設計（PRJ-8：Card+FormField でメタ情報を 2 カラム化、削除確認を design-system Dialog 化、formatImageSize 共通化） |
 | [docs/49_camera-upload.md](docs/49_camera-upload.md) | 端末カメラからの画像アップロード 設計（PRJ-9：input[capture] によるカメラ起動、EXIF Orientation 補正・リサイズ・圧縮の前処理共通化） |
 | [docs/50_pwa-foundation.md](docs/50_pwa-foundation.md) | PWA 基盤 + キャッシュ戦略 設計（PRJ-10 T1：@serwist/next 導入・manifest・アイコン・iOS メタタグ・backend API は NetworkOnly のキャッシュ戦略） |
+| [docs/51_sw-update-notice.md](docs/51_sw-update-notice.md) | SW 更新通知 UI 設計（PRJ-10 T2：waiting イベント検知 → 画面下部バナー → controlling 待ち reload） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 
