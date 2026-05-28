@@ -319,7 +319,8 @@ Phase 3 完了時点で **作業ブランチを切り、設計書を先行コミ
 1. `git push -u origin <branch>` でリモートへ push
 2. `gh pr create --base main --title "..." --body "..."` で PR 作成
 3. PR にラベル `author: ai` を付与（運用上の Reviewee マーカー）
-4. PR URL をユーザーへ報告
+4. **Notion タスクページの `PR` プロパティ（URL 型）に PR URL を書き込む**（`notion-update-page` を使用。タスク DB と PR を紐付けるための運用）
+5. PR URL をユーザーへ報告
 
 PR タイトル形式: `<type>(tsk-N): <要約>`（例: `feat(tsk-9): メールアドレス変更フローを実装`）。日本語可・簡潔に。
 
