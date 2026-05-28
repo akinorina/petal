@@ -49,6 +49,7 @@
 | [docs/47_image-list-grid.md](docs/47_image-list-grid.md) | 画像一覧ページ グリッド表示 設計（PRJ-8：3 列サムネイルグリッド + Pagination + 一覧ページ全体 D&D + アップロード後の 1 ページ目遷移） |
 | [docs/48_image-detail-page.md](docs/48_image-detail-page.md) | 画像詳細ページ 設計（PRJ-8：Card+FormField でメタ情報を 2 カラム化、削除確認を design-system Dialog 化、formatImageSize 共通化） |
 | [docs/49_camera-upload.md](docs/49_camera-upload.md) | 端末カメラからの画像アップロード 設計（PRJ-9：input[capture] によるカメラ起動、EXIF Orientation 補正・リサイズ・圧縮の前処理共通化） |
+| [docs/50_pwa-foundation.md](docs/50_pwa-foundation.md) | PWA 基盤 + キャッシュ戦略 設計（PRJ-10 T1：@serwist/next 導入・manifest・アイコン・iOS メタタグ・backend API は NetworkOnly のキャッシュ戦略） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 
