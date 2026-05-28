@@ -131,8 +131,8 @@ export function InstallPrompt() {
   return (
     <>
       <div
-        role="dialog"
-        aria-label="アプリのインストール"
+        role="status"
+        aria-live="polite"
         className="fixed inset-x-0 bottom-0 z-40 px-4 pb-4 sm:flex sm:justify-center"
       >
         <div className="flex flex-col gap-3 rounded-lg border border-border-subtle bg-surface-raised px-4 py-3 shadow-lg sm:flex-row sm:items-center sm:gap-4">
