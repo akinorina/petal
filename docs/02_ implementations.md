@@ -53,12 +53,15 @@
 
 ```text
 petal/
-  backend/    # NestJS（REST API）+ docker-compose.yml
-  frontend/   # Next.js
+  backend/    # NestJS（REST API）+ docker-compose.yml / 独立 pnpm プロジェクト
+              #   backend/pnpm-lock.yaml, backend/pnpm-workspace.yaml(設定専用)
+  frontend/   # Next.js / 独立 pnpm プロジェクト
+              #   frontend/pnpm-lock.yaml, frontend/pnpm-workspace.yaml(設定専用)
   docs/       # 設計・仕様ドキュメント
-  package.json           # pnpm workspace ルート
-  pnpm-workspace.yaml
+  package.json           # リポジトリのメタ情報（pnpm workspace は組まない）
 ```
+
+> pnpm workspace は使わない。`backend/` と `frontend/` はそれぞれ独立した pnpm プロジェクトで、依存は各ディレクトリで個別に install する（`cd backend && pnpm install` / `cd frontend && pnpm install`）。各 `pnpm-workspace.yaml` は `packages:` を持たず、`allowBuilds` 等の pnpm 設定専用ファイルとして使う。
 
 ---
 

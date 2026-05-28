@@ -297,7 +297,7 @@ cp backend/.env.example backend/.env
 ### 8.4 カバレッジと CI
 
 - カバレッジ閾値は本書時点では設定しない（実態が見えてから別タスクで決める）。
-- CI への組み込みは別タスク。本書の要件はローカルで `pnpm --filter backend test` が緑になること。
+- CI への組み込みは別タスク。本書の要件はローカルで `cd backend && pnpm test` が緑になること。
 
 ### 8.5 認証ガードのテスト時スキップ
 

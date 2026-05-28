@@ -41,47 +41,42 @@ GitHub (main ブランチ) push
 
 ### 4.1 `amplify.yml`（リポジトリルート）
 
-Amplify がモノリポ構成を正しくビルドするための設定ファイル。
+`frontend/` は pnpm workspace に属さない独立 pnpm プロジェクトなので、`appRoot: frontend` 配下で素直に install / build できる。
 
 ```yaml
 version: 1
-frontend:
-  phases:
-    preBuild:
-      commands:
-        - corepack enable
-        - corepack prepare pnpm@latest --activate
-        - pnpm install --frozen-lockfile
-    build:
-      commands:
-        - pnpm --filter frontend build
-  artifacts:
-    baseDirectory: frontend/.next
-    files:
-      - '**/*'
-  cache:
-    paths:
-      - node_modules/**/*
-      - frontend/node_modules/**/*
-      - frontend/.next/cache/**/*
+applications:
+  - frontend:
+      phases:
+        preBuild:
+          commands:
+            - corepack enable
+            - pnpm install --frozen-lockfile
+        build:
+          commands:
+            - pnpm build
+      artifacts:
+        baseDirectory: .next
+        files:
+          - "**/*"
+      cache:
+        paths:
+          - .next/cache/**/*
+          - node_modules/**/*
+    appRoot: frontend
 ```
 
 ポイント：
 
-- `corepack` で pnpm を有効化（Amplify の Node.js 環境に pnpm がない場合の対処）
-- `pnpm install --frozen-lockfile` でルートの `pnpm-workspace.yaml` を使い全依存を解決
-- `baseDirectory: frontend/.next` で Next.js の出力ディレクトリを指定
-- キャッシュを設定してビルド時間を短縮
+- `appRoot: frontend` 配下で実行されるため、コマンドは frontend ディレクトリ基準。
+- `corepack enable` で `frontend/package.json` の `packageManager`（pnpm@11.3.0）が有効化される。
+- workspace を組まないため、symlink を跨がない通常の `pnpm install --frozen-lockfile` が `frontend/pnpm-lock.yaml` を使って再現可能に走る。`--ignore-workspace` / `--no-frozen-lockfile` / `--ignore-scripts` / `next` 直叩きといった旧 hack は不要。
+- ネイティブ依存（sharp 等）はプレビルトの platform パッケージで動作し、build script は `frontend/pnpm-workspace.yaml` の `allowBuilds` で制御する。
+- `baseDirectory: .next`（appRoot 相対）で Next.js の出力を指定。standalone モードは使わない。
 
 ### 4.2 `frontend/next.config.ts`
 
-Amplify SSR（standalone モード）対応のため `output: 'standalone'` を追加。
-
-```typescript
-const nextConfig: NextConfig = {
-  output: 'standalone',
-};
-```
+standalone モードは使わない（過去に試行したが pnpm symlink 構造との相性で撤去済み）。Amplify は `.next` 出力と `node_modules` をそのままホストする。`next.config.ts` に Amplify 専用の `output` 設定は不要。
 
 ### 4.3 本番用環境変数（Amplify Console に設定）
 
@@ -114,7 +109,7 @@ Amplify Console の「アプリの設定」→「環境変数」で §4.3 の変
 
 ### 5.3 CORS 設定（バックエンド側）
 
-Amplify の URL（`https://xxxx.amplifyapp.com`）を `backend/.envs/.env.production` の `CORS_ORIGIN` に設定し、`pnpm --filter backend deploy` で Lambda を再デプロイする。
+Amplify の URL（`https://xxxx.amplifyapp.com`）を `backend/.envs/.env.production` の `CORS_ORIGIN` に設定し、`cd backend && pnpm deploy` で Lambda を再デプロイする。
 
 ### 5.4 動作確認
 

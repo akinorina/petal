@@ -11,7 +11,7 @@
 | データベース | PostgreSQL |
 | 認証 | AWS Cognito |
 | ストレージ | AWS S3（v2 以降） |
-| パッケージマネージャ | pnpm（モノリポ） |
+| パッケージマネージャ | pnpm（モノリポ・workspace なし／backend・frontend は独立プロジェクト） |
 
 ## ディレクトリ構成
 
@@ -61,10 +61,12 @@ source ~/.zshrc
 
 ## 開発
 
+backend / frontend は pnpm workspace を組まない独立プロジェクトです。依存は各ディレクトリで個別に install します（`cd backend && pnpm install` / `cd frontend && pnpm install`）。
+
 ```bash
 # バックエンド（http://localhost:3000）
-pnpm --filter backend start:dev
+cd backend && pnpm start:dev
 
 # フロントエンド（http://localhost:3001）
-pnpm --filter frontend start:dev
+cd frontend && pnpm start:dev
 ```

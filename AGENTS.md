@@ -59,7 +59,7 @@
 - `backend/` … NestJS + TypeORM + PostgreSQL（REST API）
 - `frontend/` … Next.js + React + Tailwind CSS
 - 認証 … AWS Cognito（バックエンド経由で SECRET_HASH 付きの Confidential client）
-- パッケージマネージャ … **pnpm のみ**（npm / yarn 禁止）
+- パッケージマネージャ … **pnpm のみ**（npm / yarn 禁止）。**pnpm workspace は組まない**：`backend/` と `frontend/` はそれぞれ独立した pnpm プロジェクトで、各自の `pnpm-lock.yaml` と設定用 `pnpm-workspace.yaml`（`packages:` を持たず `allowBuilds` 等の設定専用）を持つ。依存は各ディレクトリで個別に install する（`cd backend && pnpm install` / `cd frontend && pnpm install`）。ルート直下で `pnpm install` や `pnpm --filter` は使わない。
 
 ## 2. 守るべき主要ルール（要約）
 
@@ -103,7 +103,7 @@
 1. ユーザーの要求を理解したら、関連する `docs/` を読む。
 2. 既存のコード規約・命名・構成に揃える。新しいパターンを持ち込まない。
 3. 不明な設計判断はコードを書く前にユーザーに確認する。
-4. 実装後はビルド（`pnpm --filter backend build` / `pnpm --filter frontend build`）を通すこと。
+4. 実装後はビルド（`cd backend && pnpm build` / `cd frontend && pnpm build`）を通すこと。
 5. ルールを更新・追加した場合は `docs/00_rules.md` を編集する。本ファイルではなく `docs/` を正とする運用。
 
 ## 4. やってはいけないこと

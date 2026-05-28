@@ -20,7 +20,7 @@ frontend/lib/api.ts                 ← UI から呼び出すドメインごと�
 
 ### Swagger UI / JSON エンドポイント
 
-`pnpm --filter backend start:dev` 実行中：
+`cd backend && pnpm start:dev` 実行中：
 
 - Swagger UI: <http://localhost:3000/api-docs>
 - OpenAPI JSON: <http://localhost:3000/api-docs-json>
@@ -28,7 +28,7 @@ frontend/lib/api.ts                 ← UI から呼び出すドメインごと�
 ### 仕様ファイルの書き出し
 
 ```bash
-pnpm --filter backend openapi:export
+cd backend && pnpm openapi:export
 # → backend/openapi.json を更新
 ```
 
@@ -37,11 +37,11 @@ pnpm --filter backend openapi:export
 ## 3. Frontend 側
 
 ```bash
-pnpm --filter frontend openapi:gen
+cd frontend && pnpm openapi:gen
 # → frontend/lib/openapi/schema.d.ts を更新
 ```
 
-入力は `../backend/openapi.json`。Backend 側の DTO を変更したら **Backend export → Frontend gen** の順に再生成する。
+入力は `../backend/openapi.json`（backend / frontend は別 pnpm プロジェクトだが同一リポジトリのため相対パスで参照できる）。Backend 側の DTO を変更したら **Backend export → Frontend gen** の順に再生成する。
 
 ### 利用方法
 
