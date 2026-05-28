@@ -54,6 +54,7 @@
 | [docs/52_install-prompt.md](docs/52_install-prompt.md) | インストール導線 設計（PRJ-10 T3：Android/Desktop の beforeinstallprompt バナー + iOS Safari の手順案内モーダル、localStorage で却下/インストール済みを抑制） |
 | [docs/53_standalone-detection.md](docs/53_standalone-detection.md) | スタンドアロン起動の検出・計測 設計（PRJ-10 T4 / TSK-94：`display-mode: standalone` 判定フック + `trackEvent('app_launch')` 発火口） |
 | [docs/54_lighthouse-pwa-ci.md](docs/54_lighthouse-pwa-ci.md) | Lighthouse PWA 監査の CI 組み込み 設計（PRJ-10 T5 / TSK-95：`@lhci/cli` + GitHub Actions で `installable-manifest` をゲート） |
+| [docs/55_release-branch-cicd.md](docs/55_release-branch-cicd.md) | release ブランチによる CI/CD 起動制御 設計（PRJ-11：`main` 開発 → `promote-to-release` で `release` にマージ → Amplify / Lambda デプロイ） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 
@@ -102,6 +103,15 @@
 
 - **コミットメッセージは日本語**。
 - `git push --force` や `git reset --hard` などの破壊的操作はユーザーの明示的許可なく実行しない。
+
+### リリース運用（PRJ-11）
+
+詳細は [docs/55_release-branch-cicd.md](docs/55_release-branch-cicd.md) を参照。
+
+- 開発は `main` で行う。全 PR は `main` に向ける。
+- `main` への push では **CI のみ** が走る（Lambda / Amplify はデプロイされない）。
+- デプロイは **`release` ブランチへの push** が起点。`release` への更新は GitHub Actions の `Promote main to release` ワークフロー（`workflow_dispatch`）経由で `main` をマージして行う。
+- **`release` への直接 push は禁止**（GitHub Free プランの制約で Branch protection を使えないため運用ルールで担保）。
 
 ## 3. 作業の進め方
 
