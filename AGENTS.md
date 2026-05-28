@@ -53,6 +53,7 @@
 | [docs/51_sw-update-notice.md](docs/51_sw-update-notice.md) | SW 更新通知 UI 設計（PRJ-10 T2：waiting イベント検知 → 画面下部バナー → controlling 待ち reload） |
 | [docs/52_install-prompt.md](docs/52_install-prompt.md) | インストール導線 設計（PRJ-10 T3：Android/Desktop の beforeinstallprompt バナー + iOS Safari の手順案内モーダル、localStorage で却下/インストール済みを抑制） |
 | [docs/53_standalone-detection.md](docs/53_standalone-detection.md) | スタンドアロン起動の検出・計測 設計（PRJ-10 T4 / TSK-94：`display-mode: standalone` 判定フック + `trackEvent('app_launch')` 発火口） |
+| [docs/54_lighthouse-pwa-ci.md](docs/54_lighthouse-pwa-ci.md) | Lighthouse PWA 監査の CI 組み込み 設計（PRJ-10 T5 / TSK-95：`@lhci/cli` + GitHub Actions で `installable-manifest` をゲート） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 
