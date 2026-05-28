@@ -1,0 +1,57 @@
+name: Promote main to release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (optional, e.g. v1.2.3). Leave empty to skip tagging.'
+        required: false
+        default: ''
+      release_notes:
+        description: 'Release notes (optional, used when tag is provided).'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    name: Merge main into release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout release
+        uses: actions/checkout@v6
+        with:
+          ref: release
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge main into release
+        run: |
+          git fetch origin main:main
+          if git merge --ff-only main; then
+            echo "Fast-forwarded release to main."
+          else
+            echo "Fast-forward not possible. Creating a merge commit."
+            git merge --no-ff main -m "chore: promote main to release"
+          fi
+
+      - name: Push release
+        run: git push origin release
+
+      - name: Create tag and GitHub Release
+        if: ${{ inputs.tag != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git tag "${{ inputs.tag }}"
+          git push origin "${{ inputs.tag }}"
+          gh release create "${{ inputs.tag }}" \
+            --target release \
+            --title "${{ inputs.tag }}" \
+            --notes "${{ inputs.release_notes }}"
