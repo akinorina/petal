@@ -11,6 +11,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Serwist が生成する Service Worker 成果物（minify 済み・lint 対象外）。
+    "public/sw.js",
+    "public/sw.js.map",
+    "public/swe-worker-*.js",
   ]),
   {
     rules: {

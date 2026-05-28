@@ -1,5 +1,6 @@
 # 設定専用ファイル（packages: を持たないため workspace は構成しない）。
 # pnpm 11 では allowBuilds 等の設定がここに集約される。
 allowBuilds:
+  esbuild: true
   sharp: true
   unrs-resolver: true

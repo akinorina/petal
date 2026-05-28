@@ -80,6 +80,26 @@ PRJ-10「Petal PWA 化」の最初のタスク。Service Worker・Web App Manife
   - 案 X: 認証ページ（`(admin)` 配下）も NetworkOnly — Notion の字義通りだが、サーバレンダ前提の
     表現。クライアント認証の実態では HTML は機密でなく、オフライン耐性を不必要に損なうため却下。
 
+### 判断 4: Serwist の統合方式（configurator モード）
+
+- **採用案**: Serwist の **configurator モード**（`serwist.config.ts` + `@serwist/cli` で
+  `next build && serwist build` の後段ビルド）。`next.config.ts` の `withSerwistInit` ラップは
+  使わない。SW 登録は `@serwist/next/react` の `SerwistProvider` を `layout.tsx` に置く
+  （dev は `disable` で無効化）。
+- **理由**:
+  - Next.js 16 は既定で **Turbopack** を使い、`withSerwistInit` が注入する webpack 設定が
+    Turbopack 非対応でビルドが失敗する（実装時に発覚）。Amplify の `pnpm build` も Turbopack で
+    走るため、webpack 強制（`next build --webpack`）は Next 16・テンプレート方針に逆行する。
+  - configurator モードはバンドラ非依存で Turbopack と互換。SW のバンドルは Next のプリレンダ
+    完了**後**に走るため、プリレンダ済みルートの自動 precache も得られる。
+  - 追加依存は dev のみ（`@serwist/cli` / `esbuild`）。`@serwist/next`（`SerwistProvider` を
+    ランタイムで使用）は dependencies に置く。
+- **却下案**:
+  - 案 X: `withSerwistInit` + `next build --webpack` — Turbopack を捨てることになり却下。
+- **備考**: `serwist.config.ts` は純粋な ESM JS として CLI に読み込まれる（`build` スクリプトで
+  パスを明示）。`MODULE_TYPELESS_PACKAGE_JSON` 警告が出るが無害（`type: module` は他設定への
+  影響が大きいため付与しない）。
+
 ### 判断 3: アイコン素材
 
 - **採用案**: 純 Node スクリプト（`frontend/scripts/generate-pwa-icons.mjs`、依存ゼロ・zlib で
@@ -123,23 +143,30 @@ iOS 向けには `layout.tsx` の `metadata.appleWebApp`（`capable: true` /
 
 - SW は `skipWaiting: true` / `clientsClaim: true` で更新を即時適用する（T2 で承認 UI を被せる）。
 - API オリジン判定は SW バンドルにインライン化される `process.env.NEXT_PUBLIC_API_BASE_URL`
-  から導出する。未設定時（ローカル）は同一オリジンの `/` をデフォルトとし、相対 API も想定し
-  パス `^/(auth|users|images|audit-logs)` も NetworkOnly に含める。
+  から導出し、**リクエスト URL の「オリジン一致」のみ**で NetworkOnly を判定する。Petal の API
+  は常に別オリジン（API Gateway）であり、`/images` 等のページルートと同名のパス（`/images`
+  API 等）を同一オリジンのパス前提で判定するとページキャッシュを誤って無効化するため、パス判定
+  は行わない。`NEXT_PUBLIC_API_BASE_URL` が未設定／不正な場合は NetworkOnly 対象なし
+  （ページキャッシュを壊さない安全側）。
 
 ## 既存設計との差分・整合性
 
 - フロントエンドのみの変更。backend / migrations / `.env.example` の変更は不要
   （`NEXT_PUBLIC_API_BASE_URL` は既存）。
-- Amplify ビルド（[docs/37](37_amplify-hosting-setup.md)）は `pnpm build` → `.next` を成果物に
-  する。Serwist はビルド時に `public/sw.js` を生成するため、`.next` 配下の静的配信に含まれる。
-  追加のビルド手順変更は不要。
-- `next.config.ts` の既存設定（`allowedDevOrigins`）は `withSerwist(...)` でラップして温存する。
+- Amplify ビルド（[docs/37](37_amplify-hosting-setup.md)）は `pnpm build` を実行する。`build`
+  スクリプトを `next build && serwist build serwist.config.ts` に変更したため、Amplify でも
+  `next build` 後に `public/sw.js` が生成され、`public/` の静的配信に含まれる。`amplify.yml`
+  自体の変更は不要。`esbuild`（serwist CLI が使用）のビルド許可を `pnpm-workspace.yaml` の
+  `allowBuilds` に追加する。
+- `next.config.ts` の既存設定（`allowedDevOrigins`）は変更しない（configurator モードのため
+  ラップ不要）。
 
 ## 完了条件（具体化版）
 
 - [ ] `@serwist/next` / `serwist` が `frontend/package.json` に追加され `pnpm install` 済み。
-- [ ] `next.config.ts` が `withSerwistInit`（`swSrc: 'src/app/sw.ts'` / `swDest: 'public/sw.js'`
-      / dev 無効化）でラップされている。
+- [ ] `serwist.config.ts`（`swSrc: 'src/app/sw.ts'` / `swDest: 'public/sw.js'`）があり、`build`
+      スクリプトが `next build && serwist build serwist.config.ts`。dev は `SerwistProvider` の
+      `disable` で SW 無効。
 - [ ] `src/app/manifest.ts` が上記仕様の manifest を返す。
 - [ ] `public/icons/` に 192 / 512 / maskable / apple-touch-icon が配置されている。
 - [ ] `layout.tsx` に iOS メタタグ（`appleWebApp` / `apple-touch-icon` / `themeColor`）が入る。
@@ -177,14 +204,15 @@ iOS 向けには `layout.tsx` の `metadata.appleWebApp`（`capable: true` /
 ### 変更・追加ファイル
 
 - frontend/
-  - `package.json` / `pnpm-lock.yaml`（`@serwist/next` + `serwist` 追加）
-  - `next.config.ts`（`withSerwistInit` ラップ）
-  - `tsconfig.json`（`types: ['@serwist/next/typings']` / `lib: ['webworker']` 追記、
-    `public/sw.js` を exclude）
+  - `package.json`（`build` を `next build && serwist build serwist.config.ts` に） / `pnpm-lock.yaml`
+  - `pnpm-workspace.yaml`（`allowBuilds.esbuild: true`）
+  - `serwist.config.ts`（新規・configurator 設定。`swSrc` / `swDest`）
+  - `tsconfig.json`（`public/sw.js` を exclude。SW の型は `sw.ts` 内の triple-slash 参照で解決）
   - `src/app/sw.ts`（新規・Service Worker 本体）
   - `src/app/manifest.ts`（新規・Web App Manifest）
-  - `src/app/layout.tsx`（iOS メタタグ・themeColor 追加）
+  - `src/app/layout.tsx`（iOS メタタグ・themeColor・`SerwistProvider` による SW 登録）
   - `src/app/~offline/page.tsx`（新規・オフラインフォールバック）
+  - `eslint.config.mjs`（生成 SW `public/sw.js` 等を ignore）
   - `public/icons/*`（新規・生成アイコン）
   - `scripts/generate-pwa-icons.mjs`（新規・アイコン生成スクリプト）
   - `.gitignore`（`public/sw.js` と Serwist 生成物を無視）
@@ -196,17 +224,18 @@ iOS 向けには `layout.tsx` の `metadata.appleWebApp`（`capable: true` /
 
 - migration: 不要
 - 環境変数: 追加なし（`NEXT_PUBLIC_API_BASE_URL` は既存）
-- 依存パッケージ: `@serwist/next`（dependencies）/ `serwist`（devDependencies）を追加
+- 依存パッケージ: `@serwist/next`（dependencies）/ `serwist` `@serwist/cli` `esbuild`
+  （devDependencies）を追加
 
 ### 作業順序（コミット単位）
 
 1. **コミット 1: 設計ドキュメント追加**
    - 含めるファイル: `docs/50_pwa-foundation.md`、`AGENTS.md`
    - 完了確認: `npx markdownlint-cli 'docs/**/*.md'`
-2. **コミット 2: Serwist 導入と SW・manifest 実装**
-   - 含めるファイル: `package.json` / `pnpm-lock.yaml` / `next.config.ts` / `tsconfig.json` /
-     `src/app/sw.ts` / `src/app/manifest.ts` / `src/app/layout.tsx` / `src/app/~offline/page.tsx`
-     / `.gitignore`
+2. **コミット 2: Serwist 導入（configurator）と SW・manifest 実装**
+   - 含めるファイル: `package.json` / `pnpm-lock.yaml` / `pnpm-workspace.yaml` /
+     `serwist.config.ts` / `tsconfig.json` / `eslint.config.mjs` / `src/app/sw.ts` /
+     `src/app/manifest.ts` / `src/app/layout.tsx` / `src/app/~offline/page.tsx` / `.gitignore`
    - 完了確認: `cd frontend && pnpm lint && pnpm build`、本番起動で SW 登録・manifest 読込
 3. **コミット 3: PWA アイコン生成・配置**
    - 含めるファイル: `scripts/generate-pwa-icons.mjs` / `public/icons/*`
