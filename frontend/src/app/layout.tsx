@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { SerwistProvider } from '@serwist/next/react';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { UpdateNotice } from '@/components/UpdateNotice';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -35,6 +36,7 @@ export default function RootLayout({
           disable={process.env.NODE_ENV !== 'production'}
         >
           <AuthProvider>{children}</AuthProvider>
+          <UpdateNotice />
         </SerwistProvider>
       </body>
     </html>
