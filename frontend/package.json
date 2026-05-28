@@ -4,7 +4,7 @@
   "private": true,
   "packageManager": "pnpm@11.3.0",
   "scripts": {
-    "start:dev": "next dev",
+    "start:dev": "next dev --experimental-https --experimental-https-key ../certs/localhost+2-key.pem --experimental-https-cert ../certs/localhost+2.pem",
     "start:prod": "next start",
     "build": "next build && serwist build serwist.config.ts",
     "lint": "eslint",
