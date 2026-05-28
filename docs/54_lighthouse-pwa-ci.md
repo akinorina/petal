@@ -22,9 +22,11 @@ PRJ-10「Petal PWA 化」の仕上げタスク。Lighthouse の PWA installabili
 - `frontend/lighthouserc.json` を新設し、`@lhci/cli` の collect / assert 設定を定義する。
 - 監査対象: `installable-manifest`（必須・スコア 1 でなければ fail）。
   補助的に `apple-touch-icon` / `maskable-icon` / `viewport` も warn で計測する。
-- 起動方式: `pnpm build` 済みの `next start` を Lighthouse CI の `startServerCommand` で立ち上げ、
-  `http://localhost:3000/login` を計測。
-- `frontend/package.json` に `@lhci/cli` を devDependency として追加。
+- 起動方式: `pnpm build` 済みの `next start --port 4321` を Lighthouse CI の `startServerCommand`
+  で立ち上げ、`http://localhost:4321/login` を計測。ローカルでの port 3000 衝突（backend 既存
+  プロセス）と CI の意図しない競合を避けるため専用ポートを使用する。
+- `frontend/package.json` に `@lhci/cli@0.13.0` を devDependency として追加（Lighthouse 11.4 を
+  内包）。
 
 ### 非対象
 
@@ -45,10 +47,10 @@ PRJ-10「Petal PWA 化」の仕上げタスク。Lighthouse の PWA installabili
 
 ## 設計判断
 
-### 判断 1: ツール選定（`@lhci/cli` 採用）
+### 判断 1: ツール選定（`@lhci/cli@0.13` 採用）
 
-- **採用案**: `@lhci/cli` を `frontend/` の devDependency として追加し、`lhci autorun` を CI で
-  実行する。設定は `frontend/lighthouserc.json`。
+- **採用案**: `@lhci/cli@0.13.0`（内部で Lighthouse 11.4 を使用）を `frontend/` の devDependency
+  として追加し、`lhci autorun` を CI で実行する。設定は `frontend/lighthouserc.json`。
 - **理由**:
   - GitHub Actions 上で公式に推奨されている方式。`startServerCommand` で `next start` をライフ
     サイクル管理付きで起動でき、ジョブの自前 background プロセス管理が不要。
@@ -56,6 +58,10 @@ PRJ-10「Petal PWA 化」の仕上げタスク。Lighthouse の PWA installabili
     足す場合も同じ仕組み）。
   - `treosh/lighthouse-ci-action` のようなサードパーティ Action でなく公式 CLI を直接使うことで、
     依存元を 1 つに絞り（npm 上の `@lhci/cli`）、Action のバージョン追従コストを避ける。
+  - **Lighthouse 12 系で `installable-manifest` / `maskable-icon` 等 PWA 関連監査が削除された**
+    ため、最新の `@lhci/cli@0.15`（Lighthouse 12.6）/`0.14`（Lighthouse 12.1）は本タスクの要件
+    （installable 判定のゲート）を満たせない。Lighthouse 11.x をバンドルする最後のメジャーで
+    ある `@lhci/cli@0.13.0` を採用する。
 - **却下案**:
   - 案 X: `lighthouse` CLI を素で実行 + 自前 jq でスコア判定 — 起動・終了制御・JSON 解釈をすべて
     シェルで組む必要があり保守性が低い。却下。
@@ -78,14 +84,17 @@ PRJ-10「Petal PWA 化」の仕上げタスク。Lighthouse の PWA installabili
 ### 判断 3: 監査範囲（`installable-manifest` のみゲート）
 
 - **採用案**: 厳格にゲートするのは `installable-manifest` のみ（`["error", { "minScore": 1 }]`）。
-  補助として `apple-touch-icon` / `maskable-icon` / `viewport` を warn 相当でレポートする。
+  補助として `maskable-icon` / `viewport` を warn 相当でレポートする。
 - **理由**:
   - 完了条件は「installable 判定が出ないと CI が落ちる」であり、`installable-manifest` 監査の
     スコア 1 がそれに直接対応する（manifest・start_url・icons・display を Chrome が installable
     と判断したかを 1/0 で返す）。
-  - Lighthouse 12 で PWA カテゴリは削除されたため、個別 audit を直接 assert する形にする。
-  - apple-touch-icon / maskable-icon は iOS / Android のホーム画面体験に直結するが、欠落しても
-    Chrome の installability 自体は通る場合があるため、本タスクのゲートとしては warn に留める。
+  - Lighthouse 11 では PWA カテゴリは存在するが、本タスクの要件は PWA 全体スコアではなく
+    installability のみのため、`onlyAudits` で対象監査を絞って実行コストを抑える。
+  - maskable-icon は Android のホーム画面体験に直結するが、欠落しても Chrome の installability
+    自体は通るため、本タスクのゲートとしては warn に留める。`apple-touch-icon` 監査は
+    Lighthouse 11 では individual audit として公開されておらず、`installable-manifest` 側で
+    iOS 用 fallback として `apple-touch-icon` の存在を含めて評価される。
 - **却下案**:
   - 案 X: `categories:pwa` を assert — Lighthouse 12 で PWA カテゴリは存在しない。却下。
   - 案 Y: `service-worker` 監査を必須にする — Lighthouse 12 で同名監査は deprecated。`installable
@@ -128,7 +137,7 @@ DB / 外部 API への副作用なし。本タスクは CI 構成のみで完結
 
 ## 完了条件
 
-- [ ] `frontend/package.json` に `@lhci/cli` が devDependency として追加されている。
+- [ ] `frontend/package.json` に `@lhci/cli@0.13.0` が devDependency として追加されている。
 - [ ] `frontend/lighthouserc.json` が存在し、`installable-manifest` を error 閾値でアサート
       している。
 - [ ] `.github/workflows/ci.yml` に `lighthouse` ジョブが追加され、`pull_request` / `push (main)`

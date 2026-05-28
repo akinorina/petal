@@ -47,6 +47,9 @@ yarn-error.log*
 /public/sw.js.map
 /public/swe-worker-*.js
 
+# lighthouse ci
+.lighthouseci/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

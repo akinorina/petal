@@ -1,0 +1,31 @@
+{
+  "ci": {
+    "collect": {
+      "startServerCommand": "pnpm start:prod --port 4321",
+      "startServerReadyPattern": "Ready in",
+      "startServerReadyTimeout": 60000,
+      "url": ["http://localhost:4321/login"],
+      "numberOfRuns": 1,
+      "settings": {
+        "preset": "desktop",
+        "onlyAudits": [
+          "installable-manifest",
+          "maskable-icon",
+          "viewport"
+        ],
+        "chromeFlags": "--no-sandbox --headless=new"
+      }
+    },
+    "assert": {
+      "assertions": {
+        "installable-manifest": ["error", { "minScore": 1 }],
+        "maskable-icon": ["warn", { "minScore": 1 }],
+        "viewport": ["warn", { "minScore": 1 }]
+      }
+    },
+    "upload": {
+      "target": "filesystem",
+      "outputDir": ".lighthouseci"
+    }
+  }
+}
