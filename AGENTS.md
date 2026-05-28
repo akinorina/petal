@@ -51,6 +51,7 @@
 | [docs/49_camera-upload.md](docs/49_camera-upload.md) | 端末カメラからの画像アップロード 設計（PRJ-9：input[capture] によるカメラ起動、EXIF Orientation 補正・リサイズ・圧縮の前処理共通化） |
 | [docs/50_pwa-foundation.md](docs/50_pwa-foundation.md) | PWA 基盤 + キャッシュ戦略 設計（PRJ-10 T1：@serwist/next 導入・manifest・アイコン・iOS メタタグ・backend API は NetworkOnly のキャッシュ戦略） |
 | [docs/51_sw-update-notice.md](docs/51_sw-update-notice.md) | SW 更新通知 UI 設計（PRJ-10 T2：waiting イベント検知 → 画面下部バナー → controlling 待ち reload） |
+| [docs/52_install-prompt.md](docs/52_install-prompt.md) | インストール導線 設計（PRJ-10 T3：Android/Desktop の beforeinstallprompt バナー + iOS Safari の手順案内モーダル、localStorage で却下/インストール済みを抑制） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 
