@@ -3,6 +3,7 @@ import { SerwistProvider } from '@serwist/next/react';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { UpdateNotice } from '@/components/UpdateNotice';
 import { InstallPrompt } from '@/components/InstallPrompt';
+import { StandaloneLaunchTracker } from '@/components/StandaloneLaunchTracker';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -39,6 +40,7 @@ export default function RootLayout({
           <AuthProvider>{children}</AuthProvider>
           <UpdateNotice />
           <InstallPrompt />
+          <StandaloneLaunchTracker />
         </SerwistProvider>
       </body>
     </html>
