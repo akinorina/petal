@@ -1,0 +1,12 @@
+# 設定専用ファイル（packages: を持たないため workspace は構成しない）。
+# pnpm 11 では allowBuilds 等の設定がここに集約される。
+# 値 true = postinstall を実行 / false = 明示的にスキップ（未指定だと pnpm がエラーにする）。
+allowBuilds:
+  '@nestjs/core': true
+  '@scarf/scarf': true
+  # esbuild は postinstall が JS ランチャをネイティブバイナリに置換し、
+  # pnpm の node ラッパシム経由の起動と衝突する。プレビルト
+  # (@esbuild/<platform>) で動作するため build はスキップする。
+  esbuild: false
+  serverless: true
+  unrs-resolver: true

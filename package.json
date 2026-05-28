@@ -7,12 +7,5 @@
     "pnpm": ">=9.0.0"
   },
   "scripts": {},
-  "packageManager": "pnpm@11.3.0",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@nestjs/core",
-      "sharp",
-      "unrs-resolver"
-    ]
-  }
+  "packageManager": "pnpm@11.3.0"
 }

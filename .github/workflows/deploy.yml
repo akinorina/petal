@@ -8,6 +8,9 @@ jobs:
   deploy:
     name: Deploy (migrate / build / lambda)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -18,25 +21,24 @@ jobs:
 
       - uses: pnpm/action-setup@v6
         with:
-          version: 10.33.0
+          version: 11.3.0
 
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'pnpm'
+          cache-dependency-path: backend/pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: pnpm --filter backend build
+        run: pnpm build
 
       - name: Bundle Lambda
-        working-directory: backend
         run: pnpm bundle:lambda
 
       - name: Deploy to Lambda
-        working-directory: backend
         run: |
           zip -j lambda.zip lambda.js
           aws lambda update-function-code \
