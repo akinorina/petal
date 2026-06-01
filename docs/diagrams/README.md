@@ -23,9 +23,8 @@ Petal のソフトウェア開発で用いる各種図を集約するディレ�
 | MFA (TOTP) シーケンス図 | [mfa-sequence.drawio.svg](mfa-sequence.drawio.svg) | TOTP 登録・有効化（Associate/Verify/SetPreference）とログイン時 SOFTWARE_TOKEN_MFA チャレンジ | [29](../29_mfa-totp.md) |
 | メールアドレス変更 シーケンス図 | [email-change-sequence.drawio.svg](email-change-sequence.drawio.svg) | 変更要求 → 検証コード確認。DB を保留 UPDATE → Cognito Verify 成否で COMMIT/ROLLBACK | [20](../20_email-change-flow.md) |
 | パスワードリセット シーケンス図 | [password-reset-sequence.drawio.svg](password-reset-sequence.drawio.svg) | ForgotPassword → ConfirmForgotPassword + GlobalSignOut。enumeration 対策で常に 204 | [19](../19_password-reset.md) |
+| ユースケース図 | [usecase-diagram.drawio.svg](usecase-diagram.drawio.svg) | 管理者 / 一般ユーザー（「ログイン済ユーザー」を般化）とユーザー管理・認証・画像管理の機能俯瞰 | [01_requirements.md](../01_requirements.md) |
+| ロール / 認可フロー図 | [authz-flow.drawio.svg](authz-flow.drawio.svg) | JwtAuthGuard（JWT 検証 → DB lookup → request.user、削除済み 401）→ RolesGuard（@Roles → 403）。DB が単一の真実 | [21](../21_role-cognito-group-sync.md), [11](../11_user-info_and_authentication.md) |
+| PWA 構成図 | [pwa-architecture.drawio.svg](pwa-architecture.drawio.svg) | Serwist のキャッシュ戦略（API は NetworkOnly）／SW 更新通知／インストール導線（Android・iOS）／起動モード計測 | [50](../50_pwa-foundation.md)〜[53](../53_standalone-detection.md) |
 
-## 追加予定
-
-- ユースケース図（一般ユーザー / admin） — [01_requirements.md](../01_requirements.md)
-- ロール/認可フロー図（AuthGuard → DB lookup → RolesGuard） — [21](../21_role-cognito-group-sync.md)
-- PWA 構成図（Service Worker キャッシュ戦略・更新通知） — [50](../50_pwa-foundation.md)〜[53](../53_standalone-detection.md)
+すべての主要な設計ドキュメントを図化済み。新しい設計を追加した際は、関連する図もここに追加すること。
