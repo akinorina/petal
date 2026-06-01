@@ -12,7 +12,7 @@
 | [docs/01_requirements.md](docs/01_requirements.md) | プロジェクトの要求仕様（機能要件） |
 | [docs/02_ implementations.md](docs/02_%20implementations.md) | 技術スタック・システム構成 |
 | [docs/03_workflow.md](docs/03_workflow.md) | タスク遂行の標準ワークフロー（課題提示→課題共有→設計議論→実装議論→実装作業→評価→後処理 の 7 フェーズ） |
-| [docs/04_db-supabase-aws-hybrid.md](docs/04_db-supabase-aws-hybrid.md) | インフラ構成方針：DB のみ Supabase / その他 AWS（個人運用コスト最適化） |
+| [docs/04_db-neon-aws-hybrid.md](docs/04_db-neon-aws-hybrid.md) | インフラ構成方針：DB のみ Neon（ap-southeast-1）/ その他 AWS（個人運用コスト最適化） |
 | [docs/11_user-info_and_authentication.md](docs/11_user-info_and_authentication.md) | ユーザー情報・認証機能の設計 |
 | [docs/12_image-management.md](docs/12_image-management.md) | 画像管理機能の設計（TSK-3） |
 | [docs/13_openapi.md](docs/13_openapi.md) | OpenAPI / Swagger と Frontend 型生成の連携 |
@@ -34,7 +34,7 @@
 | [docs/29_mfa-totp.md](docs/29_mfa-totp.md) | MFA (TOTP) 対応 設計（TSK-13：Cognito Software Token MFA Optional + ログインチャレンジ拡張 + マイページ設定 UI） |
 | [docs/30_direnv-envrc.md](docs/30_direnv-envrc.md) | direnv 導入と .envrc 設定（TSK-30：.envs/ ディレクトリと symlink 切り替えによる環境変数管理） |
 | [docs/31_env-example.md](docs/31_env-example.md) | .env.example の整備（TSK-31：Supabase DB 変数・AWS 認証情報・frontend 変数の追加） |
-| [docs/34_typeorm-supabase.md](docs/34_typeorm-supabase.md) | TypeORM 設定更新（TSK-34：SSL 必須・PgBouncer Pooler 対応、DATABASE_URL / DATABASE_URL_DIRECT による接続切り替え） |
+| [docs/34_typeorm-neon.md](docs/34_typeorm-neon.md) | TypeORM 設定更新（TSK-34：Neon の SSL 必須・PgBouncer Pooler 対応、DATABASE_URL / DATABASE_URL_DIRECT による接続切り替え） |
 | [docs/36_lambda-api-gateway-setup.md](docs/36_lambda-api-gateway-setup.md) | Lambda + API Gateway デプロイ設定（TSK-36：Serverless Framework + @vendia/serverless-express、nest build で事前コンパイル） |
 | [docs/37_amplify-hosting-setup.md](docs/37_amplify-hosting-setup.md) | Amplify Hosting 設定（TSK-37：amplify.yml によるモノリポビルド・standalone モード） |
 | [docs/38_cognito-dev-setup.md](docs/38_cognito-dev-setup.md) | Cognito 開発環境用 User Pool 作成手順（TSK-38：`dev` ステージ専用 User Pool・App Client 設定） |

@@ -5,7 +5,7 @@
 - ステータス：**実装中**
 - 目的：Neon Free プランの制約（7 日間アクセスなしで自動 pause / 自動バックアップなし）に対応する定期ジョブを GitHub Actions で構築する。
 - 関連：
-  - [docs/04_db-supabase-aws-hybrid.md](04_db-supabase-aws-hybrid.md) §4（旧 DB 方針メモ。制約・対策の整理として参照）
+  - [docs/04_db-neon-aws-hybrid.md](04_db-neon-aws-hybrid.md) §4（DB 方針。Neon Free の制約・対策の整理として参照）
   - [docs/36_lambda-api-gateway-setup.md](36_lambda-api-gateway-setup.md)（実 DB は Neon Postgres、`DATABASE_URL_DIRECT` の整備済み）
 
 ## 1. スコープ
@@ -23,7 +23,7 @@
 
 ## 2. 背景・前提
 
-Neon Free プランには以下の制約がある（[docs/04_db-supabase-aws-hybrid.md](04_db-supabase-aws-hybrid.md) §4 と同等の制約）。
+Neon Free プランには以下の制約がある（[docs/04_db-neon-aws-hybrid.md](04_db-neon-aws-hybrid.md) §4 を参照）。
 
 - **自動 pause**：7 日間アクセスがないとプロジェクトが pause される
 - **自動バックアップなし**：PITR・スナップショットがない

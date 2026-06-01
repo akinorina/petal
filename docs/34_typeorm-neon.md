@@ -2,7 +2,7 @@
 
 ## 目的
 
-バックエンドの TypeORM 設定を Supabase（SSL 必須・PgBouncer Pooler）に対応させる。
+バックエンドの TypeORM 設定を Neon（SSL 必須・PgBouncer Pooler）に対応させる。
 ローカル開発環境（個別変数）との切り替えも維持する。
 
 ## スコープ
@@ -15,20 +15,20 @@
 ### 非対象
 
 - マイグレーションファイルの内容変更
-- Supabase 側の設定変更
+- Neon 側の設定変更
 
 ## 接続モードの切り替えロジック
 
-環境変数の有無で接続方式を自動切り替えする。
+環境変数の有無で接続方式を自動切り替えする。Neon は Pooler / Direct を **ホスト名（`-pooler` サフィックスの有無）** で区別する（ポートはいずれも 5432）。
 
 | 環境変数 | 接続先 | 用途 |
 | --- | --- | --- |
-| `DATABASE_URL` あり | Supabase Pooler（port 6543） | アプリ実行時 |
+| `DATABASE_URL` あり | Neon Pooler（`-pooler` エンドポイント） | アプリ実行時 |
 | `DATABASE_URL` なし | ローカル PostgreSQL（`DB_HOST` 等） | ローカル開発 |
-| `DATABASE_URL_DIRECT` あり | Supabase Direct（port 5432） | マイグレーション CLI |
+| `DATABASE_URL_DIRECT` あり | Neon Direct（非 `-pooler` エンドポイント） | マイグレーション CLI |
 | `DATABASE_URL_DIRECT` なし | ローカル PostgreSQL（`DB_HOST` 等） | ローカル開発 |
 
-## Supabase 接続時の設定値
+## Neon 接続時の設定値
 
 ### SSL
 
@@ -36,7 +36,7 @@
 ssl: { rejectUnauthorized: false }
 ```
 
-Supabase は SSL 必須。`rejectUnauthorized: false` は Supabase の自己署名証明書への対応。
+Neon は SSL 必須（接続文字列に `sslmode=require`）。`rejectUnauthorized: false` で証明書検証を緩めて接続する。
 
 ### Pooler 追加設定（アプリ実行時のみ）
 
