@@ -104,6 +104,10 @@
 - **コミットメッセージは日本語**。
 - `git push --force` や `git reset --hard` などの破壊的操作はユーザーの明示的許可なく実行しない。
 
+### ファイル削除（`.trash` 退避）
+
+- ファイル・ディレクトリを削除したいときは `rm` で物理削除せず、リポジトリ直下の **`.trash/`（`.gitignore` 済み）へ `mv` で退避**する。中間生成物・一時ファイルの片付けも同様。詳細は [docs/00_rules.md](docs/00_rules.md) §6。
+
 ### リリース運用（PRJ-11）
 
 詳細は [docs/55_release-branch-cicd.md](docs/55_release-branch-cicd.md) を参照。

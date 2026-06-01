@@ -27,3 +27,6 @@ pnpm-debug.log*
 
 # Claude Code (user-local settings)
 .claude/settings.local.json
+
+# ゴミ箱
+.trash
