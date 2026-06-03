@@ -57,6 +57,7 @@
 | [docs/55_release-branch-cicd.md](docs/55_release-branch-cicd.md) | release ブランチによる CI/CD 起動制御 設計（PRJ-11：`main` 開発 → `promote-to-release` で `release` にマージ → Amplify / Lambda デプロイ） |
 | [docs/56_self-service-signup.md](docs/56_self-service-signup.md) | セルフサービスのサインアップ 設計（TSK-12：`POST /auth/signup` + `/auth/confirm-signup` で Cognito SignUp/ConfirmSignUp、confirm 後に `role=user` で DB INSERT、`/signup` 2 ステップ画面） |
 | [docs/57_login-lockout.md](docs/57_login-lockout.md) | 不正ログイン試行のロックアウト 設計（TSK-17：`petal.login_attempts` で email 単位の失敗カウント、5 回/15 分でロックし `/auth/login` が 429、Lambda 前提で in-memory ではなく DB ストア） |
+| [docs/58_cognito-sync-audit.md](docs/58_cognito-sync-audit.md) | DB と Cognito の不整合検知/修復スクリプト 設計（TSK-18：`audit-cognito-sync` で sub をキーに突き合わせ 4 分類レポート、`--fix` は「削除済×Cognito 有効→無効化」のみ、分類ロジックは純粋関数として単体テスト） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 

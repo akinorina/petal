@@ -42,7 +42,9 @@ async function main(): Promise<void> {
     }),
   );
 
-  const sub = createResult.User?.Attributes?.find((a) => a.Name === 'sub')?.Value;
+  const sub = createResult.User?.Attributes?.find(
+    (a) => a.Name === 'sub',
+  )?.Value;
   if (!sub) throw new Error('Cognito から sub を取得できませんでした');
 
   // 2. パスワードを永続化（FORCE_CHANGE_PASSWORD ステータスを解除）
