@@ -38,10 +38,13 @@ export default function UsersPage() {
     error,
     modal,
     setModal,
+    successMessage,
+    setSuccessMessage,
     handleDelete,
     handleRestore,
     handleCreate,
     handleUpdate,
+    handleResendInvite,
   } = useUsersPage();
 
   const rangeStart = total === 0 ? 0 : (page - 1) * pageSize + 1;
@@ -102,6 +105,16 @@ export default function UsersPage() {
         </Alert>
       )}
 
+      {successMessage && (
+        <Alert
+          variant="success"
+          className="mb-4"
+          onClose={() => setSuccessMessage(null)}
+        >
+          {successMessage}
+        </Alert>
+      )}
+
       {isLoading ? (
         <p className="text-sm text-zinc-500">読み込み中...</p>
       ) : items.length === 0 ? (
@@ -159,6 +172,16 @@ export default function UsersPage() {
                     <div className="flex justify-end gap-3">
                       {tab === 'active' ? (
                         <>
+                          {user.invitationPending && (
+                            <button
+                              onClick={() =>
+                                setModal({ type: 'resend-invite', user })
+                              }
+                              className="ds-link ds-link--inline"
+                            >
+                              招待メール再送
+                            </button>
+                          )}
                           <button
                             onClick={() => setModal({ type: 'edit', user })}
                             className="ds-link ds-link--inline"
@@ -237,6 +260,17 @@ export default function UsersPage() {
           variant="primary"
           onCancel={() => setModal(null)}
           onConfirm={() => handleRestore(modal.user)}
+        />
+      )}
+
+      {modal?.type === 'resend-invite' && (
+        <ConfirmModal
+          title="招待メールを再送"
+          message={`「${modal.user.name}」(${modal.user.email}) に招待メールを再送しますか？`}
+          confirmLabel="再送する"
+          variant="primary"
+          onCancel={() => setModal(null)}
+          onConfirm={() => handleResendInvite(modal.user)}
         />
       )}
     </div>

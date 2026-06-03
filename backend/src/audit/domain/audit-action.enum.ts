@@ -3,4 +3,5 @@ export enum AuditAction {
   UpdateUser = 'UPDATE_USER',
   DeleteUser = 'DELETE_USER',
   RestoreUser = 'RESTORE_USER',
+  ResendInvite = 'RESEND_INVITE',
 }

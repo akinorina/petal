@@ -116,6 +116,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/users/{id}/resend-invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["UserController_resendInvite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/audit-logs": {
         parameters: {
             query?: never;
@@ -402,6 +418,8 @@ export interface components {
             updatedAt: string;
             /** Format: date-time */
             deletedAt: string | null;
+            /** @description true なら Cognito の UserStatus=FORCE_CHANGE_PASSWORD（招待保留中）。 一覧/個別取得・作成・更新・復活エンドポイントで返る。GET /users/me と PATCH /users/me では常に false。 softDelete 済みも常に false。 */
+            invitationPending: boolean;
             /** @description 自分自身（GET /users/me）にのみセットされる。MFA(TOTP) 有効状態。 */
             mfaEnabled?: boolean;
             id: string;
@@ -441,7 +459,7 @@ export interface components {
         };
         AuditLogResponseDto: {
             /** @enum {string} */
-            action: "CREATE_USER" | "UPDATE_USER" | "DELETE_USER" | "RESTORE_USER";
+            action: "CREATE_USER" | "UPDATE_USER" | "DELETE_USER" | "RESTORE_USER" | "RESEND_INVITE";
             id: string;
             actorUserId: string;
             targetUserId: string | null;
@@ -836,6 +854,25 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["UserResponseDto"];
                 };
+            };
+        };
+    };
+    UserController_resendInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

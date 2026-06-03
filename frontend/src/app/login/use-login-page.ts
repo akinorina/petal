@@ -24,7 +24,11 @@ export function useLoginPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // sessionStorage を読むため SSR/hydration では空のまま、マウント後に 1 回だけ取り出す。
+  // useState の lazy initializer で取ると SSR との hydration mismatch を起こすため
+  // やむを得ず effect で setState する。
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setNotice(consumeAuthNotice());
   }, []);
 

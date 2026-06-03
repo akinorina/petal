@@ -69,12 +69,15 @@ function buildMockCognitoUser(): MockCognitoUserClient {
     getUserEmail: jest.fn(),
     getUserMfaSettings: jest.fn(),
     adminGetUserSub: jest.fn(),
+    adminGetUserStatus: jest.fn().mockResolvedValue(null),
+    resendInvite: jest.fn(),
     isUsernameExists: jest.fn().mockReturnValue(false),
     isUserNotFound: jest.fn().mockReturnValue(false),
     isCodeMismatch: jest.fn().mockReturnValue(false),
     isExpiredCode: jest.fn().mockReturnValue(false),
     isAliasExists: jest.fn().mockReturnValue(false),
     isNotAuthorized: jest.fn().mockReturnValue(false),
+    isInvalidParameter: jest.fn().mockReturnValue(false),
   };
 }
 

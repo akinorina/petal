@@ -61,6 +61,7 @@
 | [docs/59_my-profile.md](docs/59_my-profile.md) | 自分のプロフィール変更 API 設計（TSK-21：`PATCH /users/me` で自身の name/nameKana のみ更新・audit なし、role/email は Zod で無視、中央 `/me` マイページを新設し導線集約） |
 | [docs/60_change-password.md](docs/60_change-password.md) | 自分のパスワード変更 API 設計（TSK-22：`POST /auth/change-password` で Cognito ChangePassword、認証必須・セッション失効なし、`/me/password` サブページ + PasswordPolicyChecklist 再利用） |
 | [docs/61_user-list-pagination.md](docs/61_user-list-pagination.md) | ユーザー一覧のページング/検索/フィルタ 設計（TSK-23：`GET /users` を `{ items, total, limit, offset }` 化、`q` で email/name/nameKana の OR `ILIKE` 部分一致、`role`/`deleted` フィルタ、フロントは URL クエリ同期 + デバウンス 300ms） |
+| [docs/62_resend-invite.md](docs/62_resend-invite.md) | 招待メールの再送 API 設計（TSK-25：`POST /users/:id/resend-invite` で `AdminGetUser` 状態確認 → `AdminCreateUser(MessageAction=RESEND)`、`UserResponseDto` に `invitationPending` を付加し条件付き表示） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 

@@ -388,6 +388,34 @@
         ]
       }
     },
+    "/users/{id}/resend-invite": {
+      "post": {
+        "operationId": "UserController_resendInvite",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "users"
+        ]
+      }
+    },
     "/audit-logs": {
       "get": {
         "operationId": "AuditLogController_findAll",
@@ -976,6 +1004,10 @@
             "nullable": true,
             "format": "date-time"
           },
+          "invitationPending": {
+            "type": "boolean",
+            "description": "true なら Cognito の UserStatus=FORCE_CHANGE_PASSWORD（招待保留中）。 一覧/個別取得・作成・更新・復活エンドポイントで返る。GET /users/me と PATCH /users/me では常に false。 softDelete 済みも常に false。"
+          },
           "mfaEnabled": {
             "type": "boolean",
             "description": "自分自身（GET /users/me）にのみセットされる。MFA(TOTP) 有効状態。"
@@ -1001,6 +1033,7 @@
           "createdAt",
           "updatedAt",
           "deletedAt",
+          "invitationPending",
           "id",
           "cognitoSub",
           "email",
@@ -1121,7 +1154,8 @@
               "CREATE_USER",
               "UPDATE_USER",
               "DELETE_USER",
-              "RESTORE_USER"
+              "RESTORE_USER",
+              "RESEND_INVITE"
             ],
             "type": "string"
           },
