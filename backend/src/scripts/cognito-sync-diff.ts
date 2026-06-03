@@ -26,7 +26,12 @@ export type Discrepancy =
       cognitoEnabled: boolean;
       fixable: boolean;
     }
-  | { kind: 'email_mismatch'; sub: string; dbEmail: string; cognitoEmail: string };
+  | {
+      kind: 'email_mismatch';
+      sub: string;
+      dbEmail: string;
+      cognitoEmail: string;
+    };
 
 /**
  * DB ユーザーと Cognito ユーザーを sub で突き合わせ、不整合を分類して返す。
