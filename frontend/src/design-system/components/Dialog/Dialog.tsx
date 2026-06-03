@@ -10,11 +10,13 @@ import {
 import type { HTMLAttributes, ReactElement, ReactNode, Ref } from 'react';
 import {
   FloatingFocusManager,
+  FloatingNode,
   FloatingOverlay,
   FloatingPortal,
   useClick,
   useDismiss,
   useFloating,
+  useFloatingNodeId,
   useInteractions,
   useMergeRefs,
   useRole,
@@ -35,6 +37,7 @@ interface DialogContextValue {
   descriptionId: string;
   size: DialogSize;
   closeOnOverlayClick: boolean;
+  nodeId: string | undefined;
 }
 
 const DialogContext = createContext<DialogContextValue | null>(null);
@@ -70,7 +73,8 @@ export const Dialog = ({
     onOpenChange?.(next);
   };
 
-  const data = useFloating({ open, onOpenChange: setOpen });
+  const nodeId = useFloatingNodeId();
+  const data = useFloating({ nodeId, open, onOpenChange: setOpen });
   const click = useClick(data.context);
   const dismiss = useDismiss(data.context, {
     outsidePress: closeOnOverlayClick,
@@ -91,9 +95,18 @@ export const Dialog = ({
     descriptionId: `ds-dialog-desc-${baseId}`,
     size,
     closeOnOverlayClick,
+    nodeId,
   };
 
-  return <DialogContext.Provider value={value}>{children}</DialogContext.Provider>;
+  return (
+    <DialogContext.Provider value={value}>
+      {nodeId ? (
+        <FloatingNode id={nodeId}>{children}</FloatingNode>
+      ) : (
+        children
+      )}
+    </DialogContext.Provider>
+  );
 };
 
 // ── Trigger ──

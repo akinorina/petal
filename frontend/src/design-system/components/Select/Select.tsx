@@ -18,6 +18,7 @@ import {
   useClick,
   useDismiss,
   useFloating,
+  useFloatingNodeId,
   useInteractions,
   useListNavigation,
   useRole,
@@ -106,7 +107,9 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps<string>>(functio
     labelsRef.current = options.map((o) => o.label);
   }, [options]);
 
+  const nodeId = useFloatingNodeId();
   const data = useFloating({
+    nodeId,
     open,
     onOpenChange: setOpen,
     placement: 'bottom-start',

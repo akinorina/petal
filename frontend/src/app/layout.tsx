@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { SerwistProvider } from '@serwist/next/react';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { FloatingTreeProvider } from '@/components/FloatingTreeProvider';
 import { UpdateNotice } from '@/components/UpdateNotice';
 import { InstallPrompt } from '@/components/InstallPrompt';
 import { StandaloneLaunchTracker } from '@/components/StandaloneLaunchTracker';
@@ -37,7 +38,9 @@ export default function RootLayout({
           swUrl="/sw.js"
           disable={process.env.NODE_ENV !== 'production'}
         >
-          <AuthProvider>{children}</AuthProvider>
+          <FloatingTreeProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </FloatingTreeProvider>
           <UpdateNotice />
           <InstallPrompt />
           <StandaloneLaunchTracker />
