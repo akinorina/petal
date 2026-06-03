@@ -21,6 +21,7 @@ import {
   CreateUserSchema,
   ListUsersQuerySchema,
   RequestEmailChangeSchema,
+  UpdateMyProfileSchema,
   UpdateUserSchema,
 } from '../application/user.schemas';
 import { User } from '../domain/user';
@@ -32,6 +33,7 @@ import {
   CreateUserRequestDto,
   ListUsersQueryDto,
   RequestEmailChangeRequestDto,
+  UpdateMyProfileRequestDto,
   UpdateUserRequestDto,
   UserResponseDto,
 } from './user.dto';
@@ -59,6 +61,19 @@ export class UserController {
       mfaEnabled = undefined;
     }
     return { ...toResponse(user), mfaEnabled };
+  }
+
+  @Patch('me')
+  async updateMyProfile(
+    @Req() req: Request,
+    @Body() body: UpdateMyProfileRequestDto,
+  ): Promise<UserResponseDto> {
+    const parsed = UpdateMyProfileSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
+    const actor = requireAuthUser(req);
+    return toResponse(
+      await this.userService.updateMyProfile(actor.userId, parsed.data),
+    );
   }
 
   @Patch('me/email')
