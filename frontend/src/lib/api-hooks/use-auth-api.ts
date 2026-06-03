@@ -137,6 +137,40 @@ async function logout(): Promise<void> {
   }
 }
 
+async function signup(
+  email: string,
+  password: string,
+  name: string,
+  nameKana: string,
+): Promise<void> {
+  const res = await fetch(`${BASE_URL}/auth/signup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password, name, nameKana }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body?.message ?? 'サインアップに失敗しました');
+  }
+}
+
+async function confirmSignup(
+  email: string,
+  code: string,
+  name: string,
+  nameKana: string,
+): Promise<void> {
+  const res = await fetch(`${BASE_URL}/auth/confirm-signup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, code, name, nameKana }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body?.message ?? 'サインアップの確定に失敗しました');
+  }
+}
+
 async function requestPasswordReset(email: string): Promise<void> {
   const res = await fetch(`${BASE_URL}/auth/forgot-password`, {
     method: 'POST',
@@ -172,6 +206,8 @@ export function useAuthApi() {
       completeNewPassword,
       respondMfaChallenge,
       logout,
+      signup,
+      confirmSignup,
       requestPasswordReset,
       confirmPasswordReset,
     }),

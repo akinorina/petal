@@ -69,6 +69,13 @@ export default function LoginPage() {
                 パスワードを忘れた方
               </NextLink>
             </p>
+
+            <p className="text-center text-sm">
+              アカウントをお持ちでない方は{' '}
+              <NextLink href="/signup" className="ds-link ds-link--inline">
+                アカウントを作成
+              </NextLink>
+            </p>
           </form>
         )}
 
