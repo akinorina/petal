@@ -59,6 +59,7 @@
 | [docs/57_login-lockout.md](docs/57_login-lockout.md) | 不正ログイン試行のロックアウト 設計（TSK-17：`petal.login_attempts` で email 単位の失敗カウント、5 回/15 分でロックし `/auth/login` が 429、Lambda 前提で in-memory ではなく DB ストア） |
 | [docs/58_cognito-sync-audit.md](docs/58_cognito-sync-audit.md) | DB と Cognito の不整合検知/修復スクリプト 設計（TSK-18：`audit-cognito-sync` で sub をキーに突き合わせ 4 分類レポート、`--fix` は「削除済×Cognito 有効→無効化」のみ、分類ロジックは純粋関数として単体テスト） |
 | [docs/59_my-profile.md](docs/59_my-profile.md) | 自分のプロフィール変更 API 設計（TSK-21：`PATCH /users/me` で自身の name/nameKana のみ更新・audit なし、role/email は Zod で無視、中央 `/me` マイページを新設し導線集約） |
+| [docs/60_change-password.md](docs/60_change-password.md) | 自分のパスワード変更 API 設計（TSK-22：`POST /auth/change-password` で Cognito ChangePassword、認証必須・セッション失効なし、`/me/password` サブページ + PasswordPolicyChecklist 再利用） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 
