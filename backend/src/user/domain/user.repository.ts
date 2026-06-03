@@ -1,14 +1,22 @@
 import { User } from './user';
+import { UserRole } from './user-role.enum';
 
 export const USER_REPOSITORY = Symbol('IUserRepository');
+
+export type UserPageQuery = {
+  limit: number;
+  offset: number;
+  q?: string;
+  role?: UserRole;
+  deleted: boolean;
+};
 
 export interface IUserRepository {
   findById(id: string): Promise<User | null>;
   findByIdWithDeleted(id: string): Promise<User | null>;
   findByCognitoSub(cognitoSub: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
-  findAll(): Promise<User[]>;
-  findAllDeleted(): Promise<User[]>;
+  findPage(query: UserPageQuery): Promise<{ items: User[]; total: number }>;
   save(user: User): Promise<User>;
   softDelete(id: string): Promise<void>;
   restore(id: string): Promise<void>;

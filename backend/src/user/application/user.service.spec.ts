@@ -58,8 +58,7 @@ function buildMockRepository(): MockUserRepository {
     findByIdWithDeleted: jest.fn(),
     findByCognitoSub: jest.fn(),
     findByEmail: jest.fn(),
-    findAll: jest.fn(),
-    findAllDeleted: jest.fn(),
+    findPage: jest.fn(),
     save: jest.fn(),
     softDelete: jest.fn(),
     restore: jest.fn(),
@@ -364,6 +363,53 @@ describe('UserService.updateMyProfile', () => {
     await expect(
       service.updateMyProfile('missing', { name: 'x' }),
     ).rejects.toBeInstanceOf(NotFoundException);
+  });
+});
+
+describe('UserService.findPage', () => {
+  let service: UserService;
+  let userRepository: MockUserRepository;
+  let cognitoUser: MockCognitoUserClient;
+
+  beforeEach(async () => {
+    userRepository = buildMockRepository();
+    cognitoUser = buildMockCognitoUser();
+    service = await buildService(userRepository, cognitoUser);
+  });
+
+  it('クエリをそのまま repository に委譲し結果を返す', async () => {
+    const user = buildUser();
+    userRepository.findPage.mockResolvedValue({ items: [user], total: 1 });
+
+    const result = await service.findPage({
+      limit: 20,
+      offset: 0,
+      q: '太郎',
+      role: UserRole.Admin,
+      deleted: false,
+    });
+
+    expect(userRepository.findPage).toHaveBeenCalledWith({
+      limit: 20,
+      offset: 0,
+      q: '太郎',
+      role: UserRole.Admin,
+      deleted: false,
+    });
+    expect(result.items).toEqual([user]);
+    expect(result.total).toBe(1);
+  });
+
+  it('deleted=true でも repository にそのまま委譲する', async () => {
+    userRepository.findPage.mockResolvedValue({ items: [], total: 0 });
+
+    await service.findPage({ limit: 10, offset: 20, deleted: true });
+
+    expect(userRepository.findPage).toHaveBeenCalledWith({
+      limit: 10,
+      offset: 20,
+      deleted: true,
+    });
   });
 });
 
