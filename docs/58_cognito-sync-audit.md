@@ -175,4 +175,57 @@ DB: 12 件（削除済 3 件） / Cognito: 11 件
 
 ## 11. 未確定事項
 
-- なし（Phase 2 / Phase 3 で全論点確定済み）。実装計画は Phase 4 で本書末尾に追記する。
+- なし（Phase 2 / Phase 3 で全論点確定済み）。
+
+---
+
+## 12. 実装計画（Phase 4）
+
+> すべて **backend/** 配下で完結する。コマンドは **backend/package.json** に定義し、`cd backend` してから実行する。
+
+### 12.1 変更・追加ファイル
+
+#### backend（新規）
+
+- `src/scripts/cognito-sync-diff.ts`: 型（`DbUser` / `CognitoUser` / `Discrepancy`）と純粋関数 `classifyDiscrepancies`
+- `src/scripts/cognito-sync-diff.spec.ts`: 分類ロジックの単体テスト
+- `scripts/audit-cognito-sync.ts`: スタンドアロン I/O（ListUsers ページング・DB raw SQL・整形出力・`--fix` で AdminDisableUser）
+
+#### backend（変更）
+
+- `package.json`: `"audit-cognito-sync": "ts-node -r tsconfig-paths/register scripts/audit-cognito-sync.ts"` を追加
+
+migration / 環境変数 / 依存追加: なし（既存の `COGNITO_USER_POOL_ID` / `COGNITO_REGION` / DB 接続変数を利用）。
+
+### 12.2 作業順序（コミット単位）
+
+1. **backend: 純粋分類ロジック + テスト**（`src/scripts/cognito-sync-diff.ts` + spec）— 完了確認 `cd backend && pnpm test && pnpm build`
+2. **backend: スクリプト本体 + package.json コマンド** — 完了確認 `cd backend && npx tsc --noEmit --skipLibCheck scripts/audit-cognito-sync.ts`（型）/ `npx eslint scripts/audit-cognito-sync.ts`（手動 lint）。実行は実 Cognito + DB 前提
+
+### 12.3 テスト方針
+
+- `cognito-sync-diff.spec.ts`: 4 カテゴリ（db_only / cognito_only / state_mismatch / email_mismatch）と `fixable` 判定、整合時 0 件、状態+email 両ずれの二重計上をカバー。CI（`pnpm test`）で担保。
+- スクリプト本体は外部 I/O 依存のため手動シナリオ（§10）で確認。型は `tsc --noEmit` で検証。
+
+### 12.4 想定外時の判断ルール（タスク固有）
+
+- **AI 単独判断 OK**: 出力文言・整形、ListUsers の `Limit` 調整、ログ表現。
+- **中断して相談**:
+  - Cognito ListUsers が `sub` を返さない / 属性形が想定と異なる
+  - `--fix` の対象拡大（Enable 方向など）の要望
+  - DB スキーマや突き合わせキーの見直しが必要になった場合
+
+### 12.5 事前解決済みの判断ポイント（ドライラン結果）
+
+| # | 判断ポイント | 解決 |
+| - | ------------ | ---- |
+| 1 | Cognito 側の取得項目 | `Username` / `Enabled` / 属性の `sub`・`email`。キーは `sub` |
+| 2 | DB 取得 SQL | `SELECT cognito_sub, email, (deleted_at IS NOT NULL) AS deleted FROM "petal"."users"`（softDelete 含む） |
+| 3 | ページング | `ListUsersCommand` を `PaginationToken` でループ、`Limit` 60 |
+| 4 | `--fix` の解釈 | `process.argv.includes('--fix')`。未指定は report-only |
+| 5 | Disable の対象指定 | Cognito 側の `Username` で `AdminDisableUser`（DB email ではなく Cognito の Username を使う） |
+| 6 | email 比較 | 大文字小文字差での誤検知を避けるため `toLowerCase()` で比較 |
+| 7 | 状態+email 両ずれ | 両カテゴリに計上する |
+| 8 | 純粋ロジックの置き場所 | `src/scripts/`（jest rootDir=src の対象）。スクリプトは相対 import |
+| 9 | 終了コード | 実行時エラーのみ `exit 1`、その他は `exit 0` |
+| 10 | 実行場所 | すべて `backend/` 配下。コマンドは backend/package.json |
