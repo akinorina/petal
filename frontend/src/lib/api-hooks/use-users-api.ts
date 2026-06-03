@@ -83,6 +83,14 @@ export function useUsersApi(query: UsersQuery) {
     [reload],
   );
 
+  const resendInvite = useCallback(
+    async (id: string) => {
+      await userApi.resendInvite(id);
+      await reload();
+    },
+    [reload],
+  );
+
   return {
     items,
     total,
@@ -94,5 +102,6 @@ export function useUsersApi(query: UsersQuery) {
     update,
     remove,
     restore,
+    resendInvite,
   };
 }

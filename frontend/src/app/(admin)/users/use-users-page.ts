@@ -15,6 +15,7 @@ export type Modal =
   | { type: 'edit'; user: User }
   | { type: 'delete'; user: User }
   | { type: 'restore'; user: User }
+  | { type: 'resend-invite'; user: User }
   | null;
 
 export type Tab = 'active' | 'deleted';
@@ -47,6 +48,7 @@ export function useUsersPage() {
 
   const [searchInput, setSearchInput] = useState(urlQ);
   const [modal, setModal] = useState<Modal>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const query = useMemo(
     () => ({
@@ -151,6 +153,18 @@ export function useUsersPage() {
     setModal(null);
   }
 
+  async function handleResendInvite(user: User) {
+    try {
+      await api.resendInvite(user.id);
+      setModal(null);
+      setSuccessMessage(`${user.name} に招待メールを再送しました`);
+    } catch (e) {
+      api.setError(
+        e instanceof ApiError ? e.message : '招待メールの再送に失敗しました',
+      );
+    }
+  }
+
   const totalPages = Math.max(1, Math.ceil(api.total / PAGE_SIZE));
 
   return {
@@ -170,9 +184,12 @@ export function useUsersPage() {
     error: api.error,
     modal,
     setModal,
+    successMessage,
+    setSuccessMessage,
     handleDelete,
     handleRestore,
     handleCreate,
     handleUpdate,
+    handleResendInvite,
   };
 }
