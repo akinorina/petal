@@ -196,6 +196,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/change-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthController_changePassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/forgot-password": {
         parameters: {
             query?: never;
@@ -484,6 +500,10 @@ export interface components {
             code: string;
             name: string;
             nameKana: string;
+        };
+        ChangePasswordRequestDto: {
+            previousPassword: string;
+            proposedPassword: string;
         };
         ForgotPasswordRequestDto: {
             /** Format: email */
@@ -901,6 +921,27 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ConfirmSignupRequestDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_changePassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordRequestDto"];
             };
         };
         responses: {

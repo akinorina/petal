@@ -511,6 +511,30 @@
         ]
       }
     },
+    "/auth/change-password": {
+      "post": {
+        "operationId": "AuthController_changePassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/auth/forgot-password": {
       "post": {
         "operationId": "AuthController_forgotPassword",
@@ -1249,6 +1273,21 @@
           "code",
           "name",
           "nameKana"
+        ]
+      },
+      "ChangePasswordRequestDto": {
+        "type": "object",
+        "properties": {
+          "previousPassword": {
+            "type": "string"
+          },
+          "proposedPassword": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "previousPassword",
+          "proposedPassword"
         ]
       },
       "ForgotPasswordRequestDto": {

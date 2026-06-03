@@ -9,17 +9,25 @@ export class ApiError extends Error {
   }
 }
 
-async function unwrap<T>(promise: Promise<{ data?: T; response: Response }>): Promise<T> {
-  const { data, response } = await promise;
+async function unwrap<T>(
+  promise: Promise<{ data?: T; error?: unknown; response: Response }>,
+): Promise<T> {
+  const { data, error, response } = await promise;
   if (!response.ok) {
-    const body: unknown = await response.clone().json().catch(() => null);
-    const message =
-      (body && typeof body === 'object' && 'message' in body
-        ? String((body as { message?: unknown }).message ?? '')
-        : '') || response.statusText;
+    // openapi-fetch はレスポンスボディを既に消費しているため、
+    // response.clone() は使わず、パース済みの error からメッセージを取り出す。
+    const message = messageFromError(error) || response.statusText || 'リクエストに失敗しました';
     throw new ApiError(response.status, message);
   }
   return data as T;
+}
+
+function messageFromError(error: unknown): string {
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string') return message;
+  }
+  return '';
 }
 
 export const imageApi = {
@@ -63,6 +71,14 @@ export const mfaApi = {
   },
   disable: async (): Promise<void> => {
     await unwrap(apiClient.POST('/auth/mfa/disable'));
+  },
+};
+
+export const authApi = {
+  changePassword: async (
+    body: Schemas['ChangePasswordRequestDto'],
+  ): Promise<void> => {
+    await unwrap(apiClient.POST('/auth/change-password', { body }));
   },
 };
 

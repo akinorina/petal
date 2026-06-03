@@ -35,6 +35,11 @@ export const ConfirmForgotPasswordSchema = z.object({
   newPassword: z.string().min(8),
 });
 
+export const ChangePasswordSchema = z.object({
+  previousPassword: z.string().min(1),
+  proposedPassword: z.string().min(8),
+});
+
 export const RefreshSchema = z.object({
   refreshToken: z.string().min(1),
   email: z.email(),
@@ -60,6 +65,7 @@ export type ForgotPasswordInput = z.infer<typeof ForgotPasswordSchema>;
 export type ConfirmForgotPasswordInput = z.infer<
   typeof ConfirmForgotPasswordSchema
 >;
+export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>;
 export type RefreshInput = z.infer<typeof RefreshSchema>;
 export type MfaChallengeInput = z.infer<typeof MfaChallengeSchema>;
 export type MfaVerifyInput = z.infer<typeof MfaVerifySchema>;

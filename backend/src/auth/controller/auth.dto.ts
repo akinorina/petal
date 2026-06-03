@@ -74,6 +74,11 @@ export class ConfirmForgotPasswordRequestDto {
   newPassword!: string;
 }
 
+export class ChangePasswordRequestDto {
+  previousPassword!: string;
+  proposedPassword!: string;
+}
+
 export class RefreshRequestDto {
   refreshToken!: string;
   @ApiProperty({ format: 'email' })

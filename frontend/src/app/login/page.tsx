@@ -23,6 +23,7 @@ export default function LoginPage() {
     mfaCode,
     setMfaCode,
     error,
+    notice,
     isLoading,
     newPasswordCheck,
     handleLogin,
@@ -39,6 +40,8 @@ export default function LoginPage() {
 
         {step.kind === 'login' && (
           <form onSubmit={handleLogin} className="space-y-4">
+            {notice && <Alert variant="success">{notice}</Alert>}
+
             <FormField label="メールアドレス" isRequired>
               <Input
                 type="email"

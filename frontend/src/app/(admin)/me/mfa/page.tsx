@@ -35,6 +35,9 @@ export default function MeMfaPage() {
           メールアドレス変更
         </a>
         <span className="font-medium text-zinc-900">2 段階認証</span>
+        <a href="/me/password" className="ds-link ds-link--inline">
+          パスワード変更
+        </a>
       </nav>
       <Text as="h1" variant="heading-md">2 段階認証 (MFA)</Text>
 
