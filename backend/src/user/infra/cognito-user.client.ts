@@ -19,6 +19,7 @@ import {
   UserNotFoundException,
   VerifyUserAttributeCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
+import { runWithCognitoMetrics } from '../../common/observability/cognito-metrics';
 
 export type CognitoUserCreated = {
   sub: string;
@@ -42,16 +43,21 @@ export class CognitoUserClient {
    * 一時パスワードは Cognito が自動生成し、招待メールに記載される。
    */
   async createUser(email: string): Promise<CognitoUserCreated> {
-    const result = await this.client.send(
-      new AdminCreateUserCommand({
-        UserPoolId: this.userPoolId,
-        Username: email,
-        UserAttributes: [
-          { Name: 'email', Value: email },
-          { Name: 'email_verified', Value: 'true' },
-        ],
-        DesiredDeliveryMediums: ['EMAIL'],
-      }),
+    const result = await runWithCognitoMetrics(
+      'AdminCreateUser',
+      () =>
+        this.client.send(
+          new AdminCreateUserCommand({
+            UserPoolId: this.userPoolId,
+            Username: email,
+            UserAttributes: [
+              { Name: 'email', Value: email },
+              { Name: 'email_verified', Value: 'true' },
+            ],
+            DesiredDeliveryMediums: ['EMAIL'],
+          }),
+        ),
+      this.logger,
     );
 
     const sub = result.User?.Attributes?.find((a) => a.Name === 'sub')?.Value;
@@ -68,11 +74,16 @@ export class CognitoUserClient {
    */
   async deleteUser(email: string): Promise<void> {
     try {
-      await this.client.send(
-        new AdminDeleteUserCommand({
-          UserPoolId: this.userPoolId,
-          Username: email,
-        }),
+      await runWithCognitoMetrics(
+        'AdminDeleteUser',
+        () =>
+          this.client.send(
+            new AdminDeleteUserCommand({
+              UserPoolId: this.userPoolId,
+              Username: email,
+            }),
+          ),
+        this.logger,
       );
     } catch (err) {
       if (err instanceof UserNotFoundException) {
@@ -92,11 +103,16 @@ export class CognitoUserClient {
    */
   async disableUser(email: string): Promise<void> {
     try {
-      await this.client.send(
-        new AdminDisableUserCommand({
-          UserPoolId: this.userPoolId,
-          Username: email,
-        }),
+      await runWithCognitoMetrics(
+        'AdminDisableUser',
+        () =>
+          this.client.send(
+            new AdminDisableUserCommand({
+              UserPoolId: this.userPoolId,
+              Username: email,
+            }),
+          ),
+        this.logger,
       );
     } catch (err) {
       if (err instanceof UserNotFoundException) {
@@ -114,11 +130,16 @@ export class CognitoUserClient {
    * 不整合検知のため、ユーザーが存在しない場合は例外を投げる（disableUser とは異なる扱い）。
    */
   async enableUser(email: string): Promise<void> {
-    await this.client.send(
-      new AdminEnableUserCommand({
-        UserPoolId: this.userPoolId,
-        Username: email,
-      }),
+    await runWithCognitoMetrics(
+      'AdminEnableUser',
+      () =>
+        this.client.send(
+          new AdminEnableUserCommand({
+            UserPoolId: this.userPoolId,
+            Username: email,
+          }),
+        ),
+      this.logger,
     );
   }
 
@@ -128,11 +149,16 @@ export class CognitoUserClient {
    */
   async globalSignOut(email: string): Promise<void> {
     try {
-      await this.client.send(
-        new AdminUserGlobalSignOutCommand({
-          UserPoolId: this.userPoolId,
-          Username: email,
-        }),
+      await runWithCognitoMetrics(
+        'AdminUserGlobalSignOut',
+        () =>
+          this.client.send(
+            new AdminUserGlobalSignOutCommand({
+              UserPoolId: this.userPoolId,
+              Username: email,
+            }),
+          ),
+        this.logger,
       );
     } catch (err) {
       if (err instanceof UserNotFoundException) {
@@ -148,11 +174,16 @@ export class CognitoUserClient {
    * Cognito は新メアドへ検証コードを送信し、`email_verified=false` に切り替える。
    */
   async updateUserEmail(accessToken: string, newEmail: string): Promise<void> {
-    await this.client.send(
-      new UpdateUserAttributesCommand({
-        AccessToken: accessToken,
-        UserAttributes: [{ Name: 'email', Value: newEmail }],
-      }),
+    await runWithCognitoMetrics(
+      'UpdateUserAttributes',
+      () =>
+        this.client.send(
+          new UpdateUserAttributesCommand({
+            AccessToken: accessToken,
+            UserAttributes: [{ Name: 'email', Value: newEmail }],
+          }),
+        ),
+      this.logger,
     );
   }
 
@@ -161,12 +192,17 @@ export class CognitoUserClient {
    * 成功すると `email_verified=true` になり、新 email が確定する。
    */
   async verifyUserEmail(accessToken: string, code: string): Promise<void> {
-    await this.client.send(
-      new VerifyUserAttributeCommand({
-        AccessToken: accessToken,
-        AttributeName: 'email',
-        Code: code,
-      }),
+    await runWithCognitoMetrics(
+      'VerifyUserAttribute',
+      () =>
+        this.client.send(
+          new VerifyUserAttributeCommand({
+            AccessToken: accessToken,
+            AttributeName: 'email',
+            Code: code,
+          }),
+        ),
+      this.logger,
     );
   }
 
@@ -174,8 +210,10 @@ export class CognitoUserClient {
    * 自分のアクセストークンで Cognito 上の email 属性（保留中の新 email を含む）を取得する。
    */
   async getUserEmail(accessToken: string): Promise<string> {
-    const result = await this.client.send(
-      new GetUserCommand({ AccessToken: accessToken }),
+    const result = await runWithCognitoMetrics(
+      'GetUser',
+      () => this.client.send(new GetUserCommand({ AccessToken: accessToken })),
+      this.logger,
     );
     const email = result.UserAttributes?.find((a) => a.Name === 'email')?.Value;
     if (!email) {
@@ -190,8 +228,10 @@ export class CognitoUserClient {
   async getUserMfaSettings(
     accessToken: string,
   ): Promise<{ totpEnabled: boolean }> {
-    const result = await this.client.send(
-      new GetUserCommand({ AccessToken: accessToken }),
+    const result = await runWithCognitoMetrics(
+      'GetUser',
+      () => this.client.send(new GetUserCommand({ AccessToken: accessToken })),
+      this.logger,
     );
     const totpEnabled = (result.UserMFASettingList ?? []).includes(
       'SOFTWARE_TOKEN_MFA',
@@ -206,11 +246,16 @@ export class CognitoUserClient {
    */
   async adminGetUserStatus(email: string): Promise<string | null> {
     try {
-      const result = await this.client.send(
-        new AdminGetUserCommand({
-          UserPoolId: this.userPoolId,
-          Username: email,
-        }),
+      const result = await runWithCognitoMetrics(
+        'AdminGetUser',
+        () =>
+          this.client.send(
+            new AdminGetUserCommand({
+              UserPoolId: this.userPoolId,
+              Username: email,
+            }),
+          ),
+        this.logger,
       );
       return result.UserStatus ?? null;
     } catch (err) {
@@ -229,13 +274,18 @@ export class CognitoUserClient {
    * InvalidParameterException を返すため、呼び出し前に状態確認すること。
    */
   async resendInvite(email: string): Promise<void> {
-    await this.client.send(
-      new AdminCreateUserCommand({
-        UserPoolId: this.userPoolId,
-        Username: email,
-        MessageAction: 'RESEND',
-        DesiredDeliveryMediums: ['EMAIL'],
-      }),
+    await runWithCognitoMetrics(
+      'AdminCreateUser.RESEND',
+      () =>
+        this.client.send(
+          new AdminCreateUserCommand({
+            UserPoolId: this.userPoolId,
+            Username: email,
+            MessageAction: 'RESEND',
+            DesiredDeliveryMediums: ['EMAIL'],
+          }),
+        ),
+      this.logger,
     );
   }
 
@@ -244,11 +294,16 @@ export class CognitoUserClient {
    * セルフサインアップ確定後に DB へ保存する cognito_sub を引くために使う。
    */
   async adminGetUserSub(email: string): Promise<string> {
-    const result = await this.client.send(
-      new AdminGetUserCommand({
-        UserPoolId: this.userPoolId,
-        Username: email,
-      }),
+    const result = await runWithCognitoMetrics(
+      'AdminGetUser',
+      () =>
+        this.client.send(
+          new AdminGetUserCommand({
+            UserPoolId: this.userPoolId,
+            Username: email,
+          }),
+        ),
+      this.logger,
     );
     const sub = result.UserAttributes?.find((a) => a.Name === 'sub')?.Value;
     if (!sub) {
