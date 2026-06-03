@@ -29,7 +29,9 @@ describe('classifyDiscrepancies', () => {
 
   it('DB のみ存在は db_only', () => {
     const result = classifyDiscrepancies([db({ cognitoSub: 'x' })], []);
-    expect(result).toEqual([{ kind: 'db_only', sub: 'x', email: 'taro@example.com' }]);
+    expect(result).toEqual([
+      { kind: 'db_only', sub: 'x', email: 'taro@example.com' },
+    ]);
   });
 
   it('Cognito のみ存在は cognito_only', () => {
@@ -78,7 +80,10 @@ describe('classifyDiscrepancies', () => {
 
   it('DB 削除済 × Cognito 無効 は整合（不整合なし）', () => {
     expect(
-      classifyDiscrepancies([db({ deleted: true })], [cognito({ enabled: false })]),
+      classifyDiscrepancies(
+        [db({ deleted: true })],
+        [cognito({ enabled: false })],
+      ),
     ).toEqual([]);
   });
 
