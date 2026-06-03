@@ -82,7 +82,8 @@
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 1000;
+  /* Dialog overlay (1300) より前面に出す必要があるため 1400 を採用 */
+  z-index: 1400;
   background: var(--surface-raised);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
