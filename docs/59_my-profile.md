@@ -131,4 +131,58 @@ DB スキーマ変更なし（既存 `petal.users` の name / name_kana を更�
 
 ## 11. 未確定事項
 
-- なし（Phase 2 / Phase 3 で全論点確定済み）。実装計画は Phase 4 で本書末尾に追記する。
+- なし（Phase 2 / Phase 3 で全論点確定済み）。
+
+---
+
+## 12. 実装計画（Phase 4）
+
+### 12.1 変更・追加ファイル
+
+#### backend
+
+- `src/user/application/user.schemas.ts`（変更）: `UpdateMyProfileSchema` + 型
+- `src/user/controller/user.dto.ts`（変更）: `UpdateMyProfileRequestDto`（name? / nameKana?）
+- `src/user/application/user.service.ts`（変更）: `updateMyProfile(userId, input)`（audit なし）
+- `src/user/controller/user.controller.ts`（変更）: `@Patch('me')` を `/me` 群に追加（`:id` より前）
+- `src/user/application/user.service.spec.ts`（変更）: `updateMyProfile` のテスト
+- `openapi.json`（再生成）
+
+#### frontend
+
+- `src/lib/api.ts`（変更）: `userApi.updateMyProfile(body)`
+- `src/app/(admin)/me/page.tsx`（新規）: プロフィール表示 + 氏名/ふりがな編集
+- `src/app/(admin)/me/use-me-page.ts`（新規）: `userApi.findMe` で読込・`updateMyProfile` で保存
+- `src/app/(admin)/me/email/page.tsx` / `me/mfa/page.tsx`（変更）: nav に「プロフィール」(/me) を追加
+- `src/app/(admin)/layout.tsx`（変更）: ヘッダー email リンクを `/me/email` → `/me`
+- `src/lib/openapi/schema.d.ts`（再生成）
+
+migration / 環境変数 / 依存追加: なし。
+
+### 12.2 作業順序（コミット単位）
+
+1. **backend: PATCH /users/me + updateMyProfile + テスト + openapi 再生成** — 完了確認 `cd backend && pnpm lint && pnpm test && pnpm build`、`/users/me` の patch が openapi.json に出る
+2. **frontend: /me ページ + api + 導線 + schema 再生成** — 完了確認 `cd frontend && pnpm lint && pnpm build`
+
+### 12.3 テスト方針
+
+- `user.service.spec.ts`: `updateMyProfile` が name/nameKana を更新し、未指定項目は不変、audit を呼ばない（`auditLogService.record` 未呼出）ことを確認。
+- frontend はユニットテスト無し（lint/build で担保）。手動シナリオ（§10）で確認。
+
+### 12.4 想定外時の判断ルール（タスク固有）
+
+- **AI 単独判断 OK**: 画面文言・フォーム配置、nav リンク文言。
+- **中断して相談**: API 仕様/スキーマ変更が必要、role/email を扱う必要が出た、AuthContext に name を持たせる必要が出た場合。
+
+### 12.5 事前解決済みの判断ポイント（ドライラン結果）
+
+| # | 判断ポイント | 解決 |
+| - | ------------ | ---- |
+| 1 | 空 body | name/nameKana 両方 undefined → 変更なしで現在値を返す |
+| 2 | レスポンス | `200` + `UserResponseDto`（`toResponse`、mfaEnabled は付けない） |
+| 3 | ルート順 | `@Patch('me')` を `/me` 群（`:id` より前）に置く |
+| 4 | 認可 | `@Roles` なし・対象は常に `request.user.userId`（自分） |
+| 5 | フロント読込 | `userApi.findMe()` で name/nameKana/email を取得 |
+| 6 | 保存後 | 返却値でフォーム更新 + 成功表示。AuthContext は更新不要（name を持たない） |
+| 7 | 導線 | `/me`⇄`/me/email`⇄`/me/mfa` を nav 相互リンク、ヘッダーは `/me` へ |
+| 8 | audit | `updateMyProfile` では `auditLogService.record` を呼ばない |
