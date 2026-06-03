@@ -318,6 +318,55 @@ describe('UserService.update', () => {
   });
 });
 
+describe('UserService.updateMyProfile', () => {
+  let service: UserService;
+  let userRepository: MockUserRepository;
+  let cognitoUser: MockCognitoUserClient;
+  let auditLog: MockAuditLogService;
+
+  beforeEach(async () => {
+    userRepository = buildMockRepository();
+    cognitoUser = buildMockCognitoUser();
+    auditLog = buildMockAuditLog();
+    service = await buildService(userRepository, cognitoUser, auditLog);
+  });
+
+  it('name / nameKana を更新し save する（audit は呼ばない）', async () => {
+    const user = buildUser({ name: '旧名', nameKana: 'きゅうめい' });
+    userRepository.findById.mockResolvedValue(user);
+    userRepository.save.mockImplementation((u: User) => u);
+
+    const result = await service.updateMyProfile(user.id, {
+      name: '新名',
+      nameKana: 'しんめい',
+    });
+
+    expect(result.name).toBe('新名');
+    expect(result.nameKana).toBe('しんめい');
+    expect(userRepository.save).toHaveBeenCalledTimes(1);
+    expect(auditLog.record).not.toHaveBeenCalled();
+  });
+
+  it('未指定の項目は変更しない', async () => {
+    const user = buildUser({ name: '旧名', nameKana: 'きゅうめい' });
+    userRepository.findById.mockResolvedValue(user);
+    userRepository.save.mockImplementation((u: User) => u);
+
+    const result = await service.updateMyProfile(user.id, { name: '新名' });
+
+    expect(result.name).toBe('新名');
+    expect(result.nameKana).toBe('きゅうめい');
+  });
+
+  it('存在しないユーザーで NotFoundException', async () => {
+    userRepository.findById.mockResolvedValue(null);
+
+    await expect(
+      service.updateMyProfile('missing', { name: 'x' }),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+});
+
 describe('UserService.findById', () => {
   let service: UserService;
   let userRepository: MockUserRepository;

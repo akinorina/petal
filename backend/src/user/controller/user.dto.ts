@@ -39,6 +39,11 @@ export class UpdateUserRequestDto {
   role?: UserRole;
 }
 
+export class UpdateMyProfileRequestDto {
+  name?: string;
+  nameKana?: string;
+}
+
 export class ListUsersQueryDto {
   @ApiProperty({ enum: ['true', 'false'], required: false })
   deleted?: 'true' | 'false';

@@ -16,7 +16,11 @@ import { User } from '../domain/user';
 import { UserRole } from '../domain/user-role.enum';
 import { IUserRepository, USER_REPOSITORY } from '../domain/user.repository';
 import { CognitoUserClient } from '../infra/cognito-user.client';
-import { CreateUserInput, UpdateUserInput } from './user.schemas';
+import {
+  CreateUserInput,
+  UpdateMyProfileInput,
+  UpdateUserInput,
+} from './user.schemas';
 
 @Injectable()
 export class UserService {
@@ -200,6 +204,20 @@ export class UserService {
     }
 
     return saved;
+  }
+
+  /**
+   * 自分自身のプロフィール（氏名・ふりがな）のみを更新する。
+   * role / email は対象外。admin 操作ではないため監査ログは記録しない。
+   */
+  async updateMyProfile(
+    userId: string,
+    input: UpdateMyProfileInput,
+  ): Promise<User> {
+    const user = await this.findById(userId);
+    if (input.name !== undefined) user.name = input.name;
+    if (input.nameKana !== undefined) user.nameKana = input.nameKana;
+    return this.userRepository.save(user);
   }
 
   async restore(id: string, actorId: string): Promise<User> {

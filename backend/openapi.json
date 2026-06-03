@@ -46,6 +46,40 @@
         "tags": [
           "users"
         ]
+      },
+      "patch": {
+        "operationId": "UserController_updateMyProfile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMyProfileRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "users"
+        ]
       }
     },
     "/users/me/email": {
@@ -916,6 +950,17 @@
           "name",
           "nameKana"
         ]
+      },
+      "UpdateMyProfileRequestDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "nameKana": {
+            "type": "string"
+          }
+        }
       },
       "RequestEmailChangeRequestDto": {
         "type": "object",
