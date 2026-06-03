@@ -421,6 +421,12 @@ export interface components {
         ConfirmEmailChangeRequestDto: {
             code: string;
         };
+        PaginatedUsersResponseDto: {
+            items: components["schemas"]["UserResponseDto"][];
+            total: number;
+            limit: number;
+            offset: number;
+        };
         CreateUserRequestDto: {
             /** Format: email */
             email: string;
@@ -701,6 +707,11 @@ export interface operations {
     UserController_findAll: {
         parameters: {
             query?: {
+                limit?: number;
+                offset?: number;
+                /** @description email / name / nameKana の部分一致（大文字小文字無視） */
+                q?: string;
+                role?: components["schemas"]["UserRole"];
                 deleted?: "true" | "false";
             };
             header?: never;
@@ -714,7 +725,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserResponseDto"][];
+                    "application/json": components["schemas"]["PaginatedUsersResponseDto"];
                 };
             };
         };

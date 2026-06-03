@@ -100,11 +100,23 @@ export const userApi = {
   findMe: () => unwrap(apiClient.GET('/users/me')),
   updateMyProfile: (body: Schemas['UpdateMyProfileRequestDto']) =>
     unwrap(apiClient.PATCH('/users/me', { body })),
-  findAll: (params?: { deleted?: boolean }) =>
+  findPage: (params: {
+    limit: number;
+    offset: number;
+    q?: string;
+    role?: 'admin' | 'user';
+    deleted?: boolean;
+  }) =>
     unwrap(
       apiClient.GET('/users', {
         params: {
-          query: params?.deleted ? { deleted: 'true' } : {},
+          query: {
+            limit: params.limit,
+            offset: params.offset,
+            ...(params.q ? { q: params.q } : {}),
+            ...(params.role ? { role: params.role } : {}),
+            deleted: params.deleted ? 'true' : 'false',
+          },
         },
       }),
     ),

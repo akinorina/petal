@@ -8,17 +8,35 @@ type User = Schemas['UserResponseDto'];
 type CreateUserRequest = Schemas['CreateUserRequestDto'];
 type UpdateUserRequest = Schemas['UpdateUserRequestDto'];
 
-export function useUsersApi(deleted: boolean) {
-  const [users, setUsers] = useState<User[]>([]);
+export type UsersQuery = {
+  limit: number;
+  offset: number;
+  q?: string;
+  role?: 'admin' | 'user';
+  deleted: boolean;
+};
+
+export function useUsersApi(query: UsersQuery) {
+  const [items, setItems] = useState<User[]>([]);
+  const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const { limit, offset, q, role, deleted } = query;
 
   const reload = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await userApi.findAll({ deleted });
-      setUsers(data);
+      const data = await userApi.findPage({
+        limit,
+        offset,
+        q,
+        role,
+        deleted,
+      });
+      setItems(data.items);
+      setTotal(data.total);
     } catch (e) {
       setError(
         e instanceof ApiError ? e.message : 'データの取得に失敗しました',
@@ -26,7 +44,7 @@ export function useUsersApi(deleted: boolean) {
     } finally {
       setIsLoading(false);
     }
-  }, [deleted]);
+  }, [limit, offset, q, role, deleted]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -66,7 +84,8 @@ export function useUsersApi(deleted: boolean) {
   );
 
   return {
-    users,
+    items,
+    total,
     isLoading,
     error,
     setError,
