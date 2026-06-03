@@ -55,6 +55,7 @@
 | [docs/53_standalone-detection.md](docs/53_standalone-detection.md) | スタンドアロン起動の検出・計測 設計（PRJ-10 T4 / TSK-94：`display-mode: standalone` 判定フック + `trackEvent('app_launch')` 発火口） |
 | [docs/54_lighthouse-pwa-ci.md](docs/54_lighthouse-pwa-ci.md) | Lighthouse PWA 監査の CI 組み込み 設計（PRJ-10 T5 / TSK-95：`@lhci/cli` + GitHub Actions で `installable-manifest` をゲート） |
 | [docs/55_release-branch-cicd.md](docs/55_release-branch-cicd.md) | release ブランチによる CI/CD 起動制御 設計（PRJ-11：`main` 開発 → `promote-to-release` で `release` にマージ → Amplify / Lambda デプロイ） |
+| [docs/56_self-service-signup.md](docs/56_self-service-signup.md) | セルフサービスのサインアップ 設計（TSK-12：`POST /auth/signup` + `/auth/confirm-signup` で Cognito SignUp/ConfirmSignUp、confirm 後に `role=user` で DB INSERT、`/signup` 2 ステップ画面） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 

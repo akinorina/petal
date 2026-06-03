@@ -5,6 +5,7 @@ import {
   AdminDeleteUserCommand,
   AdminDisableUserCommand,
   AdminEnableUserCommand,
+  AdminGetUserCommand,
   AdminUserGlobalSignOutCommand,
   AliasExistsException,
   CodeMismatchException,
@@ -195,6 +196,24 @@ export class CognitoUserClient {
       'SOFTWARE_TOKEN_MFA',
     );
     return { totpEnabled };
+  }
+
+  /**
+   * 管理者権限で email（= Username）から Cognito の sub を取得する。
+   * セルフサインアップ確定後に DB へ保存する cognito_sub を引くために使う。
+   */
+  async adminGetUserSub(email: string): Promise<string> {
+    const result = await this.client.send(
+      new AdminGetUserCommand({
+        UserPoolId: this.userPoolId,
+        Username: email,
+      }),
+    );
+    const sub = result.UserAttributes?.find((a) => a.Name === 'sub')?.Value;
+    if (!sub) {
+      throw new Error('Cognito から sub を取得できませんでした');
+    }
+    return sub;
   }
 
   isUsernameExists(err: unknown): boolean {

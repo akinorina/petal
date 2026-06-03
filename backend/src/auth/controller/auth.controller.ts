@@ -17,17 +17,20 @@ import { AuthService } from '../application/auth.service';
 import { Public } from '../../common/decorators/public.decorator';
 import {
   ConfirmForgotPasswordSchema,
+  ConfirmSignupSchema,
   ForgotPasswordSchema,
   LoginSchema,
   MfaChallengeSchema,
   MfaVerifySchema,
   NewPasswordChallengeSchema,
   RefreshSchema,
+  SignupSchema,
 } from '../application/auth.schemas';
 import {
   AuthenticatedResponseDto,
   ChallengeResponseDto,
   ConfirmForgotPasswordRequestDto,
+  ConfirmSignupRequestDto,
   ForgotPasswordRequestDto,
   LoginRequestDto,
   LoginResponseDto,
@@ -38,6 +41,7 @@ import {
   NewPasswordChallengeRequestDto,
   RefreshRequestDto,
   RefreshResponseDto,
+  SignupRequestDto,
 } from './auth.dto';
 
 @ApiTags('auth')
@@ -88,6 +92,33 @@ export class AuthController {
       throw new UnauthorizedException('Authorization ヘッダーが不正です');
     }
     await this.authService.logout(token);
+  }
+
+  @Public()
+  @Post('signup')
+  @HttpCode(204)
+  async signup(@Body() body: SignupRequestDto): Promise<void> {
+    const parsed = SignupSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.flatten());
+    }
+    await this.authService.signup(parsed.data.email, parsed.data.password);
+  }
+
+  @Public()
+  @Post('confirm-signup')
+  @HttpCode(204)
+  async confirmSignup(@Body() body: ConfirmSignupRequestDto): Promise<void> {
+    const parsed = ConfirmSignupSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.flatten());
+    }
+    await this.authService.confirmSignup(
+      parsed.data.email,
+      parsed.data.code,
+      parsed.data.name,
+      parsed.data.nameKana,
+    );
   }
 
   @Public()

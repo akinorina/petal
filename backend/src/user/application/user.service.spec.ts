@@ -79,6 +79,7 @@ function buildMockCognitoUser(): MockCognitoUserClient {
     verifyUserEmail: jest.fn(),
     getUserEmail: jest.fn(),
     getUserMfaSettings: jest.fn(),
+    adminGetUserSub: jest.fn(),
     isUsernameExists: jest.fn().mockReturnValue(false),
     isUserNotFound: jest.fn().mockReturnValue(false),
     isCodeMismatch: jest.fn().mockReturnValue(false),
@@ -110,6 +111,48 @@ async function buildService(
   }).compile();
   return moduleRef.get(UserService);
 }
+
+describe('UserService.createSelfSignup', () => {
+  let service: UserService;
+  let userRepository: MockUserRepository;
+  let cognitoUser: MockCognitoUserClient;
+
+  beforeEach(async () => {
+    userRepository = buildMockRepository();
+    cognitoUser = buildMockCognitoUser();
+    service = await buildService(userRepository, cognitoUser);
+  });
+
+  const params = {
+    cognitoSub: 'sub-signup',
+    email: 'signup@example.com',
+    name: 'サインアップ 花子',
+    nameKana: 'さいんあっぷ はなこ',
+  };
+
+  it('未登録なら role=user で DB save し User を返す', async () => {
+    userRepository.findByCognitoSub.mockResolvedValue(null);
+    userRepository.save.mockImplementation((u: User) => u);
+
+    const result = await service.createSelfSignup(params);
+
+    expect(userRepository.findByCognitoSub).toHaveBeenCalledWith('sub-signup');
+    expect(userRepository.save).toHaveBeenCalledTimes(1);
+    expect(result.email).toBe(params.email);
+    expect(result.cognitoSub).toBe('sub-signup');
+    expect(result.role).toBe(UserRole.User);
+  });
+
+  it('同じ cognito_sub が既存なら save せず既存を返す（冪等）', async () => {
+    const existing = buildUser({ cognitoSub: 'sub-signup' });
+    userRepository.findByCognitoSub.mockResolvedValue(existing);
+
+    const result = await service.createSelfSignup(params);
+
+    expect(result).toBe(existing);
+    expect(userRepository.save).not.toHaveBeenCalled();
+  });
+});
 
 describe('UserService.create', () => {
   let service: UserService;

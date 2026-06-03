@@ -117,6 +117,38 @@ export class UserService {
     return saved;
   }
 
+  /**
+   * セルフサインアップ確定後に DB へ users 行を作成する。
+   * Cognito 側は SignUp/ConfirmSignUp で作成済みのため、ここでは DB INSERT のみ。
+   * 同じ cognito_sub が既に存在する場合は再利用し、冪等に振る舞う。
+   * admin 操作ではないため監査ログは記録しない。
+   */
+  async createSelfSignup(params: {
+    cognitoSub: string;
+    email: string;
+    name: string;
+    nameKana: string;
+  }): Promise<User> {
+    const existing = await this.userRepository.findByCognitoSub(
+      params.cognitoSub,
+    );
+    if (existing) return existing;
+
+    const now = new Date();
+    const user = new User({
+      id: randomUUID(),
+      cognitoSub: params.cognitoSub,
+      email: params.email,
+      name: params.name,
+      nameKana: params.nameKana,
+      role: UserRole.User,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null,
+    });
+    return this.userRepository.save(user);
+  }
+
   async update(
     id: string,
     input: UpdateUserInput,

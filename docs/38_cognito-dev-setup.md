@@ -60,7 +60,11 @@ petal-backend-dev
 
 ### 3.5 セルフサービスサインアップ
 
-- **無効**（管理者作成のみ）
+- **有効**（TSK-12 / [56_self-service-signup.md](56_self-service-signup.md)）。
+  - User Pool の「セルフサービスのサインアップ」を有効化し、**Email の確認（Cognito 送信の確認コード）**を ON にする。
+  - 一般ユーザーは `POST /auth/signup` → メールの確認コードを `POST /auth/confirm-signup` で確定 → DB に `role=user` で作成される。
+  - 管理者作成（`AdminCreateUser` 招待フロー）も併存。
+  - 必須属性は **email のみ**（氏名・ふりがなは DB 管理）なので、追加のカスタム属性定義は不要。
 
 ## 4. 環境変数
 

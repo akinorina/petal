@@ -11,6 +11,20 @@ export const NewPasswordChallengeSchema = z.object({
   session: z.string().min(1),
 });
 
+export const SignupSchema = z.object({
+  email: z.email(),
+  password: z.string().min(8),
+  name: z.string().min(1).max(100),
+  nameKana: z.string().min(1).max(100),
+});
+
+export const ConfirmSignupSchema = z.object({
+  email: z.email(),
+  code: z.string().min(1),
+  name: z.string().min(1).max(100),
+  nameKana: z.string().min(1).max(100),
+});
+
 export const ForgotPasswordSchema = z.object({
   email: z.email(),
 });
@@ -36,6 +50,8 @@ export const MfaVerifySchema = z.object({
   code: z.string().min(6).max(6),
 });
 
+export type SignupInput = z.infer<typeof SignupSchema>;
+export type ConfirmSignupInput = z.infer<typeof ConfirmSignupSchema>;
 export type LoginInput = z.infer<typeof LoginSchema>;
 export type NewPasswordChallengeInput = z.infer<
   typeof NewPasswordChallengeSchema

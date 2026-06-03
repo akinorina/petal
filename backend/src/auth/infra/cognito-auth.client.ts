@@ -10,13 +10,17 @@ import {
   CodeMismatchException,
   CognitoIdentityProviderClient,
   ConfirmForgotPasswordCommand,
+  ConfirmSignUpCommand,
   EnableSoftwareTokenMFAException,
   ExpiredCodeException,
   ForgotPasswordCommand,
   GlobalSignOutCommand,
+  InvalidParameterException,
   InvalidPasswordException,
   NotAuthorizedException,
   SetUserMFAPreferenceCommand,
+  SignUpCommand,
+  UsernameExistsException,
   UserNotFoundException,
   VerifySoftwareTokenCommand,
   VerifySoftwareTokenResponseType,
@@ -252,6 +256,36 @@ export class CognitoAuthClient {
     );
   }
 
+  /**
+   * セルフサインアップ（未認証ユーザーが自分で登録）。
+   * Cognito が検証コードをメール送信し、ユーザーは UNCONFIRMED 状態になる。
+   */
+  async signUp(email: string, password: string): Promise<void> {
+    await this.client.send(
+      new SignUpCommand({
+        ClientId: this.clientId,
+        Username: email,
+        Password: password,
+        SecretHash: this.computeSecretHash(email),
+        UserAttributes: [{ Name: 'email', Value: email }],
+      }),
+    );
+  }
+
+  /**
+   * サインアップの検証コードを確定し、ユーザーを CONFIRMED にする。
+   */
+  async confirmSignUp(email: string, code: string): Promise<void> {
+    await this.client.send(
+      new ConfirmSignUpCommand({
+        ClientId: this.clientId,
+        Username: email,
+        ConfirmationCode: code,
+        SecretHash: this.computeSecretHash(email),
+      }),
+    );
+  }
+
   async forgotPassword(email: string): Promise<void> {
     await this.client.send(
       new ForgotPasswordCommand({
@@ -280,6 +314,26 @@ export class CognitoAuthClient {
 
   isUserNotFound(err: unknown): boolean {
     return err instanceof UserNotFoundException;
+  }
+
+  isUsernameExists(err: unknown): boolean {
+    return err instanceof UsernameExistsException;
+  }
+
+  isInvalidParameter(err: unknown): boolean {
+    return err instanceof InvalidParameterException;
+  }
+
+  /**
+   * ConfirmSignUp を既に CONFIRMED 済みのユーザーに対して呼んだ場合、
+   * Cognito は NotAuthorizedException（"Current status is CONFIRMED"）を投げる。
+   * 冪等な再実行のため、これを「確認済み」として識別する。
+   */
+  isUserAlreadyConfirmed(err: unknown): boolean {
+    return (
+      err instanceof NotAuthorizedException &&
+      /CONFIRMED/i.test(err.message ?? '')
+    );
   }
 
   isCodeMismatch(err: unknown): boolean {
