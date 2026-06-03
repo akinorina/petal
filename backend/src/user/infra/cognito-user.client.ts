@@ -12,6 +12,7 @@ import {
   CognitoIdentityProviderClient,
   ExpiredCodeException,
   GetUserCommand,
+  InvalidParameterException,
   NotAuthorizedException,
   UpdateUserAttributesCommand,
   UsernameExistsException,
@@ -199,6 +200,46 @@ export class CognitoUserClient {
   }
 
   /**
+   * 管理者権限で対象ユーザーの UserStatus を取得する。
+   * 招待メール再送（TSK-25）で FORCE_CHANGE_PASSWORD を事前確認するために使う。
+   * ユーザーが存在しない場合は null を返す。
+   */
+  async adminGetUserStatus(email: string): Promise<string | null> {
+    try {
+      const result = await this.client.send(
+        new AdminGetUserCommand({
+          UserPoolId: this.userPoolId,
+          Username: email,
+        }),
+      );
+      return result.UserStatus ?? null;
+    } catch (err) {
+      if (err instanceof UserNotFoundException) {
+        return null;
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * 招待メールを再送する。
+   * AdminCreateUser を MessageAction='RESEND' で呼ぶことで、新規作成ではなく
+   * 既存ユーザーへの招待メール（一時パスワード）の再送になる。
+   * 対象が UserStatus=FORCE_CHANGE_PASSWORD でないと Cognito 側で
+   * InvalidParameterException を返すため、呼び出し前に状態確認すること。
+   */
+  async resendInvite(email: string): Promise<void> {
+    await this.client.send(
+      new AdminCreateUserCommand({
+        UserPoolId: this.userPoolId,
+        Username: email,
+        MessageAction: 'RESEND',
+        DesiredDeliveryMediums: ['EMAIL'],
+      }),
+    );
+  }
+
+  /**
    * 管理者権限で email（= Username）から Cognito の sub を取得する。
    * セルフサインアップ確定後に DB へ保存する cognito_sub を引くために使う。
    */
@@ -238,5 +279,9 @@ export class CognitoUserClient {
 
   isNotAuthorized(err: unknown): boolean {
     return err instanceof NotAuthorizedException;
+  }
+
+  isInvalidParameter(err: unknown): boolean {
+    return err instanceof InvalidParameterException;
   }
 }

@@ -79,12 +79,15 @@ function buildMockCognitoUser(): MockCognitoUserClient {
     getUserEmail: jest.fn(),
     getUserMfaSettings: jest.fn(),
     adminGetUserSub: jest.fn(),
+    adminGetUserStatus: jest.fn().mockResolvedValue(null),
+    resendInvite: jest.fn(),
     isUsernameExists: jest.fn().mockReturnValue(false),
     isUserNotFound: jest.fn().mockReturnValue(false),
     isCodeMismatch: jest.fn().mockReturnValue(false),
     isExpiredCode: jest.fn().mockReturnValue(false),
     isAliasExists: jest.fn().mockReturnValue(false),
     isNotAuthorized: jest.fn().mockReturnValue(false),
+    isInvalidParameter: jest.fn().mockReturnValue(false),
   };
 }
 
@@ -410,6 +413,135 @@ describe('UserService.findPage', () => {
       offset: 20,
       deleted: true,
     });
+  });
+});
+
+describe('UserService.enrichInvitationStatus', () => {
+  let service: UserService;
+  let userRepository: MockUserRepository;
+  let cognitoUser: MockCognitoUserClient;
+
+  beforeEach(async () => {
+    userRepository = buildMockRepository();
+    cognitoUser = buildMockCognitoUser();
+    service = await buildService(userRepository, cognitoUser);
+  });
+
+  it('Cognito status=FORCE_CHANGE_PASSWORD で invitationPending=true', async () => {
+    cognitoUser.adminGetUserStatus.mockResolvedValue('FORCE_CHANGE_PASSWORD');
+    const user = buildUser();
+    const result = await service.enrichInvitationStatus(user);
+    expect(result.invitationPending).toBe(true);
+    expect(cognitoUser.adminGetUserStatus).toHaveBeenCalledWith(user.email);
+  });
+
+  it('Cognito status=CONFIRMED で invitationPending=false', async () => {
+    cognitoUser.adminGetUserStatus.mockResolvedValue('CONFIRMED');
+    const result = await service.enrichInvitationStatus(buildUser());
+    expect(result.invitationPending).toBe(false);
+  });
+
+  it('Cognito 取得失敗で warn し invitationPending=false', async () => {
+    cognitoUser.adminGetUserStatus.mockRejectedValue(new Error('boom'));
+    const result = await service.enrichInvitationStatus(buildUser());
+    expect(result.invitationPending).toBe(false);
+  });
+
+  it('softDelete 済みは Cognito を引かず invitationPending=false', async () => {
+    const deleted = buildUser({ deletedAt: new Date() });
+    const result = await service.enrichInvitationStatus(deleted);
+    expect(result.invitationPending).toBe(false);
+    expect(cognitoUser.adminGetUserStatus).not.toHaveBeenCalled();
+  });
+
+  it('enrichInvitationStatusMany は全件分を Promise.all で実行する', async () => {
+    cognitoUser.adminGetUserStatus.mockResolvedValueOnce(
+      'FORCE_CHANGE_PASSWORD',
+    );
+    cognitoUser.adminGetUserStatus.mockResolvedValueOnce('CONFIRMED');
+    const users = [
+      buildUser({ email: 'a@example.com' }),
+      buildUser({ email: 'b@example.com' }),
+    ];
+    const result = await service.enrichInvitationStatusMany(users);
+    expect(result.map((r) => r.invitationPending)).toEqual([true, false]);
+    expect(cognitoUser.adminGetUserStatus).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('UserService.resendInvite', () => {
+  let service: UserService;
+  let userRepository: MockUserRepository;
+  let cognitoUser: MockCognitoUserClient;
+  let auditLog: MockAuditLogService;
+  let target: User;
+
+  beforeEach(async () => {
+    userRepository = buildMockRepository();
+    cognitoUser = buildMockCognitoUser();
+    auditLog = buildMockAuditLog();
+    service = await buildService(userRepository, cognitoUser, auditLog);
+    target = buildUser({ email: 'invite@example.com' });
+    userRepository.findById.mockResolvedValue(target);
+  });
+
+  it('FORCE_CHANGE_PASSWORD なら resendInvite が呼ばれ監査ログが記録される', async () => {
+    cognitoUser.adminGetUserStatus.mockResolvedValue('FORCE_CHANGE_PASSWORD');
+    cognitoUser.resendInvite.mockResolvedValue(undefined);
+
+    await service.resendInvite(target.id, ACTOR_ID);
+
+    expect(cognitoUser.resendInvite).toHaveBeenCalledWith(target.email);
+    expect(auditLog.record).toHaveBeenCalledWith({
+      actorUserId: ACTOR_ID,
+      action: AuditAction.ResendInvite,
+      targetUserId: target.id,
+      metadata: { targetEmail: target.email },
+    });
+  });
+
+  it('DB に存在しないなら NotFoundException（findById が投げる）', async () => {
+    userRepository.findById.mockResolvedValue(null);
+    await expect(
+      service.resendInvite('missing', ACTOR_ID),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(cognitoUser.resendInvite).not.toHaveBeenCalled();
+  });
+
+  it('Cognito に居ない（status=null）なら BadGatewayException', async () => {
+    cognitoUser.adminGetUserStatus.mockResolvedValue(null);
+    await expect(
+      service.resendInvite(target.id, ACTOR_ID),
+    ).rejects.toBeInstanceOf(BadGatewayException);
+    expect(cognitoUser.resendInvite).not.toHaveBeenCalled();
+    expect(auditLog.record).not.toHaveBeenCalled();
+  });
+
+  it('UserStatus が FORCE_CHANGE_PASSWORD 以外なら BadRequestException', async () => {
+    cognitoUser.adminGetUserStatus.mockResolvedValue('CONFIRMED');
+    await expect(
+      service.resendInvite(target.id, ACTOR_ID),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(cognitoUser.resendInvite).not.toHaveBeenCalled();
+  });
+
+  it('Cognito resendInvite が InvalidParameter で BadRequestException', async () => {
+    cognitoUser.adminGetUserStatus.mockResolvedValue('FORCE_CHANGE_PASSWORD');
+    cognitoUser.resendInvite.mockRejectedValue(new Error('boom'));
+    cognitoUser.isInvalidParameter.mockReturnValue(true);
+    await expect(
+      service.resendInvite(target.id, ACTOR_ID),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(auditLog.record).not.toHaveBeenCalled();
+  });
+
+  it('Cognito resendInvite その他失敗で BadGatewayException', async () => {
+    cognitoUser.adminGetUserStatus.mockResolvedValue('FORCE_CHANGE_PASSWORD');
+    cognitoUser.resendInvite.mockRejectedValue(new Error('boom'));
+    await expect(
+      service.resendInvite(target.id, ACTOR_ID),
+    ).rejects.toBeInstanceOf(BadGatewayException);
+    expect(auditLog.record).not.toHaveBeenCalled();
   });
 });
 

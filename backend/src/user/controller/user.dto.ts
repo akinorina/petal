@@ -16,6 +16,13 @@ export class UserResponseDto {
   @ApiProperty({ format: 'date-time', nullable: true })
   deletedAt!: string | null;
   @ApiProperty({
+    description:
+      'true なら Cognito の UserStatus=FORCE_CHANGE_PASSWORD（招待保留中）。' +
+      ' 一覧/個別取得・作成・更新・復活エンドポイントで返る。GET /users/me と PATCH /users/me では常に false。' +
+      ' softDelete 済みも常に false。',
+  })
+  invitationPending!: boolean;
+  @ApiProperty({
     required: false,
     description:
       '自分自身（GET /users/me）にのみセットされる。MFA(TOTP) 有効状態。',

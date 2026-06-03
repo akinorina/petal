@@ -61,7 +61,7 @@ export class UserController {
       // MFA 状態取得は補助情報のため、失敗時は undefined のまま返す
       mfaEnabled = undefined;
     }
-    return { ...toResponse(user), mfaEnabled };
+    return { ...toResponse(user, false), mfaEnabled };
   }
 
   @Patch('me')
@@ -72,9 +72,11 @@ export class UserController {
     const parsed = UpdateMyProfileSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
     const actor = requireAuthUser(req);
-    return toResponse(
-      await this.userService.updateMyProfile(actor.userId, parsed.data),
+    const updated = await this.userService.updateMyProfile(
+      actor.userId,
+      parsed.data,
     );
+    return toResponse(updated, false);
   }
 
   @Patch('me/email')
@@ -131,8 +133,9 @@ export class UserController {
       role,
       deleted,
     });
+    const enriched = await this.userService.enrichInvitationStatusMany(items);
     return {
-      items: items.map(toResponse),
+      items: enriched.map((e) => toResponse(e.user, e.invitationPending)),
       total,
       limit,
       offset,
@@ -142,7 +145,9 @@ export class UserController {
   @Get(':id')
   @Roles(UserRole.Admin)
   async findOne(@Param('id') id: string): Promise<UserResponseDto> {
-    return toResponse(await this.userService.findById(id));
+    const user = await this.userService.findById(id);
+    const enriched = await this.userService.enrichInvitationStatus(user);
+    return toResponse(enriched.user, enriched.invitationPending);
   }
 
   @Post()
@@ -154,7 +159,9 @@ export class UserController {
     const result = CreateUserSchema.safeParse(body);
     if (!result.success) throw new BadRequestException(result.error.flatten());
     const actor = requireAuthUser(req);
-    return toResponse(await this.userService.create(result.data, actor.userId));
+    const created = await this.userService.create(result.data, actor.userId);
+    const enriched = await this.userService.enrichInvitationStatus(created);
+    return toResponse(enriched.user, enriched.invitationPending);
   }
 
   @Patch(':id')
@@ -167,9 +174,13 @@ export class UserController {
     const result = UpdateUserSchema.safeParse(body);
     if (!result.success) throw new BadRequestException(result.error.flatten());
     const actor = requireAuthUser(req);
-    return toResponse(
-      await this.userService.update(id, result.data, actor.userId),
+    const updated = await this.userService.update(
+      id,
+      result.data,
+      actor.userId,
     );
+    const enriched = await this.userService.enrichInvitationStatus(updated);
+    return toResponse(enriched.user, enriched.invitationPending);
   }
 
   @Delete(':id')
@@ -188,7 +199,20 @@ export class UserController {
     @Param('id') id: string,
   ): Promise<UserResponseDto> {
     const actor = requireAuthUser(req);
-    return toResponse(await this.userService.restore(id, actor.userId));
+    const restored = await this.userService.restore(id, actor.userId);
+    const enriched = await this.userService.enrichInvitationStatus(restored);
+    return toResponse(enriched.user, enriched.invitationPending);
+  }
+
+  @Post(':id/resend-invite')
+  @Roles(UserRole.Admin)
+  @HttpCode(204)
+  async resendInvite(
+    @Req() req: Request,
+    @Param('id') id: string,
+  ): Promise<void> {
+    const actor = requireAuthUser(req);
+    await this.userService.resendInvite(id, actor.userId);
   }
 
   private async resolveActor(req: Request): Promise<User> {
@@ -215,7 +239,7 @@ function extractBearer(authorization: string | undefined): string {
   return match[1];
 }
 
-function toResponse(user: User): UserResponseDto {
+function toResponse(user: User, invitationPending: boolean): UserResponseDto {
   return {
     id: user.id,
     cognitoSub: user.cognitoSub,
@@ -226,5 +250,6 @@ function toResponse(user: User): UserResponseDto {
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),
     deletedAt: user.deletedAt ? user.deletedAt.toISOString() : null,
+    invitationPending,
   };
 }

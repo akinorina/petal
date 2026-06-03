@@ -25,6 +25,9 @@ import {
   UpdateMyProfileInput,
   UpdateUserInput,
 } from './user.schemas';
+import { UserWithStatus } from './user.types';
+
+const COGNITO_USER_STATUS_FORCE_CHANGE_PASSWORD = 'FORCE_CHANGE_PASSWORD';
 
 @Injectable()
 export class UserService {
@@ -39,6 +42,84 @@ export class UserService {
 
   findPage(query: UserPageQuery): Promise<{ items: User[]; total: number }> {
     return this.userRepository.findPage(query);
+  }
+
+  /**
+   * Cognito の UserStatus を引き、招待保留状態（FORCE_CHANGE_PASSWORD）かを判定する。
+   * softDelete 済み: 常に false（Cognito 引きスキップ）。
+   * Cognito 取得失敗: warn ログを残し false 扱い（UI に影響させない）。
+   */
+  async enrichInvitationStatus(user: User): Promise<UserWithStatus> {
+    if (user.deletedAt !== null) {
+      return { user, invitationPending: false };
+    }
+    try {
+      const status = await this.cognitoUser.adminGetUserStatus(user.email);
+      return {
+        user,
+        invitationPending: status === COGNITO_USER_STATUS_FORCE_CHANGE_PASSWORD,
+      };
+    } catch (err) {
+      this.logger.warn(
+        `Cognito 状態取得に失敗（invitationPending=false 扱い）: ${user.email} / ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+      return { user, invitationPending: false };
+    }
+  }
+
+  /**
+   * 複数ユーザーに対して enrichInvitationStatus を並列実行する。
+   * 一覧 API では limit ≤ 100 が保証されている前提で Promise.all。
+   */
+  enrichInvitationStatusMany(users: User[]): Promise<UserWithStatus[]> {
+    return Promise.all(users.map((u) => this.enrichInvitationStatus(u)));
+  }
+
+  /**
+   * 招待メールを再送する（TSK-25）。
+   * - softDelete 済み / DB に居ない → 404
+   * - Cognito に居ない → 502
+   * - UserStatus が FORCE_CHANGE_PASSWORD 以外 → 400
+   * - 成功時に監査ログを記録
+   */
+  async resendInvite(id: string, actorId: string): Promise<void> {
+    const user = await this.findById(id);
+
+    const status = await this.cognitoUser.adminGetUserStatus(user.email);
+    if (status === null) {
+      throw new BadGatewayException(
+        'Cognito 上にユーザーが存在しません。整合性復旧が必要です。',
+      );
+    }
+    if (status !== COGNITO_USER_STATUS_FORCE_CHANGE_PASSWORD) {
+      throw new BadRequestException(
+        'このユーザーは既にパスワード設定済みのため招待を再送できません',
+      );
+    }
+
+    try {
+      await this.cognitoUser.resendInvite(user.email);
+    } catch (err) {
+      if (this.cognitoUser.isInvalidParameter(err)) {
+        throw new BadRequestException(
+          'このユーザーは既にパスワード設定済みのため招待を再送できません',
+        );
+      }
+      this.logger.error(
+        `Cognito 招待メール再送に失敗しました: ${user.email}`,
+        err instanceof Error ? err.stack : String(err),
+      );
+      throw new BadGatewayException('招待メールの再送に失敗しました');
+    }
+
+    await this.auditLogService.record({
+      actorUserId: actorId,
+      action: AuditAction.ResendInvite,
+      targetUserId: id,
+      metadata: { targetEmail: user.email },
+    });
   }
 
   async findById(id: string): Promise<User> {
