@@ -429,6 +429,54 @@
         ]
       }
     },
+    "/auth/signup": {
+      "post": {
+        "operationId": "AuthController_signup",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignupRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/confirm-signup": {
+      "post": {
+        "operationId": "AuthController_confirmSignup",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmSignupRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/auth/forgot-password": {
       "post": {
         "operationId": "AuthController_forgotPassword",
@@ -1110,6 +1158,54 @@
           "password"
         ]
       },
+      "SignupRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "nameKana": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "name",
+          "nameKana"
+        ]
+      },
+      "ConfirmSignupRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "nameKana": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "code",
+          "name",
+          "nameKana"
+        ]
+      },
       "ForgotPasswordRequestDto": {
         "type": "object",
         "properties": {
@@ -1252,13 +1348,13 @@
         "type": "object",
         "properties": {
           "mimeType": {
-            "type": "string",
             "enum": [
               "image/jpeg",
               "image/png",
               "image/gif",
               "image/webp"
-            ]
+            ],
+            "type": "string"
           },
           "originalFilename": {
             "type": "string"
@@ -1283,13 +1379,13 @@
         "type": "object",
         "properties": {
           "mimeType": {
-            "type": "string",
             "enum": [
               "image/jpeg",
               "image/png",
               "image/gif",
               "image/webp"
-            ]
+            ],
+            "type": "string"
           },
           "createdAt": {
             "type": "string",
