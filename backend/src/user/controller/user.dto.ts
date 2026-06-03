@@ -45,8 +45,27 @@ export class UpdateMyProfileRequestDto {
 }
 
 export class ListUsersQueryDto {
-  @ApiProperty({ enum: ['true', 'false'], required: false })
+  @ApiProperty({ required: false, default: 20 })
+  limit?: number;
+  @ApiProperty({ required: false, default: 0 })
+  offset?: number;
+  @ApiProperty({
+    required: false,
+    description: 'email / name / nameKana の部分一致（大文字小文字無視）',
+  })
+  q?: string;
+  @ApiProperty({ enum: UserRole, enumName: 'UserRole', required: false })
+  role?: UserRole;
+  @ApiProperty({ enum: ['true', 'false'], required: false, default: 'false' })
   deleted?: 'true' | 'false';
+}
+
+export class PaginatedUsersResponseDto {
+  @ApiProperty({ type: [UserResponseDto] })
+  items!: UserResponseDto[];
+  total!: number;
+  limit!: number;
+  offset!: number;
 }
 
 export class RequestEmailChangeRequestDto {

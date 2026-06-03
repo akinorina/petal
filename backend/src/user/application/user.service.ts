@@ -14,7 +14,11 @@ import { AuditAction } from '../../audit/domain/audit-action.enum';
 import { LastAdminConflictException } from '../../common/exceptions/last-admin-conflict.exception';
 import { User } from '../domain/user';
 import { UserRole } from '../domain/user-role.enum';
-import { IUserRepository, USER_REPOSITORY } from '../domain/user.repository';
+import {
+  IUserRepository,
+  USER_REPOSITORY,
+  UserPageQuery,
+} from '../domain/user.repository';
 import { CognitoUserClient } from '../infra/cognito-user.client';
 import {
   CreateUserInput,
@@ -33,12 +37,8 @@ export class UserService {
     private readonly auditLogService: AuditLogService,
   ) {}
 
-  findAll(): Promise<User[]> {
-    return this.userRepository.findAll();
-  }
-
-  findAllDeleted(): Promise<User[]> {
-    return this.userRepository.findAllDeleted();
+  findPage(query: UserPageQuery): Promise<{ items: User[]; total: number }> {
+    return this.userRepository.findPage(query);
   }
 
   async findById(id: string): Promise<User> {

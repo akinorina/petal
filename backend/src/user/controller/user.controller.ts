@@ -32,6 +32,7 @@ import {
   ConfirmEmailChangeRequestDto,
   CreateUserRequestDto,
   ListUsersQueryDto,
+  PaginatedUsersResponseDto,
   RequestEmailChangeRequestDto,
   UpdateMyProfileRequestDto,
   UpdateUserRequestDto,
@@ -116,14 +117,26 @@ export class UserController {
 
   @Get()
   @Roles(UserRole.Admin)
-  async findAll(@Query() query: ListUsersQueryDto): Promise<UserResponseDto[]> {
+  async findAll(
+    @Query() query: ListUsersQueryDto,
+  ): Promise<PaginatedUsersResponseDto> {
     const parsed = ListUsersQuerySchema.safeParse(query);
     if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
 
-    const users = parsed.data.deleted
-      ? await this.userService.findAllDeleted()
-      : await this.userService.findAll();
-    return users.map(toResponse);
+    const { limit, offset, q, role, deleted } = parsed.data;
+    const { items, total } = await this.userService.findPage({
+      limit,
+      offset,
+      q,
+      role,
+      deleted,
+    });
+    return {
+      items: items.map(toResponse),
+      total,
+      limit,
+      offset,
+    };
   }
 
   @Get(':id')

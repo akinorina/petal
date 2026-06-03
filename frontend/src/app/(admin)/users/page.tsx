@@ -8,12 +8,13 @@ import { Dialog } from '@/design-system/components/Dialog';
 import { EmptyState } from '@/design-system/components/EmptyState';
 import { FormField } from '@/design-system/components/FormField';
 import { Input } from '@/design-system/components/Input';
+import { Pagination } from '@/design-system/components/Pagination';
 import { Select } from '@/design-system/components/Select';
 import { Tabs } from '@/design-system/components/Tabs';
 import { Tag } from '@/design-system/components/Tag';
 import { Text } from '@/design-system/components/Text';
 import type { Schemas } from '@/lib/openapi/client';
-import { useUsersPage } from './use-users-page';
+import { useUsersPage, type RoleFilter } from './use-users-page';
 
 type User = Schemas['UserResponseDto'];
 type CreateUserRequest = Schemas['CreateUserRequestDto'];
@@ -23,7 +24,16 @@ export default function UsersPage() {
   const {
     tab,
     setTab,
-    users,
+    roleFilter,
+    setRoleFilter,
+    searchInput,
+    setSearchInput,
+    page,
+    setPage,
+    totalPages,
+    pageSize,
+    items,
+    total,
     isLoading,
     error,
     modal,
@@ -33,6 +43,9 @@ export default function UsersPage() {
     handleCreate,
     handleUpdate,
   } = useUsersPage();
+
+  const rangeStart = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const rangeEnd = (page - 1) * pageSize + items.length;
 
   return (
     <div>
@@ -56,6 +69,33 @@ export default function UsersPage() {
         </Tabs.List>
       </Tabs>
 
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="min-w-[240px] flex-1">
+          <Input
+            type="search"
+            placeholder="氏名・ふりがな・メールで検索"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            aria-label="ユーザー検索"
+          />
+        </div>
+        <div className="w-40">
+          <Select
+            options={[
+              { value: 'all', label: 'すべてのロール' },
+              { value: 'admin', label: '管理者' },
+              { value: 'user', label: 'ユーザー' },
+            ]}
+            value={roleFilter}
+            onChange={(v) => setRoleFilter(v as RoleFilter)}
+            aria-label="ロールで絞り込み"
+          />
+        </div>
+        <p className="text-xs text-zinc-500">
+          {total} 件中 {rangeStart}–{rangeEnd}
+        </p>
+      </div>
+
       {error && (
         <Alert variant="danger" className="mb-4">
           {error}
@@ -64,13 +104,13 @@ export default function UsersPage() {
 
       {isLoading ? (
         <p className="text-sm text-zinc-500">読み込み中...</p>
-      ) : users.length === 0 ? (
+      ) : items.length === 0 ? (
         <Card padding="none">
           <EmptyState
             title="ユーザーがいません"
             description={
               tab === 'active'
-                ? 'まだユーザーが登録されていません。「ユーザーを追加」から最初のユーザーを登録しましょう。'
+                ? '条件に一致するユーザーがいません。検索条件を変更するか、「ユーザーを追加」から登録してください。'
                 : '削除済みのユーザーはありません。'
             }
           />
@@ -99,7 +139,7 @@ export default function UsersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
-              {users.map((user) => (
+              {items.map((user) => (
                 <tr key={user.id} className="hover:bg-zinc-50">
                   <td className="px-4 py-3 font-medium">{user.name}</td>
                   <td className="px-4 py-3 text-zinc-500">{user.nameKana}</td>
@@ -147,6 +187,18 @@ export default function UsersPage() {
             </tbody>
           </table>
         </Card>
+      )}
+
+      {totalPages > 1 && (
+        <div className="mt-4 flex justify-end">
+          <Pagination
+            variant="numbered"
+            page={page}
+            totalPages={totalPages}
+            ariaLabel="ユーザー一覧のページ"
+            onChange={(p) => setPage(p)}
+          />
+        </div>
       )}
 
       {modal?.type === 'create' && (

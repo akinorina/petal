@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Not, Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { User } from '../domain/user';
 import { UserRole } from '../domain/user-role.enum';
-import { IUserRepository } from '../domain/user.repository';
+import { IUserRepository, UserPageQuery } from '../domain/user.repository';
 import { UserEntity } from './user.entity';
 
 @Injectable()
@@ -45,17 +45,36 @@ export class UserRepositoryImpl implements IUserRepository {
     return entity ? this.toDomain(entity) : null;
   }
 
-  async findAll(): Promise<User[]> {
-    const entities = await this.repo.find();
-    return entities.map((e) => this.toDomain(e));
-  }
+  async findPage(
+    query: UserPageQuery,
+  ): Promise<{ items: User[]; total: number }> {
+    const qb = this.repo.createQueryBuilder('u');
 
-  async findAllDeleted(): Promise<User[]> {
-    const entities = await this.repo.find({
-      withDeleted: true,
-      where: { deletedAt: Not(IsNull()) },
-    });
-    return entities.map((e) => this.toDomain(e));
+    if (query.deleted) {
+      qb.withDeleted().andWhere('u.deleted_at IS NOT NULL');
+    }
+
+    if (query.role !== undefined) {
+      qb.andWhere('u.role = :role', { role: query.role });
+    }
+
+    if (query.q) {
+      qb.andWhere(
+        new Brackets((b) => {
+          b.where('u.email ILIKE :q', { q: `%${query.q}%` })
+            .orWhere('u.name ILIKE :q', { q: `%${query.q}%` })
+            .orWhere('u.name_kana ILIKE :q', { q: `%${query.q}%` });
+        }),
+      );
+    }
+
+    qb.orderBy('u.created_at', 'DESC')
+      .addOrderBy('u.id', 'ASC')
+      .take(query.limit)
+      .skip(query.offset);
+
+    const [entities, total] = await qb.getManyAndCount();
+    return { items: entities.map((e) => this.toDomain(e)), total };
   }
 
   async save(user: User): Promise<User> {
