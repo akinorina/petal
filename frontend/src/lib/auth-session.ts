@@ -8,6 +8,22 @@ const EMAIL_KEY = 'petal_email';
 
 export const AUTH_CLEARED_EVENT = 'petal:auth-cleared';
 
+const AUTH_NOTICE_KEY = 'petal:auth-notice';
+
+/** ログイン画面で一度だけ表示する通知メッセージを保存する（再ログイン誘導など）。 */
+export function setAuthNotice(message: string): void {
+  if (typeof window === 'undefined') return;
+  sessionStorage.setItem(AUTH_NOTICE_KEY, message);
+}
+
+/** 保存済みの通知メッセージを取り出し、消費（削除）する。 */
+export function consumeAuthNotice(): string | null {
+  if (typeof window === 'undefined') return null;
+  const value = sessionStorage.getItem(AUTH_NOTICE_KEY);
+  if (value) sessionStorage.removeItem(AUTH_NOTICE_KEY);
+  return value;
+}
+
 type RefreshResponse = {
   accessToken: string;
   idToken: string;

@@ -33,6 +33,9 @@ export default function MePage() {
         <a href="/me/mfa" className="ds-link ds-link--inline">
           2 段階認証
         </a>
+        <a href="/me/password" className="ds-link ds-link--inline">
+          パスワード変更
+        </a>
       </nav>
       <Text as="h1" variant="heading-md">プロフィール</Text>
 

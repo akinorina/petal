@@ -66,6 +66,14 @@ export const mfaApi = {
   },
 };
 
+export const authApi = {
+  changePassword: async (
+    body: Schemas['ChangePasswordRequestDto'],
+  ): Promise<void> => {
+    await unwrap(apiClient.POST('/auth/change-password', { body }));
+  },
+};
+
 export const auditLogApi = {
   findAll: (params: { limit: number; offset: number }) =>
     unwrap(

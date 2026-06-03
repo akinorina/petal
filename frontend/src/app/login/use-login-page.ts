@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { consumeAuthNotice } from '@/lib/auth-session';
 import { evaluatePasswordForm } from '@/lib/password-policy';
 
 type Step =
@@ -20,7 +21,12 @@ export function useLoginPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [mfaCode, setMfaCode] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setNotice(consumeAuthNotice());
+  }, []);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -116,6 +122,7 @@ export function useLoginPage() {
     mfaCode,
     setMfaCode,
     error,
+    notice,
     isLoading,
     newPasswordCheck,
     handleLogin,
