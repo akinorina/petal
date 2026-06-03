@@ -51,7 +51,7 @@ function buildMockCognitoAuth(): MockCognitoAuthClient {
     isCodeMismatch: jest.fn().mockReturnValue(false),
     isExpiredCode: jest.fn().mockReturnValue(false),
     isInvalidPassword: jest.fn().mockReturnValue(false),
-    isLimitExceeded: jest.fn().mockReturnValue(false),
+    isThrottled: jest.fn().mockReturnValue(false),
     isNotAuthorized: jest.fn().mockReturnValue(false),
     isEnableSoftwareTokenMfa: jest.fn().mockReturnValue(false),
   };
@@ -625,9 +625,9 @@ describe('AuthService.changePassword', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
-  it('LimitExceeded で 429 HttpException', async () => {
+  it('スロットリング(isThrottled)で 429 HttpException', async () => {
     cognitoAuth.changePassword.mockRejectedValue(new Error('boom'));
-    cognitoAuth.isLimitExceeded.mockReturnValue(true);
+    cognitoAuth.isThrottled.mockReturnValue(true);
 
     await expect(
       service.changePassword('AT', 'Old1!', 'New1234!'),

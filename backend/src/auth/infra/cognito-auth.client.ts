@@ -22,6 +22,7 @@ import {
   NotAuthorizedException,
   SetUserMFAPreferenceCommand,
   SignUpCommand,
+  TooManyRequestsException,
   UsernameExistsException,
   UserNotFoundException,
   VerifySoftwareTokenCommand,
@@ -367,8 +368,16 @@ export class CognitoAuthClient {
     return err instanceof InvalidPasswordException;
   }
 
-  isLimitExceeded(err: unknown): boolean {
-    return err instanceof LimitExceededException;
+  /**
+   * Cognito のスロットリング系例外を判定する。
+   * `LimitExceededException`（試行上限）と `TooManyRequestsException`（汎用スロットリング）
+   * の両方を「回数制限」として扱う。
+   */
+  isThrottled(err: unknown): boolean {
+    return (
+      err instanceof LimitExceededException ||
+      err instanceof TooManyRequestsException
+    );
   }
 
   isNotAuthorized(err: unknown): boolean {

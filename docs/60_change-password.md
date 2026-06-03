@@ -75,7 +75,7 @@
 | --- | --- | --- |
 | `NotAuthorizedException` | **400** | 現在のパスワードが正しくありません |
 | `InvalidPasswordException` | 400 | 新しいパスワードがポリシーに合致していません |
-| `LimitExceededException` | 429 | 回数が多すぎます。しばらくしてから再度お試しください |
+| `LimitExceededException` / `TooManyRequestsException` | 429 | 回数が多すぎます。しばらくしてから再度お試しください |
 | その他 | 502 | パスワード変更に失敗しました |
 
 - access token は `JwtAuthGuard` で検証済みのため、`NotAuthorizedException` は実質「旧パスワード不一致」を意味する。

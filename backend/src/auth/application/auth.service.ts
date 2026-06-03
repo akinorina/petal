@@ -240,7 +240,7 @@ export class AuthService {
           '新しいパスワードがポリシーに合致していません',
         );
       }
-      if (this.cognitoAuth.isLimitExceeded(err)) {
+      if (this.cognitoAuth.isThrottled(err)) {
         throw new HttpException(
           '回数が多すぎます。しばらくしてから再度お試しください',
           HttpStatus.TOO_MANY_REQUESTS,
