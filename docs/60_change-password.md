@@ -135,4 +135,58 @@ DB 変更なし（パスワードは Cognito 管理）。
 
 ## 11. 未確定事項
 
-- なし（Phase 2 / Phase 3 で全論点確定済み）。実装計画は Phase 4 で本書末尾に追記する。
+- なし（Phase 2 / Phase 3 で全論点確定済み）。
+
+---
+
+## 12. 実装計画（Phase 4）
+
+### 12.1 変更・追加ファイル
+
+#### backend
+
+- `src/auth/infra/cognito-auth.client.ts`（変更）: `changePassword(accessToken, prev, proposed)` + `isLimitExceeded`（`ChangePasswordCommand` / `LimitExceededException` を import）
+- `src/auth/application/auth.service.ts`（変更）: `changePassword` + エラーマッピング（`HttpException`/`HttpStatus` で 429）
+- `src/auth/application/auth.schemas.ts`（変更）: `ChangePasswordSchema`
+- `src/auth/controller/auth.dto.ts`（変更）: `ChangePasswordRequestDto`
+- `src/auth/controller/auth.controller.ts`（変更）: `POST /auth/change-password`（`@Public` なし・204・`extractBearer`）
+- `src/auth/application/auth.service.spec.ts`（変更）: `changePassword` テスト + cognito モックに `changePassword`/`isLimitExceeded` 追加
+- `openapi.json`（再生成）
+
+#### frontend
+
+- `src/lib/api.ts`（変更）: `authApi.changePassword(body)`（`apiClient.POST('/auth/change-password')`）
+- `src/app/(admin)/me/password/page.tsx`（新規）: 現在/新/確認 + `PasswordPolicyChecklist`
+- `src/app/(admin)/me/password/use-me-password-page.ts`（新規）
+- `src/app/(admin)/me/page.tsx` / `me/email/page.tsx` / `me/mfa/page.tsx`（変更）: nav に「パスワード変更」追加
+- `src/lib/openapi/schema.d.ts`（再生成）
+
+migration / 環境変数 / 依存追加: なし。
+
+### 12.2 作業順序（コミット単位）
+
+1. **backend: change-password エンドポイント + テスト + openapi 再生成** — 完了確認 `cd backend && pnpm lint && pnpm test && pnpm build`、`/auth/change-password` が openapi.json に出る
+2. **frontend: /me/password ページ + api + 導線 + schema 再生成** — 完了確認 `cd frontend && pnpm lint && pnpm build`
+
+### 12.3 テスト方針
+
+- `auth.service.spec.ts`: 正常（changePassword 呼出）/ NotAuthorized→401 / InvalidPassword→400 / LimitExceeded→429 / その他→502 をカバー。
+- frontend はユニットテスト無し（lint/build で担保）。手動シナリオ（§10）で確認。
+
+### 12.4 想定外時の判断ルール（タスク固有）
+
+- **AI 単独判断 OK**: 画面文言・フォーム配置、nav リンク文言。
+- **中断して相談**: API 仕様/スキーマ変更、GlobalSignOut（セッション失効）方針の変更、Cognito エラー分類が想定と異なる場合。
+
+### 12.5 事前解決済みの判断ポイント（ドライラン結果）
+
+| # | 判断ポイント | 解決 |
+| - | ------------ | ---- |
+| 1 | レスポンス | `204 No Content` |
+| 2 | エラーマッピング | NotAuthorized→401 / InvalidPassword→400 / LimitExceeded→429 / その他→502 |
+| 3 | access token | `extractBearer` で取得し Cognito `ChangePassword` に渡す（DB 不使用） |
+| 4 | フロント呼び出し | `apiClient`（authApi）で自動 Bearer 付与（mfaApi と同方式） |
+| 5 | 送信可否 | `current != '' && evaluatePasswordForm(...).canSubmit` |
+| 6 | 成功後 | フォームをクリアし成功表示。ログアウトしない |
+| 7 | 導線 | `/me`・`/me/email`・`/me/mfa`・`/me/password` の nav 相互リンク |
+| 8 | spec モック | `buildMockCognitoAuth` に `changePassword`/`isLimitExceeded` を追加 |
