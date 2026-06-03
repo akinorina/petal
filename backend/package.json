@@ -27,6 +27,7 @@
     "migration:show": "typeorm-ts-node-commonjs -d database/data-source.ts migration:show",
     "create-admin": "ts-node -r tsconfig-paths/register scripts/create-admin.ts",
     "audit-cognito-sync": "ts-node -r tsconfig-paths/register scripts/audit-cognito-sync.ts",
+    "import-cognito-users": "ts-node -r tsconfig-paths/register scripts/import-cognito-users.ts",
     "openapi:export": "nest build && node dist/src/openapi-export.js",
     "use-env": "bash scripts/use-env.sh",
     "s3:logs": "docker compose -f ./docker-compose.yml logs -f localstack",

@@ -63,6 +63,7 @@
 | [docs/61_user-list-pagination.md](docs/61_user-list-pagination.md) | ユーザー一覧のページング/検索/フィルタ 設計（TSK-23：`GET /users` を `{ items, total, limit, offset }` 化、`q` で email/name/nameKana の OR `ILIKE` 部分一致、`role`/`deleted` フィルタ、フロントは URL クエリ同期 + デバウンス 300ms） |
 | [docs/62_resend-invite.md](docs/62_resend-invite.md) | 招待メールの再送 API 設計（TSK-25：`POST /users/:id/resend-invite` で `AdminGetUser` 状態確認 → `AdminCreateUser(MessageAction=RESEND)`、`UserResponseDto` に `invitationPending` を付加し条件付き表示） |
 | [docs/63_cognito-observability.md](docs/63_cognito-observability.md) | Cognito 連携の観測性 設計（TSK-27：`runWithCognitoMetrics(op, fn)` で SDK 呼び出しを包み、`{msg, op, result, latencyMs, errorCode}` を 1 行 JSON で出力。CloudWatch Logs Insights で集計可能、既存ログは併存） |
+| [docs/64_cognito-sync-import.md](docs/64_cognito-sync-import.md) | 管理者用 Cognito ↔ DB 同期スクリプト 設計（TSK-26：`backend/scripts/import-cognito-users.ts`、`--mode cognito-to-db\|db-to-cognito` + `--email\|--all` + `--dry-run`、差分検出は既存 `classifyDiscrepancies` を再利用、Mode B は `MessageAction=SUPPRESS` で新 sub を DB に反映） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 
