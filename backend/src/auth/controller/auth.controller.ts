@@ -17,6 +17,7 @@ import {
 import { AuthService } from '../application/auth.service';
 import { Public } from '../../common/decorators/public.decorator';
 import {
+  ChangePasswordSchema,
   ConfirmForgotPasswordSchema,
   ConfirmSignupSchema,
   ForgotPasswordSchema,
@@ -30,6 +31,7 @@ import {
 import {
   AuthenticatedResponseDto,
   ChallengeResponseDto,
+  ChangePasswordRequestDto,
   ConfirmForgotPasswordRequestDto,
   ConfirmSignupRequestDto,
   ForgotPasswordRequestDto,
@@ -128,6 +130,27 @@ export class AuthController {
       parsed.data.code,
       parsed.data.name,
       parsed.data.nameKana,
+    );
+  }
+
+  @Post('change-password')
+  @HttpCode(204)
+  async changePassword(
+    @Headers('authorization') authorization: string | undefined,
+    @Body() body: ChangePasswordRequestDto,
+  ): Promise<void> {
+    const token = extractBearer(authorization);
+    if (!token) {
+      throw new UnauthorizedException('Authorization ヘッダーが不正です');
+    }
+    const parsed = ChangePasswordSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.flatten());
+    }
+    await this.authService.changePassword(
+      token,
+      parsed.data.previousPassword,
+      parsed.data.proposedPassword,
     );
   }
 

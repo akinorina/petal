@@ -7,6 +7,7 @@ import {
   AssociateSoftwareTokenCommand,
   AuthFlowType,
   ChallengeNameType,
+  ChangePasswordCommand,
   CodeMismatchException,
   CognitoIdentityProviderClient,
   ConfirmForgotPasswordCommand,
@@ -17,6 +18,7 @@ import {
   GlobalSignOutCommand,
   InvalidParameterException,
   InvalidPasswordException,
+  LimitExceededException,
   NotAuthorizedException,
   SetUserMFAPreferenceCommand,
   SignUpCommand,
@@ -153,6 +155,23 @@ export class CognitoAuthClient {
   async globalSignOut(accessToken: string): Promise<void> {
     await this.client.send(
       new GlobalSignOutCommand({ AccessToken: accessToken }),
+    );
+  }
+
+  /**
+   * ログイン中ユーザーが自身のパスワードを変更する（access token を使用）。
+   */
+  async changePassword(
+    accessToken: string,
+    previousPassword: string,
+    proposedPassword: string,
+  ): Promise<void> {
+    await this.client.send(
+      new ChangePasswordCommand({
+        AccessToken: accessToken,
+        PreviousPassword: previousPassword,
+        ProposedPassword: proposedPassword,
+      }),
     );
   }
 
@@ -346,6 +365,10 @@ export class CognitoAuthClient {
 
   isInvalidPassword(err: unknown): boolean {
     return err instanceof InvalidPasswordException;
+  }
+
+  isLimitExceeded(err: unknown): boolean {
+    return err instanceof LimitExceededException;
   }
 
   isNotAuthorized(err: unknown): boolean {

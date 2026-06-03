@@ -2,6 +2,8 @@ import {
   BadGatewayException,
   BadRequestException,
   ConflictException,
+  HttpException,
+  HttpStatus,
   Inject,
   Injectable,
   Logger,
@@ -208,6 +210,54 @@ export class AuthService {
         err instanceof Error ? err.stack : String(err),
       );
       throw new BadGatewayException('トークン更新に失敗しました');
+    }
+  }
+
+  /**
+   * ログイン中ユーザーのパスワードを変更し、成功後に全セッションを失効させる。
+   * GlobalSignOut の失敗は warn ログのみで、パスワード変更は成功扱いとする。
+   */
+  async changePassword(
+    accessToken: string,
+    previousPassword: string,
+    proposedPassword: string,
+  ): Promise<void> {
+    try {
+      await this.cognitoAuth.changePassword(
+        accessToken,
+        previousPassword,
+        proposedPassword,
+      );
+    } catch (err) {
+      if (this.cognitoAuth.isNotAuthorized(err)) {
+        throw new UnauthorizedException('現在のパスワードが正しくありません');
+      }
+      if (this.cognitoAuth.isInvalidPassword(err)) {
+        throw new BadRequestException(
+          '新しいパスワードがポリシーに合致していません',
+        );
+      }
+      if (this.cognitoAuth.isLimitExceeded(err)) {
+        throw new HttpException(
+          '回数が多すぎます。しばらくしてから再度お試しください',
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+      this.logger.error(
+        'ChangePassword に失敗しました',
+        err instanceof Error ? err.stack : String(err),
+      );
+      throw new BadGatewayException('パスワード変更に失敗しました');
+    }
+
+    try {
+      await this.cognitoAuth.globalSignOut(accessToken);
+    } catch (err) {
+      this.logger.warn(
+        `GlobalSignOut に失敗（パスワード変更は成功）: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
     }
   }
 

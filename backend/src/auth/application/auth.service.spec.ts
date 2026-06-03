@@ -2,6 +2,7 @@ import {
   BadGatewayException,
   BadRequestException,
   ConflictException,
+  HttpException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -37,6 +38,7 @@ function buildMockCognitoAuth(): MockCognitoAuthClient {
     verifySoftwareToken: jest.fn(),
     setSoftwareTokenMfaEnabled: jest.fn(),
     globalSignOut: jest.fn(),
+    changePassword: jest.fn(),
     signUp: jest.fn(),
     confirmSignUp: jest.fn(),
     forgotPassword: jest.fn(),
@@ -49,6 +51,7 @@ function buildMockCognitoAuth(): MockCognitoAuthClient {
     isCodeMismatch: jest.fn().mockReturnValue(false),
     isExpiredCode: jest.fn().mockReturnValue(false),
     isInvalidPassword: jest.fn().mockReturnValue(false),
+    isLimitExceeded: jest.fn().mockReturnValue(false),
     isNotAuthorized: jest.fn().mockReturnValue(false),
     isEnableSoftwareTokenMfa: jest.fn().mockReturnValue(false),
   };
@@ -566,6 +569,80 @@ describe('AuthService.confirmForgotPassword', () => {
     await expect(
       service.confirmForgotPassword('me@example.com', '123456', 'NewPass1!'),
     ).resolves.toBeUndefined();
+  });
+});
+
+describe('AuthService.changePassword', () => {
+  let service: AuthService;
+  let cognitoAuth: MockCognitoAuthClient;
+  let cognitoUser: MockCognitoUserClient;
+
+  beforeEach(async () => {
+    cognitoAuth = buildMockCognitoAuth();
+    cognitoUser = buildMockCognitoUser();
+    service = await buildService(cognitoAuth, cognitoUser);
+  });
+
+  it('正常系: changePassword と globalSignOut を呼ぶ', async () => {
+    cognitoAuth.changePassword.mockResolvedValue(undefined);
+    cognitoAuth.globalSignOut.mockResolvedValue(undefined);
+
+    await service.changePassword('AT', 'Old1!', 'New1234!');
+
+    expect(cognitoAuth.changePassword).toHaveBeenCalledWith(
+      'AT',
+      'Old1!',
+      'New1234!',
+    );
+    expect(cognitoAuth.globalSignOut).toHaveBeenCalledWith('AT');
+  });
+
+  it('globalSignOut が失敗してもパスワード変更は成功扱い', async () => {
+    cognitoAuth.changePassword.mockResolvedValue(undefined);
+    cognitoAuth.globalSignOut.mockRejectedValue(new Error('boom'));
+
+    await expect(
+      service.changePassword('AT', 'Old1!', 'New1234!'),
+    ).resolves.toBeUndefined();
+  });
+
+  it('NotAuthorized で UnauthorizedException（globalSignOut は呼ばない）', async () => {
+    cognitoAuth.changePassword.mockRejectedValue(new Error('boom'));
+    cognitoAuth.isNotAuthorized.mockReturnValue(true);
+
+    await expect(
+      service.changePassword('AT', 'wrong', 'New1234!'),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(cognitoAuth.globalSignOut).not.toHaveBeenCalled();
+  });
+
+  it('InvalidPassword で BadRequestException', async () => {
+    cognitoAuth.changePassword.mockRejectedValue(new Error('boom'));
+    cognitoAuth.isInvalidPassword.mockReturnValue(true);
+
+    await expect(
+      service.changePassword('AT', 'Old1!', 'weak'),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('LimitExceeded で 429 HttpException', async () => {
+    cognitoAuth.changePassword.mockRejectedValue(new Error('boom'));
+    cognitoAuth.isLimitExceeded.mockReturnValue(true);
+
+    await expect(
+      service.changePassword('AT', 'Old1!', 'New1234!'),
+    ).rejects.toBeInstanceOf(HttpException);
+    await expect(
+      service.changePassword('AT', 'Old1!', 'New1234!'),
+    ).rejects.toMatchObject({ status: 429 });
+  });
+
+  it('その他失敗で BadGatewayException', async () => {
+    cognitoAuth.changePassword.mockRejectedValue(new Error('boom'));
+
+    await expect(
+      service.changePassword('AT', 'Old1!', 'New1234!'),
+    ).rejects.toBeInstanceOf(BadGatewayException);
   });
 });
 
