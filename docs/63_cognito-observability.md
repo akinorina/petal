@@ -167,8 +167,9 @@ async function runWithCognitoMetrics<T>(
 ## 10. 手動動作確認シナリオ
 
 1. ローカルで backend を起動し admin としてユーザー作成 → ログに `{"msg":"cognito_api","op":"AdminCreateUser","result":"success","latencyMs":N}` が 1 行で出る。
-2. 存在しないメールアドレスでパスワードリセット要求 → `{"msg":"cognito_api","op":"ForgotPassword","result":"error","latencyMs":N,"errorCode":"UserNotFoundException"}` が出る（業務上の挙動は変わらず 404 や 200 のまま）。
-3. CloudWatch Logs Insights で `filter msg = "cognito_api" | stats count() by op, result` が動く（ステージ環境で確認）。
+2. 既に登録済みのメールアドレスで再度ユーザー作成 → `{"msg":"cognito_api","op":"AdminCreateUser","result":"error","latencyMs":N,"errorCode":"UsernameExistsException"}` が出る。
+3. 存在しないメールアドレスでパスワードリセット要求 → Cognito の `PreventUserExistenceErrors`（デフォルト ON、ユーザー列挙攻撃対策）により Cognito API 自体は成功扱いで、`{"msg":"cognito_api","op":"ForgotPassword","result":"success","latencyMs":N}` が出る。これは Cognito 側の意図された挙動。
+4. CloudWatch Logs Insights で `filter msg = "cognito_api" | stats count() by op, result` が動く（ステージ環境で確認）。
 
 ## 11. 未確定事項
 
