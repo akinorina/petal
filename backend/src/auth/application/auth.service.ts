@@ -229,8 +229,11 @@ export class AuthService {
         proposedPassword,
       );
     } catch (err) {
+      // 旧パスワード誤りは「業務エラー」のため 400 を使う。
+      // access token は JwtAuthGuard で検証済みであり、ここで 401 を返すと
+      // フロントの「401=トークン期限切れ」処理（refresh/再ログイン誘導）と衝突する。
       if (this.cognitoAuth.isNotAuthorized(err)) {
-        throw new UnauthorizedException('現在のパスワードが正しくありません');
+        throw new BadRequestException('現在のパスワードが正しくありません');
       }
       if (this.cognitoAuth.isInvalidPassword(err)) {
         throw new BadRequestException(

@@ -606,13 +606,13 @@ describe('AuthService.changePassword', () => {
     ).resolves.toBeUndefined();
   });
 
-  it('NotAuthorized で UnauthorizedException（globalSignOut は呼ばない）', async () => {
+  it('旧パスワード誤り(NotAuthorized)で BadRequestException（globalSignOut は呼ばない）', async () => {
     cognitoAuth.changePassword.mockRejectedValue(new Error('boom'));
     cognitoAuth.isNotAuthorized.mockReturnValue(true);
 
     await expect(
       service.changePassword('AT', 'wrong', 'New1234!'),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+    ).rejects.toBeInstanceOf(BadRequestException);
     expect(cognitoAuth.globalSignOut).not.toHaveBeenCalled();
   });
 
