@@ -202,4 +202,78 @@ DB スキーマ変更なし（migration 不要）。`petal.users` に既存カ�
 
 ## 12. 未確定事項
 
-- なし（Phase 2 / Phase 3 で全論点確定済み）。実装計画は Phase 4 で本書末尾に追記する。
+- なし（Phase 2 / Phase 3 で全論点確定済み）。
+
+---
+
+## 13. 実装計画（Phase 4）
+
+### 13.1 変更・追加ファイル
+
+#### backend
+
+- `src/auth/infra/cognito-auth.client.ts`（変更）: `signUp(email,password)` / `confirmSignUp(email,code)`、`isUsernameExists` / `isInvalidParameter` / `isUserAlreadyConfirmed` ヘルパー追加（`SignUpCommand` / `ConfirmSignUpCommand` / `InvalidParameterException` を import）
+- `src/user/infra/cognito-user.client.ts`（変更）: `adminGetUserSub(email)` 追加（`AdminGetUserCommand` を import）
+- `src/user/application/user.service.ts`（変更）: `createSelfSignup({cognitoSub,email,name,nameKana})` 追加（`findByCognitoSub` で冪等・監査ログなし）
+- `src/auth/application/auth.schemas.ts`（変更）: `SignupSchema` / `ConfirmSignupSchema` 追加
+- `src/auth/controller/auth.dto.ts`（変更）: `SignupRequestDto` / `ConfirmSignupRequestDto` 追加
+- `src/auth/application/auth.service.ts`（変更）: `UserService` を注入し `signup()` / `confirmSignup()` 追加
+- `src/auth/controller/auth.controller.ts`（変更）: `POST /auth/signup` / `POST /auth/confirm-signup`（ともに `@Public`・204）
+- `src/auth/application/auth.service.spec.ts`（変更）: `UserService` モックを追加（既存テスト維持）＋ signup/confirmSignup の新規テスト
+- `src/user/application/user.service.spec.ts`（変更）: `createSelfSignup` のテスト追加
+- `openapi.json`（再生成）
+
+#### frontend
+
+- `src/lib/api-hooks/use-auth-api.ts`（変更）: `signup` / `confirmSignup` 追加
+- `src/app/signup/page.tsx`（新規）: form → confirm → done の 3 ステップ
+- `src/app/signup/use-signup-page.ts`（新規）: 状態・ハンドラ（forgot-password 踏襲、`evaluatePasswordForm` 利用）
+- `src/app/login/page.tsx`（変更）: 「アカウントを作成」導線を追加
+- `src/lib/openapi/schema.d.ts`（再生成）
+
+#### docs
+
+- `docs/14_cognito-user-pool-setup.md` / `docs/38_cognito-dev-setup.md`（変更）: セルフサインアップ有効化・メール検証の設定手順を追記
+
+migration / 環境変数 / 依存追加: **いずれも不要**（既存 `users` テーブル・既存 Cognito 変数で完結）。
+
+### 13.2 作業順序（コミット単位）
+
+1. **backend: Cognito クライアント拡張**（cognito-auth.client / cognito-user.client）— 完了確認 `cd backend && pnpm build`
+2. **backend: UserService.createSelfSignup + テスト** — 完了確認 `cd backend && pnpm test && pnpm build`
+3. **backend: signup/confirm-signup エンドポイント + spec 更新** — 完了確認 `cd backend && pnpm lint && pnpm test && pnpm build`
+4. **backend: openapi.json 再生成**（`pnpm openapi:export`）— 完了確認 `/auth/signup` `/auth/confirm-signup` が openapi.json に出現
+5. **frontend: auth API + /signup ページ + ログイン導線 + schema.d.ts 再生成** — 完了確認 `cd frontend && pnpm lint && pnpm build`
+6. **docs: Cognito セルフサインアップ設定手順を追記** — 完了確認 `npx markdownlint-cli 'docs/**/*.md'`
+
+### 13.3 テスト方針
+
+- backend は Jest ユニットテスト（CI で `pnpm test`）。`AuthService.signup`（正常 / UsernameExists→409 / InvalidPassword→400 / その他→502）、`AuthService.confirmSignup`（正常 / CodeMismatch→400 / Expired→400 / 既確認は続行 / 冪等）、`UserService.createSelfSignup`（新規作成 / 既存は再利用）をカバー。
+- frontend はユニットテスト無し（CI は lint/build のみ）。`pnpm build` で型・ビルドを担保。
+- 完全な手動シナリオ（§11）は Cognito の「セルフサインアップ有効化」設定が前提のため、設定反映後に実機確認する（設定変更自体は別途）。
+
+### 13.4 想定外時の判断ルール（タスク固有）
+
+- **AI 単独判断 OK**: 既存 forgot-password/login スタイルへの追従、エラーメッセージ文言、Zod 制約の微調整、design-system コンポーネントの選択。
+- **中断して相談**:
+  - Cognito の確認方式が「コード」でなく「リンク」だった等、API 想定差異
+  - User Pool 設定の都合で `SignUp` が使えず `AdminCreateUser` 経由が必須になる場合
+  - confirm 後に**自動ログイン（トークン発行）**へ方針変更したくなった場合（password 再保持が必要になり設計変更）
+  - DB スキーマ・API 仕様・トランザクション境界の変更が必要になった場合
+
+### 13.5 事前解決済みの判断ポイント（ドライラン結果）
+
+| # | 判断ポイント | 解決 |
+| - | ------------ | ---- |
+| 1 | self-signup を監査ログに記録するか | **しない**。admin 操作ではなく、`AuditAction` への新規追加はスコープ外 |
+| 2 | confirm 後にトークンを返すか | **返さない（204）**。confirm 時に password が無く再認証不可。ユーザーは `/login` で手動ログイン |
+| 3 | signup のレスポンス | **204 No Content** |
+| 4 | 「既に確認済み」の検出 | `isUserAlreadyConfirmed`= `NotAuthorizedException` かつ message に `CONFIRMED` を含む → 成功扱いで続行 |
+| 5 | createSelfSignup の冪等チェック | `findByCognitoSub(sub)` のみ（email=Cognito username 一意のため sub 一意で十分） |
+| 6 | password の Zod 制約 | `min(8)` のみ（ポリシー詳細はフロント `PasswordPolicyChecklist` で事前検証、最終判定は Cognito の `InvalidPasswordException`→400） |
+| 7 | name/nameKana の Zod 制約 | `z.string().min(1).max(100)`（`user.schemas` の `CreateUserSchema` に合わせる） |
+| 8 | confirm 成功後の画面遷移 | signup ページ内に **done ステップ**を表示（「登録が完了しました」+ `/login` ボタン）。`useSearchParams`/Suspense を避け login ページ改修を最小化 |
+| 9 | ログイン導線の位置 | login フォーム下部、「パスワードを忘れた方」付近に「アカウントを作成」リンク |
+| 10 | openapi 再生成 | backend `openapi.json` と frontend `schema.d.ts` を再生成しコミット（既存慣習） |
+| 11 | DB INSERT の actor | self-signup のため actor 概念なし。`createSelfSignup` は actorId を取らない |
+| 12 | auth.service.spec の既存テスト破壊 | `UserService` モックを `buildService` に追加して回避 |
