@@ -33,7 +33,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        patch: operations["UserController_updateMyProfile"];
         trace?: never;
     };
     "/users/me/email": {
@@ -394,6 +394,10 @@ export interface components {
             name: string;
             nameKana: string;
         };
+        UpdateMyProfileRequestDto: {
+            name?: string;
+            nameKana?: string;
+        };
         RequestEmailChangeRequestDto: {
             /** Format: email */
             email: string;
@@ -598,6 +602,29 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponseDto"];
+                };
+            };
+        };
+    };
+    UserController_updateMyProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMyProfileRequestDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {

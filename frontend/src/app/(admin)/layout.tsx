@@ -46,7 +46,7 @@ export default function AdminLayout({
         }
         end={
           <div className="flex items-center gap-4">
-            <Link href="/me/email" className="ds-link ds-link--inline text-xs">
+            <Link href="/me" className="ds-link ds-link--inline text-xs">
               {email}
             </Link>
             <button

@@ -27,6 +27,9 @@ export default function MeEmailPage() {
   return (
     <div className="mx-auto max-w-md">
       <nav className="mb-4 flex gap-3 text-xs">
+        <a href="/me" className="ds-link ds-link--inline">
+          プロフィール
+        </a>
         <span className="font-medium text-zinc-900">メールアドレス変更</span>
         <a href="/me/mfa" className="ds-link ds-link--inline">
           2 段階認証

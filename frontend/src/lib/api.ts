@@ -82,6 +82,8 @@ export const auditLogApi = {
 
 export const userApi = {
   findMe: () => unwrap(apiClient.GET('/users/me')),
+  updateMyProfile: (body: Schemas['UpdateMyProfileRequestDto']) =>
+    unwrap(apiClient.PATCH('/users/me', { body })),
   findAll: (params?: { deleted?: boolean }) =>
     unwrap(
       apiClient.GET('/users', {

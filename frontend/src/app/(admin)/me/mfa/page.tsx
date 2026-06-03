@@ -28,6 +28,9 @@ export default function MeMfaPage() {
   return (
     <div className="mx-auto max-w-md space-y-4">
       <nav className="flex gap-3 text-xs">
+        <a href="/me" className="ds-link ds-link--inline">
+          プロフィール
+        </a>
         <a href="/me/email" className="ds-link ds-link--inline">
           メールアドレス変更
         </a>
