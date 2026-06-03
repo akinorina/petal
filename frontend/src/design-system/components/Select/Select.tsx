@@ -15,6 +15,7 @@ import {
   offset,
   shift,
   size,
+  useClick,
   useDismiss,
   useFloating,
   useInteractions,
@@ -139,9 +140,16 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps<string>>(functio
     selectedIndex: selectedIndex >= 0 ? selectedIndex : undefined,
     onMatch: open ? setActiveIndex : (idx) => commit(idx),
   });
+  const click = useClick(data.context, { event: 'mousedown' });
   const dismiss = useDismiss(data.context);
   const role = useRole(data.context, { role: 'listbox' });
-  const interactions = useInteractions([listNav, typeahead, dismiss, role]);
+  const interactions = useInteractions([
+    click,
+    listNav,
+    typeahead,
+    dismiss,
+    role,
+  ]);
 
   const commit = useCallback(
     (idx: number | null) => {
