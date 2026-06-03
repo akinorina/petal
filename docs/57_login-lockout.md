@@ -195,4 +195,71 @@ POST /auth/login {email,password}  (+ IP)
 
 ## 12. 未確定事項
 
-- なし（Phase 2 / Phase 3 で全論点確定済み）。実装計画は Phase 4 で本書末尾に追記する。
+- なし（Phase 2 / Phase 3 で全論点確定済み）。
+
+---
+
+## 13. 実装計画（Phase 4）
+
+### 13.1 変更・追加ファイル
+
+#### backend（新規）
+
+- `src/common/exceptions/too-many-login-attempts.exception.ts`: `HttpException`(429) 派生
+- `src/auth/domain/login-attempt.ts`: `LoginAttempt` ドメイン（`isLocked` / `registerFailure` / `empty`）
+- `src/auth/domain/login-attempt.spec.ts`: ドメインの純粋ロジック単体テスト
+- `src/auth/domain/login-attempt.repository.ts`: `ILoginAttemptRepository` + `LOGIN_ATTEMPT_REPOSITORY` トークン
+- `src/auth/infra/login-attempt.entity.ts`: TypeORM エンティティ（`petal.login_attempts`）
+- `src/auth/infra/login-attempt.repository.impl.ts`: 実装（findByEmail / save=upsert / reset=delete）
+- `database/migrations/1746144005000-CreateLoginAttemptsTable.ts`
+
+#### backend（変更）
+
+- `src/auth/application/auth.service.ts`: `ILoginAttemptRepository` と `ConfigService` を注入、`login` にロック判定・失敗記録・成功リセットを追加、`registerFailure` private 追加
+- `src/auth/controller/auth.controller.ts`: `login` で `@Ip()` / `X-Forwarded-For` を解決し `login(email, password, ip)` に渡す
+- `src/auth/auth.module.ts`: `TypeOrmModule.forFeature([LoginAttemptEntity])` と repository provider を追加
+- `src/auth/application/auth.service.spec.ts`: `LOGIN_ATTEMPT_REPOSITORY` / `ConfigService` モックを追加 + ロックアウトのテスト
+
+#### config / docs（変更）
+
+- `.envs/.env.local.example` / `.envs/.env.dev.example`: `LOGIN_LOCKOUT_MAX_ATTEMPTS` / `LOGIN_LOCKOUT_DURATION_MINUTES` を追記（既定値あり・任意）
+
+migration: あり（上記 1 ファイル）。依存追加: なし。
+
+### 13.2 作業順序（コミット単位）
+
+1. **backend: ロックアウト基盤**（例外 + ドメイン(+spec) + リポジトリ I/F/impl/entity + migration + module forFeature）— 完了確認 `pnpm test`（ドメイン spec）/ `pnpm build` / `pnpm migration:run`（ローカル DB）
+2. **backend: AuthService.login 統合 + controller IP + spec 更新** — 完了確認 `pnpm lint && pnpm test && pnpm build`
+3. **config: env example 追記** — 完了確認 目視（既定値で動く旨のコメント）
+
+### 13.3 テスト方針
+
+- `login-attempt.spec.ts`: `isLocked`（ロック中/期限切れ）、`registerFailure`（加算 / しきい値到達で `lockedUntil` セット / 窓経過で 1 から数え直し）。
+- `auth.service.spec.ts`: ロック中は 429 で Cognito 未呼出、認証失敗で `save` 呼出、認証成功で `reset` 呼出、Cognito 障害（非 NotAuthorized 例外）は `save` を呼ばない。
+- CI（`pnpm test`）で担保。手動シナリオ（§11）はローカル DB + Cognito 接続で確認。
+
+### 13.4 想定外時の判断ルール（タスク固有）
+
+- **AI 単独判断 OK**: ログ文言、env 既定値の微調整、テスト追加、ドメインメソッドの内部実装。
+- **中断して相談**:
+  - `login_attempts` のスキーマ変更が必要になった場合
+  - Cognito のエラー分類が想定と異なり「認証拒否」を `NotAuthorizedException` で判定できない場合
+  - ロックを `/auth/login` 以外へ広げる必要が出た場合
+  - Lambda 環境で IP が全く取得できず、キー設計（email のみ）の見直しが要る場合
+  - トランザクション境界・データモデル・API 仕様の変更が必要になった場合
+
+### 13.5 事前解決済みの判断ポイント（ドライラン結果）
+
+| # | 判断ポイント | 解決 |
+| - | ------------ | ---- |
+| 1 | CHALLENGE / MFA_REQUIRED でカウンタをリセットするか | **する**（資格情報は正しいため） |
+| 2 | 失敗カウント対象 | `authenticate()` が `null` または `NotAuthorizedException`。その他（5xx 等）は非カウント |
+| 3 | 古い失敗の扱い | 直近失敗から `DURATION` 以上経過なら count を 1 に数え直し |
+| 4 | 永続化方法 | `save`=TypeORM upsert（email が PK）、`reset`=行 delete |
+| 5 | しきい値/時間の取得 | `ConfigService` から取得し未設定は既定 5 / 15 分。分→ms 変換 |
+| 6 | IP 取得 | `X-Forwarded-For` 先頭 → `@Ip()` の順で解決（ログ用途のみ・保存しない） |
+| 7 | テーブルと users の関係 | FK で結ばない（存在しない email も数え得る） |
+| 8 | 物理削除の是非 | カウンタは業務データでなくレート制限用のため成功/リセット時に物理削除可（論理削除ルールの対象外、設計書に明記） |
+| 9 | `LoginAttempt.email` の検証 | `z.email()`（`LoginSchema` で検証済みの email のみ到達） |
+| 10 | 既存 login テストの破壊 | `buildService` に `LOGIN_ATTEMPT_REPOSITORY`（findByEmail→null）と `ConfigService` モックを追加 |
+| 11 | `login(email,password,ip?)` の互換 | ip は任意引数。既存呼び出し・テストは不変 |
