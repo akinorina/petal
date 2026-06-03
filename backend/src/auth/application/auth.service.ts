@@ -1,12 +1,14 @@
 import {
   BadGatewayException,
   BadRequestException,
+  ConflictException,
   Injectable,
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { CognitoAuthClient } from '../infra/cognito-auth.client';
 import { CognitoUserClient } from '../../user/infra/cognito-user.client';
+import { UserService } from '../../user/application/user.service';
 import {
   AuthenticatedResponseDto,
   ChallengeResponseDto,
@@ -23,7 +25,83 @@ export class AuthService {
   constructor(
     private readonly cognitoAuth: CognitoAuthClient,
     private readonly cognitoUser: CognitoUserClient,
+    private readonly userService: UserService,
   ) {}
+
+  /**
+   * セルフサインアップ: Cognito SignUp を呼び、検証コードをメール送信させる。
+   * DB へはまだ書き込まない（confirm 確定後に作成する）。
+   */
+  async signup(email: string, password: string): Promise<void> {
+    try {
+      await this.cognitoAuth.signUp(email, password);
+    } catch (err) {
+      if (this.cognitoAuth.isUsernameExists(err)) {
+        throw new ConflictException('すでに登録済みのメールアドレスです');
+      }
+      if (this.cognitoAuth.isInvalidPassword(err)) {
+        throw new BadRequestException('パスワードがポリシーに合致していません');
+      }
+      if (this.cognitoAuth.isInvalidParameter(err)) {
+        throw new BadRequestException('入力内容が正しくありません');
+      }
+      this.logger.error(
+        `セルフサインアップに失敗しました: ${email}`,
+        err instanceof Error ? err.stack : String(err),
+      );
+      throw new BadGatewayException('サインアップに失敗しました');
+    }
+  }
+
+  /**
+   * サインアップの検証コードを確定し、DB に users 行を作成する。
+   * ConfirmSignUp → AdminGetUser(sub) → DB INSERT の順。
+   * 既に確認済み / 既に DB 行ありのケースは冪等に成功扱いとする。
+   */
+  async confirmSignup(
+    email: string,
+    code: string,
+    name: string,
+    nameKana: string,
+  ): Promise<void> {
+    try {
+      await this.cognitoAuth.confirmSignUp(email, code);
+    } catch (err) {
+      if (this.cognitoAuth.isUserAlreadyConfirmed(err)) {
+        // 既に確認済み: 冪等に DB 作成へ進む
+      } else if (this.cognitoAuth.isCodeMismatch(err)) {
+        throw new BadRequestException('コードが正しくありません');
+      } else if (this.cognitoAuth.isExpiredCode(err)) {
+        throw new BadRequestException('コードの有効期限が切れています');
+      } else if (this.cognitoUser.isUserNotFound(err)) {
+        throw new BadRequestException('ユーザーが見つかりません');
+      } else {
+        this.logger.error(
+          `サインアップ確定に失敗しました: ${email}`,
+          err instanceof Error ? err.stack : String(err),
+        );
+        throw new BadGatewayException('サインアップの確定に失敗しました');
+      }
+    }
+
+    let sub: string;
+    try {
+      sub = await this.cognitoUser.adminGetUserSub(email);
+    } catch (err) {
+      this.logger.error(
+        `confirm 後の sub 取得に失敗しました: ${email}`,
+        err instanceof Error ? err.stack : String(err),
+      );
+      throw new BadGatewayException('サインアップの確定に失敗しました');
+    }
+
+    await this.userService.createSelfSignup({
+      cognitoSub: sub,
+      email,
+      name,
+      nameKana,
+    });
+  }
 
   async forgotPassword(email: string): Promise<void> {
     try {

@@ -1,10 +1,12 @@
 import {
   BadGatewayException,
   BadRequestException,
+  ConflictException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CognitoUserClient } from '../../user/infra/cognito-user.client';
+import { UserService } from '../../user/application/user.service';
 import {
   CognitoAuthClient,
   CognitoAuthTokens,
@@ -66,15 +68,27 @@ function buildMockCognitoUser(): MockCognitoUserClient {
   };
 }
 
+type MockUserService = {
+  createSelfSignup: jest.Mock;
+};
+
+function buildMockUserService(): MockUserService {
+  return {
+    createSelfSignup: jest.fn(),
+  };
+}
+
 async function buildService(
   cognitoAuth: MockCognitoAuthClient,
   cognitoUser: MockCognitoUserClient,
+  userService: MockUserService = buildMockUserService(),
 ): Promise<AuthService> {
   const moduleRef: TestingModule = await Test.createTestingModule({
     providers: [
       AuthService,
       { provide: CognitoAuthClient, useValue: cognitoAuth },
       { provide: CognitoUserClient, useValue: cognitoUser },
+      { provide: UserService, useValue: userService },
     ],
   }).compile();
   return moduleRef.get(AuthService);
@@ -86,6 +100,129 @@ const tokens: CognitoAuthTokens = {
   refreshToken: 'RT',
   expiresIn: 3600,
 };
+
+describe('AuthService.signup', () => {
+  let service: AuthService;
+  let cognitoAuth: MockCognitoAuthClient;
+  let cognitoUser: MockCognitoUserClient;
+
+  beforeEach(async () => {
+    cognitoAuth = buildMockCognitoAuth();
+    cognitoUser = buildMockCognitoUser();
+    service = await buildService(cognitoAuth, cognitoUser);
+  });
+
+  it('正常系: Cognito SignUp を呼ぶ', async () => {
+    cognitoAuth.signUp.mockResolvedValue(undefined);
+
+    await expect(
+      service.signup('new@example.com', 'Passw0rd!'),
+    ).resolves.toBeUndefined();
+    expect(cognitoAuth.signUp).toHaveBeenCalledWith(
+      'new@example.com',
+      'Passw0rd!',
+    );
+  });
+
+  it('UsernameExists で ConflictException', async () => {
+    cognitoAuth.signUp.mockRejectedValue(new Error('boom'));
+    cognitoAuth.isUsernameExists.mockReturnValue(true);
+
+    await expect(
+      service.signup('dup@example.com', 'Passw0rd!'),
+    ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('InvalidPassword で BadRequestException', async () => {
+    cognitoAuth.signUp.mockRejectedValue(new Error('boom'));
+    cognitoAuth.isInvalidPassword.mockReturnValue(true);
+
+    await expect(
+      service.signup('new@example.com', 'weak'),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('その他失敗で BadGatewayException', async () => {
+    cognitoAuth.signUp.mockRejectedValue(new Error('boom'));
+
+    await expect(
+      service.signup('new@example.com', 'Passw0rd!'),
+    ).rejects.toBeInstanceOf(BadGatewayException);
+  });
+});
+
+describe('AuthService.confirmSignup', () => {
+  let service: AuthService;
+  let cognitoAuth: MockCognitoAuthClient;
+  let cognitoUser: MockCognitoUserClient;
+  let userService: MockUserService;
+
+  beforeEach(async () => {
+    cognitoAuth = buildMockCognitoAuth();
+    cognitoUser = buildMockCognitoUser();
+    userService = buildMockUserService();
+    service = await buildService(cognitoAuth, cognitoUser, userService);
+  });
+
+  it('正常系: confirm → sub 取得 → createSelfSignup を呼ぶ', async () => {
+    cognitoAuth.confirmSignUp.mockResolvedValue(undefined);
+    cognitoUser.adminGetUserSub.mockResolvedValue('sub-123');
+    userService.createSelfSignup.mockResolvedValue(undefined);
+
+    await service.confirmSignup('new@example.com', '123456', '名前', 'なまえ');
+
+    expect(cognitoAuth.confirmSignUp).toHaveBeenCalledWith(
+      'new@example.com',
+      '123456',
+    );
+    expect(cognitoUser.adminGetUserSub).toHaveBeenCalledWith('new@example.com');
+    expect(userService.createSelfSignup).toHaveBeenCalledWith({
+      cognitoSub: 'sub-123',
+      email: 'new@example.com',
+      name: '名前',
+      nameKana: 'なまえ',
+    });
+  });
+
+  it('既に確認済みでも DB 作成へ進む（冪等）', async () => {
+    cognitoAuth.confirmSignUp.mockRejectedValue(new Error('boom'));
+    cognitoAuth.isUserAlreadyConfirmed.mockReturnValue(true);
+    cognitoUser.adminGetUserSub.mockResolvedValue('sub-123');
+    userService.createSelfSignup.mockResolvedValue(undefined);
+
+    await service.confirmSignup('new@example.com', '123456', '名前', 'なまえ');
+
+    expect(userService.createSelfSignup).toHaveBeenCalledTimes(1);
+  });
+
+  it('CodeMismatch で BadRequestException（DB 作成しない）', async () => {
+    cognitoAuth.confirmSignUp.mockRejectedValue(new Error('boom'));
+    cognitoAuth.isCodeMismatch.mockReturnValue(true);
+
+    await expect(
+      service.confirmSignup('new@example.com', '999', '名前', 'なまえ'),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(userService.createSelfSignup).not.toHaveBeenCalled();
+  });
+
+  it('ExpiredCode で BadRequestException', async () => {
+    cognitoAuth.confirmSignUp.mockRejectedValue(new Error('boom'));
+    cognitoAuth.isExpiredCode.mockReturnValue(true);
+
+    await expect(
+      service.confirmSignup('new@example.com', '123', '名前', 'なまえ'),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('その他失敗で BadGatewayException', async () => {
+    cognitoAuth.confirmSignUp.mockRejectedValue(new Error('boom'));
+
+    await expect(
+      service.confirmSignup('new@example.com', '123456', '名前', 'なまえ'),
+    ).rejects.toBeInstanceOf(BadGatewayException);
+    expect(userService.createSelfSignup).not.toHaveBeenCalled();
+  });
+});
 
 describe('AuthService.login', () => {
   let service: AuthService;

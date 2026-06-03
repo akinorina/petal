@@ -46,6 +46,22 @@ export class NewPasswordChallengeRequestDto {
   session!: string;
 }
 
+export class SignupRequestDto {
+  @ApiProperty({ format: 'email' })
+  email!: string;
+  password!: string;
+  name!: string;
+  nameKana!: string;
+}
+
+export class ConfirmSignupRequestDto {
+  @ApiProperty({ format: 'email' })
+  email!: string;
+  code!: string;
+  name!: string;
+  nameKana!: string;
+}
+
 export class ForgotPasswordRequestDto {
   @ApiProperty({ format: 'email' })
   email!: string;
