@@ -47,6 +47,14 @@ export function useUsersPage() {
   const urlQ = searchParams.get('q') ?? '';
 
   const [searchInput, setSearchInput] = useState(urlQ);
+  // URL の q が外部要因（ブラウザバックや直接遷移）で変わったら入力欄に同期する。
+  // 「propsから派生したstateの更新は useEffect ではなく描画中に行う」公式パターン。
+  // 参考: https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+  const [prevUrlQ, setPrevUrlQ] = useState(urlQ);
+  if (urlQ !== prevUrlQ) {
+    setPrevUrlQ(urlQ);
+    setSearchInput(urlQ);
+  }
   const [modal, setModal] = useState<Modal>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -97,10 +105,6 @@ export function useUsersPage() {
     },
     [router, searchParams, page],
   );
-
-  useEffect(() => {
-    setSearchInput(urlQ);
-  }, [urlQ]);
 
   useEffect(() => {
     if (searchInput === urlQ) return;
