@@ -22,7 +22,7 @@ import {
   DbUser,
   Discrepancy,
   classifyDiscrepancies,
-} from '../src/scripts/cognito-sync-diff';
+} from './cognito-sync-diff';
 
 type CognitoRecord = CognitoUser & { username: string };
 

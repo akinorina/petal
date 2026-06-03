@@ -41,9 +41,9 @@ DB（`petal.users`、softDelete 含む）と Cognito User Pool（ListUsers）を
 ### 対象
 
 - `backend/scripts/audit-cognito-sync.ts`（スタンドアロン実行スクリプト・I/O）
-- `backend/src/scripts/cognito-sync-diff.ts`（純粋な分類ロジック + 型）
-- `backend/src/scripts/cognito-sync-diff.spec.ts`（分類ロジックの単体テスト）
-- `package.json` に `audit-cognito-sync` スクリプトを追加
+- `backend/scripts/cognito-sync-diff.ts`（純粋な分類ロジック + 型）
+- `backend/scripts/cognito-sync-diff.spec.ts`（分類ロジックの単体テスト）
+- `backend/package.json` に `audit-cognito-sync` スクリプトを追加、および jest `roots` と lint glob に `scripts/` を追加
 
 ### 対象外
 
@@ -80,9 +80,12 @@ DB（`petal.users`、softDelete 含む）と Cognito User Pool（ListUsers）を
 
 - `create-admin.ts` と同様に `AppDataSource` と Cognito SDK を直接使う。Nest 起動の複雑さを避ける。
 
-### 判断 5: 分類ロジックの分離 → **純粋関数を `src/scripts/` に切り出す**（採用）
+### 判断 5: 分類ロジックの分離 → **純粋関数を `scripts/` に置き、テスト/lint 設定を拡張**（採用）
 
-- jest の `rootDir` は `src` のため、`backend/scripts/` 配下はテストされない。`classifyDiscrepancies(dbUsers, cognitoUsers)` を `src/scripts/cognito-sync-diff.ts` に純粋関数として置き、単体テストする。スクリプト本体は I/O（ListUsers ページング・DB クエリ・AdminDisableUser・出力）に専念する。
+- `classifyDiscrepancies(dbUsers, cognitoUsers)` を `scripts/cognito-sync-diff.ts` に純粋関数として切り出し、スクリプト本体（`scripts/audit-cognito-sync.ts`）は I/O（ListUsers ページング・DB クエリ・AdminDisableUser・出力）に専念する。
+- スクリプト関連を `scripts/` に集約するため、jest の `roots` に `<rootDir>/../scripts` を、lint glob に `scripts` を追加して CI のテスト/lint 対象に含める。
+- **理由**: スクリプト一式が 1 ディレクトリにまとまり cohesion が高い。加えて純粋モジュールが `src` 外なので `nest build`（Lambda バンドル）に含まれない副次メリットがある。
+- **却下**: `src/scripts/` に置く案（設定変更は不要だが、ディレクトリが分かれ、純粋モジュールが Lambda バンドルに含まれる）。
 
 ### 判断 6: 終了コード → **実行時エラー以外は 0**（採用）
 
@@ -187,19 +190,19 @@ DB: 12 件（削除済 3 件） / Cognito: 11 件
 
 #### backend（新規）
 
-- `src/scripts/cognito-sync-diff.ts`: 型（`DbUser` / `CognitoUser` / `Discrepancy`）と純粋関数 `classifyDiscrepancies`
-- `src/scripts/cognito-sync-diff.spec.ts`: 分類ロジックの単体テスト
+- `scripts/cognito-sync-diff.ts`: 型（`DbUser` / `CognitoUser` / `Discrepancy`）と純粋関数 `classifyDiscrepancies`
+- `scripts/cognito-sync-diff.spec.ts`: 分類ロジックの単体テスト
 - `scripts/audit-cognito-sync.ts`: スタンドアロン I/O（ListUsers ページング・DB raw SQL・整形出力・`--fix` で AdminDisableUser）
 
 #### backend（変更）
 
-- `package.json`: `"audit-cognito-sync": "ts-node -r tsconfig-paths/register scripts/audit-cognito-sync.ts"` を追加
+- `package.json`: `audit-cognito-sync` スクリプトを追加、jest `roots` に `<rootDir>/../scripts`、lint glob に `scripts` を追加
 
 migration / 環境変数 / 依存追加: なし（既存の `COGNITO_USER_POOL_ID` / `COGNITO_REGION` / DB 接続変数を利用）。
 
 ### 12.2 作業順序（コミット単位）
 
-1. **backend: 純粋分類ロジック + テスト**（`src/scripts/cognito-sync-diff.ts` + spec）— 完了確認 `cd backend && pnpm test && pnpm build`
+1. **backend: 純粋分類ロジック + テスト**（`scripts/cognito-sync-diff.ts` + spec、jest `roots`/lint glob 拡張）— 完了確認 `cd backend && pnpm test && pnpm build`
 2. **backend: スクリプト本体 + package.json コマンド** — 完了確認 `cd backend && npx tsc --noEmit --skipLibCheck scripts/audit-cognito-sync.ts`（型）/ `npx eslint scripts/audit-cognito-sync.ts`（手動 lint）。実行は実 Cognito + DB 前提
 
 ### 12.3 テスト方針
@@ -226,6 +229,6 @@ migration / 環境変数 / 依存追加: なし（既存の `COGNITO_USER_POOL_I
 | 5 | Disable の対象指定 | Cognito 側の `Username` で `AdminDisableUser`（DB email ではなく Cognito の Username を使う） |
 | 6 | email 比較 | 大文字小文字差での誤検知を避けるため `toLowerCase()` で比較 |
 | 7 | 状態+email 両ずれ | 両カテゴリに計上する |
-| 8 | 純粋ロジックの置き場所 | `src/scripts/`（jest rootDir=src の対象）。スクリプトは相対 import |
+| 8 | 純粋ロジックの置き場所 | `scripts/` に集約し、jest `roots` と lint glob を拡張して CI 対象化（Lambda バンドルにも含まれない） |
 | 9 | 終了コード | 実行時エラーのみ `exit 1`、その他は `exit 0` |
 | 10 | 実行場所 | すべて `backend/` 配下。コマンドは backend/package.json |
