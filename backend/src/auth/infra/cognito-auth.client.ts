@@ -1,6 +1,7 @@
 import * as crypto from 'crypto';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { runWithCognitoMetrics } from '../../common/observability/cognito-metrics';
 import {
   AdminInitiateAuthCommand,
   AdminRespondToAuthChallengeCommand,
@@ -57,6 +58,7 @@ export type CognitoAuthResult =
 
 @Injectable()
 export class CognitoAuthClient {
+  private readonly logger = new Logger(CognitoAuthClient.name);
   private readonly client: CognitoIdentityProviderClient;
   private readonly userPoolId: string;
   private readonly clientId: string;
@@ -86,7 +88,11 @@ export class CognitoAuthClient {
       },
     });
 
-    const response = await this.client.send(command);
+    const response = await runWithCognitoMetrics(
+      'AdminInitiateAuth',
+      () => this.client.send(command),
+      this.logger,
+    );
 
     if (
       response.ChallengeName === ChallengeNameType.NEW_PASSWORD_REQUIRED &&
@@ -141,7 +147,11 @@ export class CognitoAuthClient {
       },
     });
 
-    const response = await this.client.send(command);
+    const response = await runWithCognitoMetrics(
+      'AdminRespondToAuthChallenge.NEW_PASSWORD_REQUIRED',
+      () => this.client.send(command),
+      this.logger,
+    );
     const result = response.AuthenticationResult;
     if (!result?.AccessToken) return null;
 
@@ -154,8 +164,13 @@ export class CognitoAuthClient {
   }
 
   async globalSignOut(accessToken: string): Promise<void> {
-    await this.client.send(
-      new GlobalSignOutCommand({ AccessToken: accessToken }),
+    await runWithCognitoMetrics(
+      'GlobalSignOut',
+      () =>
+        this.client.send(
+          new GlobalSignOutCommand({ AccessToken: accessToken }),
+        ),
+      this.logger,
     );
   }
 
@@ -167,12 +182,17 @@ export class CognitoAuthClient {
     previousPassword: string,
     proposedPassword: string,
   ): Promise<void> {
-    await this.client.send(
-      new ChangePasswordCommand({
-        AccessToken: accessToken,
-        PreviousPassword: previousPassword,
-        ProposedPassword: proposedPassword,
-      }),
+    await runWithCognitoMetrics(
+      'ChangePassword',
+      () =>
+        this.client.send(
+          new ChangePasswordCommand({
+            AccessToken: accessToken,
+            PreviousPassword: previousPassword,
+            ProposedPassword: proposedPassword,
+          }),
+        ),
+      this.logger,
     );
   }
 
@@ -190,7 +210,11 @@ export class CognitoAuthClient {
       },
     });
 
-    const response = await this.client.send(command);
+    const response = await runWithCognitoMetrics(
+      'AdminInitiateAuth.REFRESH_TOKEN',
+      () => this.client.send(command),
+      this.logger,
+    );
     const result = response.AuthenticationResult;
     if (!result?.AccessToken || !result.IdToken) return null;
 
@@ -218,7 +242,11 @@ export class CognitoAuthClient {
       },
     });
 
-    const response = await this.client.send(command);
+    const response = await runWithCognitoMetrics(
+      'AdminRespondToAuthChallenge.SOFTWARE_TOKEN_MFA',
+      () => this.client.send(command),
+      this.logger,
+    );
     const result = response.AuthenticationResult;
     if (!result?.AccessToken) return null;
 
@@ -233,8 +261,13 @@ export class CognitoAuthClient {
   async associateSoftwareToken(
     accessToken: string,
   ): Promise<{ secretCode: string }> {
-    const response = await this.client.send(
-      new AssociateSoftwareTokenCommand({ AccessToken: accessToken }),
+    const response = await runWithCognitoMetrics(
+      'AssociateSoftwareToken',
+      () =>
+        this.client.send(
+          new AssociateSoftwareTokenCommand({ AccessToken: accessToken }),
+        ),
+      this.logger,
     );
     if (!response.SecretCode) {
       throw new Error('Cognito から SecretCode を取得できませんでした');
@@ -247,12 +280,17 @@ export class CognitoAuthClient {
     userCode: string,
     friendlyDeviceName?: string,
   ): Promise<{ status: 'SUCCESS' | 'ERROR' }> {
-    const response = await this.client.send(
-      new VerifySoftwareTokenCommand({
-        AccessToken: accessToken,
-        UserCode: userCode,
-        FriendlyDeviceName: friendlyDeviceName,
-      }),
+    const response = await runWithCognitoMetrics(
+      'VerifySoftwareToken',
+      () =>
+        this.client.send(
+          new VerifySoftwareTokenCommand({
+            AccessToken: accessToken,
+            UserCode: userCode,
+            FriendlyDeviceName: friendlyDeviceName,
+          }),
+        ),
+      this.logger,
     );
     const status =
       response.Status === VerifySoftwareTokenResponseType.SUCCESS
@@ -265,14 +303,19 @@ export class CognitoAuthClient {
     accessToken: string,
     enabled: boolean,
   ): Promise<void> {
-    await this.client.send(
-      new SetUserMFAPreferenceCommand({
-        AccessToken: accessToken,
-        SoftwareTokenMfaSettings: {
-          Enabled: enabled,
-          PreferredMfa: enabled,
-        },
-      }),
+    await runWithCognitoMetrics(
+      'SetUserMFAPreference',
+      () =>
+        this.client.send(
+          new SetUserMFAPreferenceCommand({
+            AccessToken: accessToken,
+            SoftwareTokenMfaSettings: {
+              Enabled: enabled,
+              PreferredMfa: enabled,
+            },
+          }),
+        ),
+      this.logger,
     );
   }
 
@@ -281,14 +324,19 @@ export class CognitoAuthClient {
    * Cognito が検証コードをメール送信し、ユーザーは UNCONFIRMED 状態になる。
    */
   async signUp(email: string, password: string): Promise<void> {
-    await this.client.send(
-      new SignUpCommand({
-        ClientId: this.clientId,
-        Username: email,
-        Password: password,
-        SecretHash: this.computeSecretHash(email),
-        UserAttributes: [{ Name: 'email', Value: email }],
-      }),
+    await runWithCognitoMetrics(
+      'SignUp',
+      () =>
+        this.client.send(
+          new SignUpCommand({
+            ClientId: this.clientId,
+            Username: email,
+            Password: password,
+            SecretHash: this.computeSecretHash(email),
+            UserAttributes: [{ Name: 'email', Value: email }],
+          }),
+        ),
+      this.logger,
     );
   }
 
@@ -296,23 +344,33 @@ export class CognitoAuthClient {
    * サインアップの検証コードを確定し、ユーザーを CONFIRMED にする。
    */
   async confirmSignUp(email: string, code: string): Promise<void> {
-    await this.client.send(
-      new ConfirmSignUpCommand({
-        ClientId: this.clientId,
-        Username: email,
-        ConfirmationCode: code,
-        SecretHash: this.computeSecretHash(email),
-      }),
+    await runWithCognitoMetrics(
+      'ConfirmSignUp',
+      () =>
+        this.client.send(
+          new ConfirmSignUpCommand({
+            ClientId: this.clientId,
+            Username: email,
+            ConfirmationCode: code,
+            SecretHash: this.computeSecretHash(email),
+          }),
+        ),
+      this.logger,
     );
   }
 
   async forgotPassword(email: string): Promise<void> {
-    await this.client.send(
-      new ForgotPasswordCommand({
-        ClientId: this.clientId,
-        Username: email,
-        SecretHash: this.computeSecretHash(email),
-      }),
+    await runWithCognitoMetrics(
+      'ForgotPassword',
+      () =>
+        this.client.send(
+          new ForgotPasswordCommand({
+            ClientId: this.clientId,
+            Username: email,
+            SecretHash: this.computeSecretHash(email),
+          }),
+        ),
+      this.logger,
     );
   }
 
@@ -321,14 +379,19 @@ export class CognitoAuthClient {
     code: string,
     newPassword: string,
   ): Promise<void> {
-    await this.client.send(
-      new ConfirmForgotPasswordCommand({
-        ClientId: this.clientId,
-        Username: email,
-        ConfirmationCode: code,
-        Password: newPassword,
-        SecretHash: this.computeSecretHash(email),
-      }),
+    await runWithCognitoMetrics(
+      'ConfirmForgotPassword',
+      () =>
+        this.client.send(
+          new ConfirmForgotPasswordCommand({
+            ClientId: this.clientId,
+            Username: email,
+            ConfirmationCode: code,
+            Password: newPassword,
+            SecretHash: this.computeSecretHash(email),
+          }),
+        ),
+      this.logger,
     );
   }
 
