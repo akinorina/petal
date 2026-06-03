@@ -5,8 +5,15 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { CognitoUserClient } from '../../user/infra/cognito-user.client';
 import { UserService } from '../../user/application/user.service';
+import { TooManyLoginAttemptsException } from '../../common/exceptions/too-many-login-attempts.exception';
+import { LoginAttempt } from '../domain/login-attempt';
+import {
+  ILoginAttemptRepository,
+  LOGIN_ATTEMPT_REPOSITORY,
+} from '../domain/login-attempt.repository';
 import {
   CognitoAuthClient,
   CognitoAuthTokens,
@@ -78,10 +85,34 @@ function buildMockUserService(): MockUserService {
   };
 }
 
+type MockLoginAttemptRepository = {
+  [K in keyof ILoginAttemptRepository]: jest.Mock;
+};
+
+function buildMockLoginAttempts(): MockLoginAttemptRepository {
+  return {
+    findByEmail: jest.fn().mockResolvedValue(null),
+    save: jest.fn().mockResolvedValue(undefined),
+    reset: jest.fn().mockResolvedValue(undefined),
+  };
+}
+
+const configValues: Record<string, string> = {
+  LOGIN_LOCKOUT_MAX_ATTEMPTS: '5',
+  LOGIN_LOCKOUT_DURATION_MINUTES: '15',
+};
+
+function buildMockConfig(): Pick<ConfigService, 'get'> {
+  return {
+    get: jest.fn((key: string) => configValues[key]),
+  };
+}
+
 async function buildService(
   cognitoAuth: MockCognitoAuthClient,
   cognitoUser: MockCognitoUserClient,
   userService: MockUserService = buildMockUserService(),
+  loginAttempts: MockLoginAttemptRepository = buildMockLoginAttempts(),
 ): Promise<AuthService> {
   const moduleRef: TestingModule = await Test.createTestingModule({
     providers: [
@@ -89,6 +120,8 @@ async function buildService(
       { provide: CognitoAuthClient, useValue: cognitoAuth },
       { provide: CognitoUserClient, useValue: cognitoUser },
       { provide: UserService, useValue: userService },
+      { provide: LOGIN_ATTEMPT_REPOSITORY, useValue: loginAttempts },
+      { provide: ConfigService, useValue: buildMockConfig() },
     ],
   }).compile();
   return moduleRef.get(AuthService);
@@ -221,6 +254,87 @@ describe('AuthService.confirmSignup', () => {
       service.confirmSignup('new@example.com', '123456', '名前', 'なまえ'),
     ).rejects.toBeInstanceOf(BadGatewayException);
     expect(userService.createSelfSignup).not.toHaveBeenCalled();
+  });
+});
+
+describe('AuthService.login lockout', () => {
+  let cognitoAuth: MockCognitoAuthClient;
+  let cognitoUser: MockCognitoUserClient;
+  let loginAttempts: MockLoginAttemptRepository;
+
+  beforeEach(() => {
+    cognitoAuth = buildMockCognitoAuth();
+    cognitoUser = buildMockCognitoUser();
+    loginAttempts = buildMockLoginAttempts();
+  });
+
+  async function service(): Promise<AuthService> {
+    return buildService(
+      cognitoAuth,
+      cognitoUser,
+      buildMockUserService(),
+      loginAttempts,
+    );
+  }
+
+  it('ロック中は 429 を投げ Cognito を呼ばない', async () => {
+    loginAttempts.findByEmail.mockResolvedValue(
+      new LoginAttempt({
+        email: 'me@example.com',
+        failCount: 5,
+        firstFailedAt: new Date(),
+        lockedUntil: new Date(Date.now() + 60_000),
+      }),
+    );
+    const svc = await service();
+
+    await expect(svc.login('me@example.com', 'pass')).rejects.toBeInstanceOf(
+      TooManyLoginAttemptsException,
+    );
+    expect(cognitoAuth.authenticate).not.toHaveBeenCalled();
+  });
+
+  it('認証失敗(null)で save を呼び 401', async () => {
+    cognitoAuth.authenticate.mockResolvedValue(null);
+    const svc = await service();
+
+    await expect(svc.login('me@example.com', 'bad')).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
+    expect(loginAttempts.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('NotAuthorized 例外で save を呼び 401', async () => {
+    cognitoAuth.authenticate.mockRejectedValue(new Error('boom'));
+    cognitoAuth.isNotAuthorized.mockReturnValue(true);
+    const svc = await service();
+
+    await expect(svc.login('me@example.com', 'bad')).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
+    expect(loginAttempts.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('Cognito 障害（NotAuthorized 以外）は save を呼ばない', async () => {
+    cognitoAuth.authenticate.mockRejectedValue(new Error('boom'));
+    const svc = await service();
+
+    await expect(svc.login('me@example.com', 'pass')).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
+    expect(loginAttempts.save).not.toHaveBeenCalled();
+  });
+
+  it('認証成功でカウンタを reset する', async () => {
+    cognitoAuth.authenticate.mockResolvedValue({
+      kind: 'authenticated',
+      tokens,
+    });
+    const svc = await service();
+
+    await svc.login('me@example.com', 'good');
+
+    expect(loginAttempts.reset).toHaveBeenCalledWith('me@example.com');
   });
 });
 

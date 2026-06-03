@@ -5,13 +5,14 @@ import { buildOpenApiConfig } from './openapi.config';
 import * as fs from 'node:fs';
 
 async function bootstrap() {
-  const httpsOptions = process.env.HTTPS === 'true'
-  ? {
-      key: fs.readFileSync('../certs/localhost+2-key.pem'),
-      cert: fs.readFileSync('../certs/localhost+2.pem'),
-    }
-  : undefined;
-  
+  const httpsOptions =
+    process.env.HTTPS === 'true'
+      ? {
+          key: fs.readFileSync('../certs/localhost+2-key.pem'),
+          cert: fs.readFileSync('../certs/localhost+2.pem'),
+        }
+      : undefined;
+
   const app = await NestFactory.create(AppModule, { httpsOptions });
   const origins = (process.env.CORS_ORIGINS ?? 'http://localhost:3001')
     .split(',')

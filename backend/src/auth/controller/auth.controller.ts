@@ -4,6 +4,7 @@ import {
   Controller,
   Headers,
   HttpCode,
+  Ip,
   Post,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -74,12 +75,21 @@ export class AuthController {
       },
     },
   })
-  async login(@Body() body: LoginRequestDto): Promise<LoginResponseDto> {
+  async login(
+    @Body() body: LoginRequestDto,
+    @Ip() ip: string,
+    @Headers('x-forwarded-for') forwardedFor: string | undefined,
+  ): Promise<LoginResponseDto> {
     const parsed = LoginSchema.safeParse(body);
     if (!parsed.success) {
       throw new BadRequestException(parsed.error.flatten());
     }
-    return this.authService.login(parsed.data.email, parsed.data.password);
+    const clientIp = forwardedFor?.split(',')[0]?.trim() || ip;
+    return this.authService.login(
+      parsed.data.email,
+      parsed.data.password,
+      clientIp,
+    );
   }
 
   @Post('logout')
