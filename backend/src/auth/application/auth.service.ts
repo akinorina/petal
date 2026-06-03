@@ -2,13 +2,24 @@ import {
   BadGatewayException,
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
-import { CognitoAuthClient } from '../infra/cognito-auth.client';
+import { ConfigService } from '@nestjs/config';
+import {
+  CognitoAuthClient,
+  CognitoAuthResult,
+} from '../infra/cognito-auth.client';
 import { CognitoUserClient } from '../../user/infra/cognito-user.client';
 import { UserService } from '../../user/application/user.service';
+import { LoginAttempt } from '../domain/login-attempt';
+import {
+  ILoginAttemptRepository,
+  LOGIN_ATTEMPT_REPOSITORY,
+} from '../domain/login-attempt.repository';
+import { TooManyLoginAttemptsException } from '../../common/exceptions/too-many-login-attempts.exception';
 import {
   AuthenticatedResponseDto,
   ChallengeResponseDto,
@@ -21,12 +32,29 @@ import {
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+  private readonly maxAttempts: number;
+  private readonly lockDurationMs: number;
 
   constructor(
     private readonly cognitoAuth: CognitoAuthClient,
     private readonly cognitoUser: CognitoUserClient,
     private readonly userService: UserService,
-  ) {}
+    @Inject(LOGIN_ATTEMPT_REPOSITORY)
+    private readonly loginAttempts: ILoginAttemptRepository,
+    config: ConfigService,
+  ) {
+    this.maxAttempts = parsePositiveInt(
+      config.get<string>('LOGIN_LOCKOUT_MAX_ATTEMPTS'),
+      5,
+    );
+    this.lockDurationMs =
+      parsePositiveInt(
+        config.get<string>('LOGIN_LOCKOUT_DURATION_MINUTES'),
+        15,
+      ) *
+      60 *
+      1000;
+  }
 
   /**
    * セルフサインアップ: Cognito SignUp を呼び、検証コードをメール送信させる。
@@ -195,38 +223,85 @@ export class AuthService {
     }
   }
 
-  async login(email: string, password: string): Promise<LoginResponseDto> {
+  async login(
+    email: string,
+    password: string,
+    ipAddress?: string,
+  ): Promise<LoginResponseDto> {
+    const now = new Date();
+    const existing = await this.loginAttempts.findByEmail(email);
+    if (existing && existing.isLocked(now)) {
+      throw new TooManyLoginAttemptsException();
+    }
+
+    let result: CognitoAuthResult | null;
     try {
-      const result = await this.cognitoAuth.authenticate(email, password);
-      if (!result) throw new UnauthorizedException('認証に失敗しました');
-
-      if (result.kind === 'challenge') {
-        const challenge: ChallengeResponseDto = {
-          status: 'CHALLENGE',
-          challengeName: result.challengeName,
-          session: result.session,
-          email,
-        };
-        return challenge;
-      }
-
-      if (result.kind === 'mfa_challenge') {
-        const mfa: MfaChallengeResponseDto = {
-          status: 'MFA_REQUIRED',
-          challengeName: result.challengeName,
-          session: result.session,
-          email,
-        };
-        return mfa;
-      }
-
-      return this.toAuthenticated(result.tokens, email);
+      result = await this.cognitoAuth.authenticate(email, password);
     } catch (err) {
-      if (err instanceof UnauthorizedException) throw err;
+      // 認証拒否のみ失敗としてカウント。Cognito 障害（5xx 等）はカウントしない。
+      if (this.cognitoAuth.isNotAuthorized(err)) {
+        await this.registerFailure(existing, email, ipAddress, now);
+      } else {
+        this.logger.error(
+          'Cognito authenticate に失敗しました',
+          err instanceof Error ? err.stack : String(err),
+        );
+      }
       throw new UnauthorizedException(
         'メールアドレスまたはパスワードが正しくありません',
       );
     }
+
+    if (!result) {
+      await this.registerFailure(existing, email, ipAddress, now);
+      throw new UnauthorizedException(
+        'メールアドレスまたはパスワードが正しくありません',
+      );
+    }
+
+    // 認証成功（CHALLENGE / MFA も資格情報は正しい）→ カウンタをリセット
+    await this.loginAttempts.reset(email);
+
+    if (result.kind === 'challenge') {
+      const challenge: ChallengeResponseDto = {
+        status: 'CHALLENGE',
+        challengeName: result.challengeName,
+        session: result.session,
+        email,
+      };
+      return challenge;
+    }
+
+    if (result.kind === 'mfa_challenge') {
+      const mfa: MfaChallengeResponseDto = {
+        status: 'MFA_REQUIRED',
+        challengeName: result.challengeName,
+        session: result.session,
+        email,
+      };
+      return mfa;
+    }
+
+    return this.toAuthenticated(result.tokens, email);
+  }
+
+  /** ログイン失敗を 1 件記録し、しきい値到達でロックする。IP はログにのみ残す。 */
+  private async registerFailure(
+    existing: LoginAttempt | null,
+    email: string,
+    ipAddress: string | undefined,
+    now: Date,
+  ): Promise<void> {
+    const base = existing ?? LoginAttempt.empty(email);
+    const updated = base.registerFailure(
+      now,
+      this.maxAttempts,
+      this.lockDurationMs,
+    );
+    await this.loginAttempts.save(updated);
+    this.logger.warn(
+      `ログイン失敗: email=${email} ip=${ipAddress ?? 'unknown'} failCount=${updated.failCount}`,
+    );
   }
 
   async respondMfaChallenge(
@@ -382,4 +457,9 @@ export class AuthService {
       email,
     };
   }
+}
+
+function parsePositiveInt(value: string | undefined, fallback: number): number {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
