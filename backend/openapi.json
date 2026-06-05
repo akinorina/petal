@@ -524,6 +524,27 @@
         ]
       }
     },
+    "/auth/signup-config": {
+      "get": {
+        "operationId": "AuthController_getSignupConfig",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignupConfigResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/auth/signup": {
       "post": {
         "operationId": "AuthController_signup",
@@ -1318,6 +1339,18 @@
         "required": [
           "email",
           "password"
+        ]
+      },
+      "SignupConfigResponseDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "セルフサインアップが有効かどうか"
+          }
+        },
+        "required": [
+          "enabled"
         ]
       },
       "SignupRequestDto": {
