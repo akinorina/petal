@@ -20,6 +20,10 @@ export function useAdminLayout() {
     router.push('/login');
   }
 
+  function goToProfile() {
+    router.push('/me');
+  }
+
   return {
     pathname,
     email,
@@ -27,5 +31,6 @@ export function useAdminLayout() {
     isAuthenticated,
     isLoading,
     handleLogout,
+    goToProfile,
   };
 }
