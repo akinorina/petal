@@ -35,6 +35,7 @@ export default function AdminLayout({
   return (
     <div className="min-h-full">
       <TopBar
+        className="admin-topbar"
         start={
           <div className="flex items-center gap-6">
             <span className="text-sm font-semibold">Petal</span>
@@ -59,7 +60,7 @@ export default function AdminLayout({
           </div>
         }
         end={
-          <div className="flex justify-end">
+          <div className="ml-auto">
             <Popover placement="bottom-end">
               <Popover.Trigger>
                 <button
