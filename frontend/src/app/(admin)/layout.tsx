@@ -2,6 +2,9 @@
 
 import Link from 'next/link';
 import { TopBar } from '@/design-system/components/TopBar';
+import { Popover } from '@/design-system/components/Popover';
+import { Avatar } from '@/design-system/components/Avatar';
+import { ListItem } from '@/design-system/components/ListItem';
 import { useAdminLayout } from './use-admin-layout';
 
 export default function AdminLayout({
@@ -9,8 +12,15 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { pathname, email, role, isAuthenticated, isLoading, handleLogout } =
-    useAdminLayout();
+  const {
+    pathname,
+    email,
+    role,
+    isAuthenticated,
+    isLoading,
+    handleLogout,
+    goToProfile,
+  } = useAdminLayout();
 
   if (isLoading) {
     return (
@@ -25,6 +35,7 @@ export default function AdminLayout({
   return (
     <div className="min-h-full">
       <TopBar
+        className="admin-topbar"
         start={
           <div className="flex items-center gap-6">
             <span className="text-sm font-semibold">Petal</span>
@@ -49,16 +60,39 @@ export default function AdminLayout({
           </div>
         }
         end={
-          <div className="flex items-center gap-4">
-            <Link href="/me" className="ds-link ds-link--inline text-xs">
-              {email}
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="ds-link ds-link--inline text-xs"
-            >
-              ログアウト
-            </button>
+          <div className="ml-auto">
+            <Popover placement="bottom-end">
+              <Popover.Trigger>
+                <button
+                  type="button"
+                  aria-label="アカウントメニュー"
+                  className="flex items-center rounded-full"
+                >
+                  <Avatar size="sm" alt="" />
+                </button>
+              </Popover.Trigger>
+              <Popover.Content className="p-0" aria-label="アカウントメニュー">
+                <div className="max-w-[240px] truncate border-b border-[var(--border-subtle)] px-4 py-2 text-xs text-zinc-500">
+                  {email}
+                </div>
+                <Popover.Close>
+                  <ListItem
+                    as="button"
+                    size="sm"
+                    title="プロフィール"
+                    onClick={goToProfile}
+                  />
+                </Popover.Close>
+                <Popover.Close>
+                  <ListItem
+                    as="button"
+                    size="sm"
+                    title="ログアウト"
+                    onClick={handleLogout}
+                  />
+                </Popover.Close>
+              </Popover.Content>
+            </Popover>
           </div>
         }
       />
