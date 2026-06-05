@@ -199,6 +199,15 @@ async function confirmPasswordReset(
   }
 }
 
+async function getSignupConfig(): Promise<{ enabled: boolean }> {
+  const res = await fetch(`${BASE_URL}/auth/signup-config`, { method: 'GET' });
+  if (!res.ok) {
+    throw new Error('サインアップ設定の取得に失敗しました');
+  }
+  const data: { enabled: boolean } = await res.json();
+  return data;
+}
+
 export function useAuthApi() {
   return useMemo(
     () => ({
@@ -208,6 +217,7 @@ export function useAuthApi() {
       logout,
       signup,
       confirmSignup,
+      getSignupConfig,
       requestPasswordReset,
       confirmPasswordReset,
     }),
