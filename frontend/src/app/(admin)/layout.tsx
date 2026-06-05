@@ -9,7 +9,7 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { pathname, email, isAuthenticated, isLoading, handleLogout } =
+  const { pathname, email, role, isAuthenticated, isLoading, handleLogout } =
     useAdminLayout();
 
   if (isLoading) {
@@ -32,15 +32,19 @@ export default function AdminLayout({
               <NavLink href="/images" active={pathname.startsWith('/images')}>
                 画像
               </NavLink>
-              <NavLink href="/users" active={pathname.startsWith('/users')}>
-                ユーザー
-              </NavLink>
-              <NavLink
-                href="/audit-logs"
-                active={pathname.startsWith('/audit-logs')}
-              >
-                監査ログ
-              </NavLink>
+              {role === 'admin' && (
+                <>
+                  <NavLink href="/users" active={pathname.startsWith('/users')}>
+                    ユーザー
+                  </NavLink>
+                  <NavLink
+                    href="/audit-logs"
+                    active={pathname.startsWith('/audit-logs')}
+                  >
+                    監査ログ
+                  </NavLink>
+                </>
+              )}
             </nav>
           </div>
         }

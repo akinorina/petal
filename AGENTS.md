@@ -66,6 +66,7 @@
 | [docs/64_cognito-sync-import.md](docs/64_cognito-sync-import.md) | 管理者用 Cognito ↔ DB 同期スクリプト 設計（TSK-26：`backend/scripts/import-cognito-users.ts`、`--mode cognito-to-db\|db-to-cognito` + `--email\|--all` + `--dry-run`、差分検出は既存 `classifyDiscrepancies` を再利用、Mode B は `MessageAction=SUPPRESS` で新 sub を DB に反映） |
 | [docs/65_create-admin-idempotent.md](docs/65_create-admin-idempotent.md) | create-admin スクリプトの再実行耐性 設計（TSK-29：`AdminGetUser` で事前確認 → 必要分だけ作成、DB は `ON CONFLICT (cognito_sub) DO NOTHING`、`--force-reset-password` フラグありのみパスワード上書き、状態別メッセージで何が起きたか可視化） |
 | [docs/66_self-signup-toggle.md](docs/66_self-signup-toggle.md) | セルフユーザー登録可否を環境変数で設定 設計（TSK-103：backend 単一 env `SELF_SIGNUP_ENABLED`（`true` のみ有効・デフォルト OFF）を真実のソースに、OFF 時は `signup`/`confirm-signup` を 403、公開 `GET /auth/signup-config` でフロントへ伝達し `/login` 導線・`/signup` を出し分け） |
+| [docs/67_admin-only-nav-guard.md](docs/67_admin-only-nav-guard.md) | 一般ユーザーは「ユーザー管理」「監査ログ」不可 設計（TSK-104：frontend のみ。`AuthContext` に role（`GET /users/me`）を保持し、TopBar の「ユーザー」「監査ログ」を admin 時のみ表示、ネスト route group `(admin)/(admin-only)/` の layout で `role !== 'admin'` を 403 表示。backend は既存 `@Roles(Admin)` で充足のため確認のみ） |
 
 新しい設計ドキュメントを追加した場合は、このテーブルにも追記すること。
 
