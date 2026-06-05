@@ -174,3 +174,63 @@ Admin の確認:
 ## 12. 未確定事項
 
 - なし（Phase 2 / Phase 3 で全論点確定）。
+
+---
+
+## 13. 実装計画（Phase 4）
+
+### 13.1 変更・追加ファイル（frontend のみ）
+
+- `src/contexts/AuthContext.tsx`（変更）:
+  - `type UserRole = Schemas['UserRole']`（`@/lib/openapi/client` の `Schemas`）を利用。
+  - `AuthState` に `role: UserRole | null` を追加。
+  - モジュールスコープに `async function fetchRole(): Promise<UserRole | null>`（`userApi.findMe()` の `role`、失敗時 `null`）を追加。
+  - 起動 `useEffect`: token あり → `fetchRole()` を await して role を含めて `setState`、token 無し → `role: null`。
+  - `login` / `completeNewPassword` / `respondMfaChallenge` 成功時: `fetchRole()` を await して `role` をセット。
+  - `logout` / `AUTH_CLEARED_EVENT` ハンドラ: `role: null`。
+  - `updateEmail` は `setState((prev) => ...)` で role を保持（変更なし）。
+- `src/app/(admin)/use-admin-layout.ts`（変更）: `useAuth()` から `role` を取り出し返却に追加。
+- `src/app/(admin)/layout.tsx`（変更）: `useAdminLayout()` から `role` を受け取り、「ユーザー」「監査ログ」の `NavLink` を `role === 'admin'` のときのみ描画。「画像」「email/ログアウト」は常時表示。
+- `src/app/(admin)/(admin-only)/layout.tsx`（新規）: `'use client'`。`useAuth()` の `role` / `isLoading` で分岐。`isLoading` → `null`、`role !== 'admin'` → `<Forbidden403 />`、それ以外 → `children`。
+- `src/app/(admin)/(admin-only)/Forbidden403.tsx`（新規）: design-system `EmptyState`（title「アクセス権限がありません」/ description「このページを表示する権限がありません。」/ `primaryAction` = `next/link` の `/images` 導線 `ds-link` スタイル）。
+- ディレクトリ移動（`git mv`、URL 不変・相対 import は同梱移動で不変）:
+  - `src/app/(admin)/users/` → `src/app/(admin)/(admin-only)/users/`
+  - `src/app/(admin)/audit-logs/` → `src/app/(admin)/(admin-only)/audit-logs/`
+
+migration / 依存追加 / 環境変数: **不要**。backend 変更・openapi 再生成: **不要**。
+
+### 13.2 作業順序（コミット単位）
+
+1. **AuthContext に role 保持を追加**（`fetchRole` + state/context 拡張）— 完了確認 `cd frontend && pnpm lint && pnpm build`
+2. **TopBar メニュー出し分け**（`use-admin-layout.ts` + `layout.tsx`）— 完了確認 `cd frontend && pnpm lint && pnpm build`
+3. **403 ガード**（route group `(admin-only)` 新設・`layout.tsx`・`Forbidden403.tsx`・`users`/`audit-logs` を `git mv`）— 完了確認 `cd frontend && pnpm lint && pnpm build`、`/users`・`/audit-logs` の URL が不変
+4. **docs（本 §13）反映**— 完了確認 `npx markdownlint-cli 'docs/**/*.md'`
+
+### 13.3 テスト方針
+
+- frontend はユニットテスト無し（既存方針）。`pnpm lint` / `pnpm build` で型・ビルドを担保。
+- 機能確認は §11 の手動シナリオ（Admin / 一般 / ちらつき）を実機で実施。
+
+### 13.4 想定外時の判断ルール（タスク固有）
+
+- **AI 単独判断 OK**: 403 ビューの文言・見た目、`fetchRole` 失敗時フォールバック（`null` 固定）、`NavLink` 出し分けの JSX 構造、ローディング表示の細部。
+- **中断して相談**:
+  - role の取得源を `GET /users/me` 以外に変える必要が出た場合
+  - role を localStorage 等に永続化する必要が出た場合（改竄/陳腐化の論点）
+  - 403 を 404 に戻す/別ステータスにする必要が出た場合
+  - route group 方式を諦め別アーキテクチャ（middleware 等）に変える必要が出た場合
+  - backend のガード追加が必要だと判明した場合（既存で充足の前提が崩れる）
+
+### 13.5 事前解決済みの判断ポイント（ドライラン結果）
+
+| # | 判断ポイント | 解決 |
+| - | ------------ | ---- |
+| 1 | frontend の `UserRole` 型源 | `Schemas['UserRole']`（`@/lib/openapi/client`）。`'admin' \| 'user'` |
+| 2 | `fetchRole` の配置 | モジュールスコープの純関数。`userApi.findMe()` → `role`、例外時 `null` |
+| 3 | role 取得タイミング | 起動時 + login/completeNewPassword/respondMfaChallenge 成功時。await してから `setState`（ちらつき防止） |
+| 4 | ローディング整合 | role 確定まで `isLoading=true`。`(admin)/layout` の「読み込み中...」で吸収。`(admin-only)/layout` は `isLoading` 中 `null` |
+| 5 | 取得失敗時の扱い | `role=null` → 一般ユーザー相当（メニュー非表示・403）にフェイルセーフ |
+| 6 | 403 ビューの導線 | `EmptyState` + `next/link` で `/images` へ（`ds-link` スタイル、TopBar と同様） |
+| 7 | ディレクトリ移動の影響 | `git mv` で履歴保持。相対 import（`./use-*-page`）は同梱移動で不変、`@/` 絶対 import も不変。URL も route group のため不変 |
+| 8 | `updateEmail` での role 保持 | `setState((prev) => ({ ...prev, email }))` のため role は維持 |
+| 9 | backend 変更要否 | 不要（`@Roles(Admin)` 既存）。openapi 再生成も不要 |
