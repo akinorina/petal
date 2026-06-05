@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export function useAdminLayout() {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, isLoading, email, logout } = useAuth();
+  const { isAuthenticated, isLoading, email, role, logout } = useAuth();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -23,6 +23,7 @@ export function useAdminLayout() {
   return {
     pathname,
     email,
+    role,
     isAuthenticated,
     isLoading,
     handleLogout,
