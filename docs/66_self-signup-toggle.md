@@ -170,3 +170,64 @@ ON の確認:
 ## 12. 未確定事項
 
 - なし（Phase 2 / Phase 3 で全論点確定）。
+
+---
+
+## 13. 実装計画（Phase 4）
+
+### 13.1 変更・追加ファイル
+
+#### backend
+
+- `src/auth/application/auth.service.ts`（変更）: コンストラクタで `this.selfSignupEnabled = config.get<string>('SELF_SIGNUP_ENABLED') === 'true'` を保持。`signup` / `confirmSignup` 先頭に OFF → `ForbiddenException('現在ユーザー登録は受け付けていません')` を追加。`getSignupConfig(): SignupConfigResponseDto` を追加（`{ enabled: this.selfSignupEnabled }`）。`ForbiddenException` を import。
+- `src/auth/controller/auth.dto.ts`（変更）: `SignupConfigResponseDto { enabled!: boolean }` を追加。
+- `src/auth/controller/auth.controller.ts`（変更）: `GET /auth/signup-config`（`@Public` / `@HttpCode(200)` / `@ApiOkResponse({ type: SignupConfigResponseDto })`）を追加し `authService.getSignupConfig()` を返す。
+- `src/auth/application/auth.service.spec.ts`（変更）: 既定 `configValues` に `SELF_SIGNUP_ENABLED: 'true'` を追加（既存 signup/confirmSignup テスト維持）。`buildMockConfig(overrides?)` / `buildService(..., configOverrides?)` を拡張。OFF 時に `signup`/`confirmSignup` が `ForbiddenException`、`getSignupConfig` が `{enabled}` を返す新規テストを追加。
+- `backend/openapi.json`（再生成）。
+- `backend/.envs/.env.local.example` / `.env.dev.example`（変更）: `Auth` セクションに `SELF_SIGNUP_ENABLED`（既定コメント付き、`true` で有効）を追記。
+
+#### frontend
+
+- `src/lib/api-hooks/use-auth-api.ts`（変更）: `getSignupConfig(): Promise<{ enabled: boolean }>` を追加（`GET /auth/signup-config`）。`useAuthApi` の返却に含める。
+- `src/app/login/use-login-page.ts`（変更）: `useAuthApi` の `getSignupConfig` をマウント時に呼び `signupEnabled`（既定 false・失敗時も false）を公開。
+- `src/app/login/page.tsx`（変更）: 「アカウントを作成」ブロックを `signupEnabled` のときのみ表示。
+- `src/app/signup/use-signup-page.ts`（変更）: マウント時に config 取得し `configStatus: 'loading' | 'enabled' | 'disabled'` を公開（失敗時 disabled）。
+- `src/app/signup/page.tsx`（変更）: `loading` はローディング表示、`disabled` は「現在ユーザー登録は受け付けていません」+「ログイン画面へ戻る」、`enabled` は従来フロー。
+- `src/lib/openapi/schema.d.ts`（再生成）。
+
+migration / 依存追加: **不要**。環境変数: `SELF_SIGNUP_ENABLED` を追加（example のみ。`.env` 実体はコミットしない）。
+
+### 13.2 作業順序（コミット単位）
+
+1. **backend: 可否フラグ + ガード + signup-config + DTO + テスト + env example** — 完了確認 `cd backend && pnpm lint && pnpm test && pnpm build`
+2. **backend: openapi.json 再生成**（`pnpm openapi:export`）— 完了確認 `/auth/signup-config` が `openapi.json` に出現
+3. **frontend: getSignupConfig + login/signup 出し分け + schema.d.ts 再生成** — 完了確認 `cd frontend && pnpm lint && pnpm build`
+4. **docs: 実装計画追記の反映**（本節）— 完了確認 `npx markdownlint-cli 'docs/**/*.md'`
+
+### 13.3 テスト方針
+
+- backend は Jest ユニット。`signup`/`confirmSignup`（ON は従来通り成功・OFF は `ForbiddenException`）、`getSignupConfig`（ON→`{enabled:true}` / OFF→`{enabled:false}`）を追加でカバー。既存テストは `configValues` 既定 `true` で不変。
+- frontend はユニット無し。`pnpm build` で型・ビルドを担保。
+- 完全な手動確認（§11）は env 切替後に実機で行う。
+
+### 13.4 想定外時の判断ルール（タスク固有）
+
+- **AI 単独判断 OK**: エラーメッセージ文言の微調整、ローディング表示の見た目、`getSignupConfig` の失敗時フォールバック（false 固定）、テストスキャフォールドの形。
+- **中断して相談**:
+  - env 単一ソース方針を覆す必要が出た場合（フロント env 併用等）
+  - OFF 時ステータスを 403 以外に変える必要が出た場合
+  - 公開エンドポイントのパス/レスポンス形を変える必要が出た場合
+  - DB スキーマ・API 仕様・トランザクション境界の変更が必要になった場合
+
+### 13.5 事前解決済みの判断ポイント（ドライラン結果）
+
+| # | 判断ポイント | 解決 |
+| - | ------------ | ---- |
+| 1 | env の真偽化 | `=== 'true'` のみ true。未設定/空/その他は false（デフォルト OFF・フェイルセーフ） |
+| 2 | ガード例外 | `ForbiddenException`（403）。signup と confirm-signup の両方に適用 |
+| 3 | config 取得 API | `GET /auth/signup-config`（`@Public`・200・`{enabled}`）。`AuthService.getSignupConfig()` |
+| 4 | 既存テスト破壊回避 | `configValues` 既定に `SELF_SIGNUP_ENABLED:'true'`、OFF は `buildService` の config override で検証 |
+| 5 | フロント config 取得失敗時 | enabled=false 扱い（登録導線を出さないフェイルセーフ） |
+| 6 | login の config 取得経路 | `use-login-page` から `useAuthApi().getSignupConfig` を直接呼ぶ（AuthContext は介さない） |
+| 7 | signup ページの読込中表示 | `configStatus='loading'` 中はフォームもメッセージも出さずローディング表示（出してから消えるチラつき回避） |
+| 8 | openapi 再生成 | backend `openapi.json` と frontend `schema.d.ts` を再生成しコミット（既存慣習） |
