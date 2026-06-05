@@ -142,3 +142,74 @@
 ## 10. 未確定事項
 
 - なし（Phase 2 / 3 で全方針確定）。
+
+---
+
+## 11. 実装計画（Phase 4）
+
+### 11.1 変更・追加ファイル
+
+| ファイル | 変更内容 |
+| ---- | ---- |
+| `frontend/src/app/(admin)/layout.tsx` | TopBar `end` スロットを「メールリンク＋ログアウトボタン」から `Popover` + `Avatar` + `ListItem` のユーザーメニューに置換。`Popover` / `Avatar` / `ListItem` を import 追加。`goToProfile` をフックから受け取る |
+| `frontend/src/app/(admin)/use-admin-layout.ts` | `goToProfile`（`router.push('/me')`）ハンドラを追加し返り値に含める |
+
+- migration / 環境変数 / 依存追加: **なし**。
+
+### 11.2 メニュー構造（実装イメージ）
+
+```tsx
+<Popover placement="bottom-end">
+  <Popover.Trigger>
+    <button type="button" aria-label="アカウントメニュー" className="...">
+      <Avatar size="sm" alt="" />
+    </button>
+  </Popover.Trigger>
+  <Popover.Content className="p-0" aria-label="アカウントメニュー">
+    <div className="...truncate...">{email}</div>      {/* 非操作のメール表示 */}
+    <Popover.Close>
+      <ListItem as="button" size="sm" title="プロフィール" onClick={goToProfile} />
+    </Popover.Close>
+    <Popover.Close>
+      <ListItem as="button" size="sm" title="ログアウト" onClick={handleLogout} />
+    </Popover.Close>
+  </Popover.Content>
+</Popover>
+```
+
+- プロフィールも `ListItem as="button"` + `goToProfile` で SPA 遷移に統一（既存 `handleLogout` と同パターン）。`as="a"` のネイティブ全リロードを避ける。
+- `Popover.Close` が各項目クリック後にメニューを閉じる。
+- `.ds-popover` の既定 padding は `className="p-0"` で打ち消し、ListItem を全幅表示。
+
+### 11.3 作業順序（コミット単位）
+
+1. **コミット 1**: `use-admin-layout.ts` に `goToProfile` を追加 → `(admin)/layout.tsx` の `end` スロットをユーザーメニューに置換。
+   - 完了確認: `cd frontend && pnpm build` が通る／`pnpm lint` が通る／手動シナリオ（§9）を確認。
+
+実装は 1 コミットにまとめる（同一の振る舞い変更で分割の意味が薄いため）。
+
+### 11.4 テスト方針
+
+- frontend はユニットテスト基盤の対象外（[docs/24_testing-strategy.md](24_testing-strategy.md) は backend 方針）。手動動作確認シナリオ（§9）で担保。
+- `cd frontend && pnpm build` / `pnpm lint` の通過を必須とする。
+
+### 11.5 想定外時の判断ルール
+
+**AI 単独判断 OK**: 軽微な className 調整、Popover/Avatar/ListItem の props 微調整、設計スコープ内の追加実装。
+
+**中断して要相談**:
+
+- design-system コンポーネントに不足があり**新規コンポーネント追加や design-system 本体の改修**が必要になった場合。
+- `Popover` のフォーカス管理がヘッダ内で破綻する等、設計方針（判断 1）を覆す必要が出た場合。
+- メニュー項目・メール表示方針（Phase 2 / 3 で確定）を変える必要が出た場合。
+
+### 11.6 事前解決済みの判断ポイント
+
+| 判断ポイント | 解決 |
+| ---- | ---- |
+| プロフィール遷移を native `<a>` か SPA か | **SPA**（`goToProfile` = `router.push('/me')`）。既存 `handleLogout` と同パターン |
+| Popover 内側 padding と ListItem 全幅の干渉 | `Popover.Content` に `className="p-0"` を付与（`:where()` 詳細度 0 で Tailwind が勝つ） |
+| メニューの配置 | `placement="bottom-end"`（右端揃え） |
+| Avatar のサイズ・画像 | `size="sm"`、画像なし（人型フォールバック）、装飾扱いで `alt=""` |
+| トリガーの a11y | `<button type="button" aria-label="アカウントメニュー">` で `Avatar` をラップ |
+| メールの折り返し | メニュー内で `truncate` + 最大幅指定 |
