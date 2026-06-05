@@ -2,6 +2,7 @@ import {
   BadGatewayException,
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   HttpException,
   HttpStatus,
   Inject,
@@ -29,6 +30,7 @@ import {
   MfaChallengeResponseDto,
   MfaSetupResponseDto,
   RefreshResponseDto,
+  SignupConfigResponseDto,
 } from '../controller/auth.dto';
 
 @Injectable()
@@ -36,6 +38,7 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private readonly maxAttempts: number;
   private readonly lockDurationMs: number;
+  private readonly selfSignupEnabled: boolean;
 
   constructor(
     private readonly cognitoAuth: CognitoAuthClient,
@@ -56,6 +59,16 @@ export class AuthService {
       ) *
       60 *
       1000;
+    this.selfSignupEnabled =
+      config.get<string>('SELF_SIGNUP_ENABLED') === 'true';
+  }
+
+  /**
+   * セルフサインアップの可否（環境変数 SELF_SIGNUP_ENABLED）を返す。
+   * フロントが /login の導線や /signup ページの表示を出し分けるために参照する。
+   */
+  getSignupConfig(): SignupConfigResponseDto {
+    return { enabled: this.selfSignupEnabled };
   }
 
   /**
@@ -63,6 +76,9 @@ export class AuthService {
    * DB へはまだ書き込まない（confirm 確定後に作成する）。
    */
   async signup(email: string, password: string): Promise<void> {
+    if (!this.selfSignupEnabled) {
+      throw new ForbiddenException('現在ユーザー登録は受け付けていません');
+    }
     try {
       await this.cognitoAuth.signUp(email, password);
     } catch (err) {
@@ -94,6 +110,9 @@ export class AuthService {
     name: string,
     nameKana: string,
   ): Promise<void> {
+    if (!this.selfSignupEnabled) {
+      throw new ForbiddenException('現在ユーザー登録は受け付けていません');
+    }
     try {
       await this.cognitoAuth.confirmSignUp(email, code);
     } catch (err) {

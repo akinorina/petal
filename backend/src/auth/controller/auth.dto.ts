@@ -62,6 +62,11 @@ export class ConfirmSignupRequestDto {
   nameKana!: string;
 }
 
+export class SignupConfigResponseDto {
+  @ApiProperty({ description: 'セルフサインアップが有効かどうか' })
+  enabled!: boolean;
+}
+
 export class ForgotPasswordRequestDto {
   @ApiProperty({ format: 'email' })
   email!: string;
