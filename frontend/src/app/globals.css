@@ -2,9 +2,13 @@
 @import '../design-system/tokens/styles.css';
 @import '../design-system/tokens/tailwind-theme.css';
 
-/* 管理レイアウトの TopBar 中身の左右パディングを main (px-4 = 16px) に揃える。
-   design-system 既定 (--space-5 = 20px) を、このレイアウトに限定して上書きする。 */
+/* 管理レイアウトの TopBar 中身を main の左右パディング (px-4 = 16px) に揃える。
+   design-system 既定 (--space-5 = 20px) を、このレイアウトに限定して上書きする。
+   さらに center スロットを使わないため列間 gap を 0 にし、end (Avatar) を
+   右パディング端まで寄せて main の右端と揃える。gap は design-system では
+   center スロット使用時に必要なので、共通側ではなくここでスコープ上書きする。 */
 .admin-topbar :where(.ds-topbar__inner) {
   padding-left: var(--space-4);
   padding-right: var(--space-4);
+  gap: 0;
 }
