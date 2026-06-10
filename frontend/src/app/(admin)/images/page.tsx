@@ -341,7 +341,13 @@ function UploadModal({
         <form onSubmit={handleSubmit}>
           <Dialog.Body>
             <div className="space-y-4">
-              <FormField label="ファイル" isRequired>
+              <div className="ds-formfield">
+                <span className="ds-formfield__label">
+                  ファイル
+                  <span className="ds-formfield__required" aria-hidden="true">
+                    *
+                  </span>
+                </span>
                 <div
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
@@ -424,7 +430,7 @@ function UploadModal({
                     </div>
                   )}
                 </div>
-              </FormField>
+              </div>
               <FormField label="タイトル（任意）">
                 <Input
                   type="text"
