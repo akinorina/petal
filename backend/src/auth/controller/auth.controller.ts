@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Get,
   Headers,
   HttpCode,
   Ip,
@@ -44,6 +45,7 @@ import {
   NewPasswordChallengeRequestDto,
   RefreshRequestDto,
   RefreshResponseDto,
+  SignupConfigResponseDto,
   SignupRequestDto,
 } from './auth.dto';
 
@@ -104,6 +106,14 @@ export class AuthController {
       throw new UnauthorizedException('Authorization ヘッダーが不正です');
     }
     await this.authService.logout(token);
+  }
+
+  @Public()
+  @Get('signup-config')
+  @HttpCode(200)
+  @ApiOkResponse({ type: SignupConfigResponseDto })
+  getSignupConfig(): SignupConfigResponseDto {
+    return this.authService.getSignupConfig();
   }
 
   @Public()

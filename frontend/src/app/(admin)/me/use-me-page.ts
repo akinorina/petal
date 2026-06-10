@@ -1,46 +1,32 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { ApiError, userApi } from '@/lib/api';
+import { ApiError } from '@/lib/api';
+import { useMeApi } from '@/lib/api-hooks/use-me-api';
 
 export function useMePage() {
-  const [email, setEmail] = useState<string | null>(null);
+  const { me, isLoading, error, setError, updateProfile } = useMeApi();
   const [name, setName] = useState('');
   const [nameKana, setNameKana] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [seeded, setSeeded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // 取得した自分のプロフィールでフォーム初期値を一度だけ埋める。
   useEffect(() => {
-    let active = true;
-    void (async () => {
-      try {
-        const me = await userApi.findMe();
-        if (!active) return;
-        setEmail(me.email);
-        setName(me.name);
-        setNameKana(me.nameKana);
-      } catch (e) {
-        if (!active) return;
-        setError(
-          e instanceof ApiError ? e.message : 'プロフィールの取得に失敗しました',
-        );
-      } finally {
-        if (active) setIsLoading(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, []);
+    if (!me || seeded) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setName(me.name);
+    setNameKana(me.nameKana);
+    setSeeded(true);
+  }, [me, seeded]);
 
   const submit = useCallback(async () => {
     setError(null);
     setSuccessMessage(null);
     setIsSubmitting(true);
     try {
-      const updated = await userApi.updateMyProfile({ name, nameKana });
+      const updated = await updateProfile({ name, nameKana });
       setName(updated.name);
       setNameKana(updated.nameKana);
       setSuccessMessage('プロフィールを更新しました');
@@ -51,13 +37,13 @@ export function useMePage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [name, nameKana]);
+  }, [name, nameKana, updateProfile, setError]);
 
   const canSubmit =
     !isLoading && name.trim() !== '' && nameKana.trim() !== '' && !isSubmitting;
 
   return {
-    email,
+    email: me?.email ?? null,
     name,
     setName,
     nameKana,

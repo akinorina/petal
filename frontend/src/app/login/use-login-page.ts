@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAuthApi } from '@/lib/api-hooks/use-auth-api';
 import { consumeAuthNotice } from '@/lib/auth-session';
 import { evaluatePasswordForm } from '@/lib/password-policy';
 
@@ -14,7 +15,11 @@ type Step =
 export function useLoginPage() {
   const router = useRouter();
   const { login, completeNewPassword, respondMfaChallenge } = useAuth();
+  const { getSignupConfig } = useAuthApi();
   const [step, setStep] = useState<Step>({ kind: 'login' });
+  // セルフ登録が有効なときのみ「アカウントを作成」導線を出す。
+  // 取得前・取得失敗時は false（導線非表示）にフォールバックする。
+  const [signupEnabled, setSignupEnabled] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -31,6 +36,20 @@ export function useLoginPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setNotice(consumeAuthNotice());
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    getSignupConfig()
+      .then((config) => {
+        if (active) setSignupEnabled(config.enabled);
+      })
+      .catch(() => {
+        if (active) setSignupEnabled(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [getSignupConfig]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -128,6 +147,7 @@ export function useLoginPage() {
     error,
     notice,
     isLoading,
+    signupEnabled,
     newPasswordCheck,
     handleLogin,
     handleNewPassword,

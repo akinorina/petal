@@ -1,14 +1,12 @@
 'use client';
 
 import { useMemo } from 'react';
-import { resolveApiBaseUrl } from '@/lib/api-base-url';
+import { requestJson } from '@/lib/http';
 import {
   clearSession,
   getStoredAccessToken,
   persistSession,
 } from '@/lib/auth-session';
-
-const BASE_URL = resolveApiBaseUrl();
 
 type AuthenticatedResponse = {
   status: 'AUTHENTICATED';
@@ -49,19 +47,13 @@ export type LoginResult =
     };
 
 async function login(email: string, password: string): Promise<LoginResult> {
-  const res = await fetch(`${BASE_URL}/auth/login`, {
+  const data = await requestJson<
+    AuthenticatedResponse | ChallengeResponse | MfaChallengeResponse
+  >('/auth/login', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+    body: { email, password },
+    fallbackMessage: 'ログインに失敗しました',
   });
-
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body?.message ?? 'ログインに失敗しました');
-  }
-
-  const data: AuthenticatedResponse | ChallengeResponse | MfaChallengeResponse =
-    await res.json();
 
   if (data.status === 'CHALLENGE') {
     return {
@@ -90,16 +82,14 @@ async function respondMfaChallenge(
   code: string,
   session: string,
 ): Promise<void> {
-  const res = await fetch(`${BASE_URL}/auth/challenge/mfa`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, code, session }),
-  });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body?.message ?? 'MFA 認証に失敗しました');
-  }
-  const data: AuthenticatedResponse = await res.json();
+  const data = await requestJson<AuthenticatedResponse>(
+    '/auth/challenge/mfa',
+    {
+      method: 'POST',
+      body: { email, code, session },
+      fallbackMessage: 'MFA 認証に失敗しました',
+    },
+  );
   persistSession(data.accessToken, data.refreshToken, data.email);
 }
 
@@ -108,16 +98,14 @@ async function completeNewPassword(
   newPassword: string,
   session: string,
 ): Promise<void> {
-  const res = await fetch(`${BASE_URL}/auth/challenge/new-password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, newPassword, session }),
-  });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body?.message ?? 'パスワード設定に失敗しました');
-  }
-  const data: AuthenticatedResponse = await res.json();
+  const data = await requestJson<AuthenticatedResponse>(
+    '/auth/challenge/new-password',
+    {
+      method: 'POST',
+      body: { email, newPassword, session },
+      fallbackMessage: 'パスワード設定に失敗しました',
+    },
+  );
   persistSession(data.accessToken, data.refreshToken, data.email);
 }
 
@@ -125,10 +113,7 @@ async function logout(): Promise<void> {
   const token = getStoredAccessToken();
   try {
     if (token) {
-      await fetch(`${BASE_URL}/auth/logout`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await requestJson('/auth/logout', { method: 'POST', token });
     }
   } catch {
     // ネットワーク失敗等はローカル状態クリアを優先するため握り潰す
@@ -143,15 +128,11 @@ async function signup(
   name: string,
   nameKana: string,
 ): Promise<void> {
-  const res = await fetch(`${BASE_URL}/auth/signup`, {
+  await requestJson('/auth/signup', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, name, nameKana }),
+    body: { email, password, name, nameKana },
+    fallbackMessage: 'サインアップに失敗しました',
   });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body?.message ?? 'サインアップに失敗しました');
-  }
 }
 
 async function confirmSignup(
@@ -160,27 +141,19 @@ async function confirmSignup(
   name: string,
   nameKana: string,
 ): Promise<void> {
-  const res = await fetch(`${BASE_URL}/auth/confirm-signup`, {
+  await requestJson('/auth/confirm-signup', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, code, name, nameKana }),
+    body: { email, code, name, nameKana },
+    fallbackMessage: 'サインアップの確定に失敗しました',
   });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body?.message ?? 'サインアップの確定に失敗しました');
-  }
 }
 
 async function requestPasswordReset(email: string): Promise<void> {
-  const res = await fetch(`${BASE_URL}/auth/forgot-password`, {
+  await requestJson('/auth/forgot-password', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email }),
+    body: { email },
+    fallbackMessage: 'パスワードリセット要求に失敗しました',
   });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body?.message ?? 'パスワードリセット要求に失敗しました');
-  }
 }
 
 async function confirmPasswordReset(
@@ -188,15 +161,18 @@ async function confirmPasswordReset(
   code: string,
   newPassword: string,
 ): Promise<void> {
-  const res = await fetch(`${BASE_URL}/auth/confirm-forgot-password`, {
+  await requestJson('/auth/confirm-forgot-password', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, code, newPassword }),
+    body: { email, code, newPassword },
+    fallbackMessage: 'パスワード設定に失敗しました',
   });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body?.message ?? 'パスワード設定に失敗しました');
-  }
+}
+
+async function getSignupConfig(): Promise<{ enabled: boolean }> {
+  return requestJson<{ enabled: boolean }>('/auth/signup-config', {
+    method: 'GET',
+    fallbackMessage: 'サインアップ設定の取得に失敗しました',
+  });
 }
 
 export function useAuthApi() {
@@ -208,6 +184,7 @@ export function useAuthApi() {
       logout,
       signup,
       confirmSignup,
+      getSignupConfig,
       requestPasswordReset,
       confirmPasswordReset,
     }),

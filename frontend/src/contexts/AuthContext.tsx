@@ -17,10 +17,15 @@ import {
   useAuthApi,
   type LoginResult,
 } from '@/lib/api-hooks/use-auth-api';
+import { useCurrentUserApi } from '@/lib/api-hooks/use-me-api';
+import type { Schemas } from '@/lib/openapi/client';
+
+type UserRole = Schemas['UserRole'];
 
 type AuthState = {
   isAuthenticated: boolean;
   email: string | null;
+  role: UserRole | null;
   isLoading: boolean;
 };
 
@@ -44,25 +49,53 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const api = useAuthApi();
+  const { findMe } = useCurrentUserApi();
   const [state, setState] = useState<AuthState>({
     isAuthenticated: false,
     email: null,
+    role: null,
     isLoading: true,
   });
 
+  // 現在のユーザーのロールを取得する。失敗時は null（一般ユーザー相当に倒す）。
+  const fetchRole = useCallback(async (): Promise<UserRole | null> => {
+    try {
+      const me = await findMe();
+      return me.role;
+    } catch {
+      return null;
+    }
+  }, [findMe]);
+
   useEffect(() => {
-    getAccessToken().then((token) => {
+    getAccessToken().then(async (token) => {
+      if (!token) {
+        setState({
+          isAuthenticated: false,
+          email: null,
+          role: null,
+          isLoading: false,
+        });
+        return;
+      }
+      const role = await fetchRole();
       setState({
-        isAuthenticated: !!token,
-        email: token ? getCurrentUserEmail() : null,
+        isAuthenticated: true,
+        email: getCurrentUserEmail(),
+        role,
         isLoading: false,
       });
     });
-  }, []);
+  }, [fetchRole]);
 
   useEffect(() => {
     const handler = () =>
-      setState({ isAuthenticated: false, email: null, isLoading: false });
+      setState({
+        isAuthenticated: false,
+        email: null,
+        role: null,
+        isLoading: false,
+      });
     window.addEventListener(AUTH_CLEARED_EVENT, handler);
     return () => window.removeEventListener(AUTH_CLEARED_EVENT, handler);
   }, []);
@@ -71,36 +104,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async (email: string, password: string) => {
       const result = await api.login(email, password);
       if (result.kind === 'authenticated') {
+        const role = await fetchRole();
         setState({
           isAuthenticated: true,
           email: result.email,
+          role,
           isLoading: false,
         });
       }
       return result;
     },
-    [api],
+    [api, fetchRole],
   );
 
   const completeNewPassword = useCallback(
     async (email: string, newPassword: string, session: string) => {
       await api.completeNewPassword(email, newPassword, session);
-      setState({ isAuthenticated: true, email, isLoading: false });
+      const role = await fetchRole();
+      setState({ isAuthenticated: true, email, role, isLoading: false });
     },
-    [api],
+    [api, fetchRole],
   );
 
   const respondMfaChallenge = useCallback(
     async (email: string, code: string, session: string) => {
       await api.respondMfaChallenge(email, code, session);
-      setState({ isAuthenticated: true, email, isLoading: false });
+      const role = await fetchRole();
+      setState({ isAuthenticated: true, email, role, isLoading: false });
     },
-    [api],
+    [api, fetchRole],
   );
 
   const logout = useCallback(async () => {
     await api.logout();
-    setState({ isAuthenticated: false, email: null, isLoading: false });
+    setState({
+      isAuthenticated: false,
+      email: null,
+      role: null,
+      isLoading: false,
+    });
   }, [api]);
 
   const updateEmail = useCallback((newEmail: string) => {

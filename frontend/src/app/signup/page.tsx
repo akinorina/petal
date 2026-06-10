@@ -12,6 +12,7 @@ import { useSignupPage } from './use-signup-page';
 export default function SignupPage() {
   const {
     step,
+    configStatus,
     email,
     setEmail,
     name,
@@ -39,7 +40,24 @@ export default function SignupPage() {
           Petal
         </Text>
 
-        {step.kind === 'form' && (
+        {configStatus === 'loading' && (
+          <Text align="center" className="text-zinc-600">
+            読み込み中...
+          </Text>
+        )}
+
+        {configStatus === 'disabled' && (
+          <div className="space-y-4">
+            <Alert variant="info">現在ユーザー登録は受け付けていません。</Alert>
+            <p className="text-center text-sm">
+              <NextLink href="/login" className="ds-link ds-link--inline">
+                ログイン画面へ戻る
+              </NextLink>
+            </p>
+          </div>
+        )}
+
+        {configStatus === 'enabled' && step.kind === 'form' && (
           <form onSubmit={handleSignup} className="space-y-4">
             <p className="text-sm text-zinc-600">
               アカウントを作成します。入力後、メールに届く検証コードで確定します。

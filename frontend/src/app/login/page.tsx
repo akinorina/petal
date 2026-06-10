@@ -25,6 +25,7 @@ export default function LoginPage() {
     error,
     notice,
     isLoading,
+    signupEnabled,
     newPasswordCheck,
     handleLogin,
     handleNewPassword,
@@ -73,12 +74,14 @@ export default function LoginPage() {
               </NextLink>
             </p>
 
-            <p className="text-center text-sm">
-              アカウントをお持ちでない方は{' '}
-              <NextLink href="/signup" className="ds-link ds-link--inline">
-                アカウントを作成
-              </NextLink>
-            </p>
+            {signupEnabled && (
+              <p className="text-center text-sm">
+                アカウントをお持ちでない方は{' '}
+                <NextLink href="/signup" className="ds-link ds-link--inline">
+                  アカウントを作成
+                </NextLink>
+              </p>
+            )}
           </form>
         )}
 

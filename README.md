@@ -26,13 +26,16 @@ petal/
 
 ## ドキュメント
 
-| ファイル | 内容 |
+ドキュメントは機能・レイヤー軸で体系化しています。起点は [docs/README.md](docs/README.md)。
+
+| カテゴリ | 内容 |
 | -------- | ---- |
-| [docs/00_rules.md](docs/00_rules.md) | 設計・実装ルール |
-| [docs/01_requirements.md](docs/01_requirements.md) | 要求仕様 |
-| [docs/02_ implementations.md](docs/02_%20implementations.md) | 実装仕様（技術スタック・構成） |
-| [docs/11_user-info_and_authentication.md](docs/11_user-info_and_authentication.md) | ユーザー情報・認証機能の設計 |
-| [docs/13_openapi.md](docs/13_openapi.md) | OpenAPI / Swagger と Frontend 型生成の連携 |
+| [docs/00_overview/](docs/00_overview/) | プロジェクト概要・要求仕様・用語 |
+| [docs/10_architecture/](docs/10_architecture/) | システム構成・設計思想・コーディング規約・DB/API 設計 |
+| [docs/20_features/](docs/20_features/) | 機能別の現状仕様 |
+| [docs/30_operations/](docs/30_operations/) | ローカル構築・デプロイ・CI/CD・運用 |
+| [docs/40_processes/](docs/40_processes/) | 開発ワークフロー・テスト方針・Git 運用 |
+| [docs/specs/](docs/specs/) | 旧タスク別ドキュメント（アーカイブ） |
 
 ## セットアップ
 
@@ -49,7 +52,7 @@ echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
-詳細は [docs/30_direnv-envrc.md](docs/30_direnv-envrc.md) を参照。
+詳細は [docs/30_operations/01_local-setup.md](docs/30_operations/01_local-setup.md) を参照。
 
 ### 2. バックエンドのセットアップ
 

@@ -2,6 +2,7 @@ import {
   BadGatewayException,
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   HttpException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -103,14 +104,18 @@ function buildMockLoginAttempts(): MockLoginAttemptRepository {
   };
 }
 
-const configValues: Record<string, string> = {
+const configValues: Record<string, string | undefined> = {
   LOGIN_LOCKOUT_MAX_ATTEMPTS: '5',
   LOGIN_LOCKOUT_DURATION_MINUTES: '15',
+  SELF_SIGNUP_ENABLED: 'true',
 };
 
-function buildMockConfig(): Pick<ConfigService, 'get'> {
+function buildMockConfig(
+  overrides: Record<string, string | undefined> = {},
+): Pick<ConfigService, 'get'> {
+  const merged = { ...configValues, ...overrides };
   return {
-    get: jest.fn((key: string) => configValues[key]),
+    get: jest.fn((key: string) => merged[key]),
   };
 }
 
@@ -119,6 +124,7 @@ async function buildService(
   cognitoUser: MockCognitoUserClient,
   userService: MockUserService = buildMockUserService(),
   loginAttempts: MockLoginAttemptRepository = buildMockLoginAttempts(),
+  configOverrides: Record<string, string | undefined> = {},
 ): Promise<AuthService> {
   const moduleRef: TestingModule = await Test.createTestingModule({
     providers: [
@@ -127,7 +133,7 @@ async function buildService(
       { provide: CognitoUserClient, useValue: cognitoUser },
       { provide: UserService, useValue: userService },
       { provide: LOGIN_ATTEMPT_REPOSITORY, useValue: loginAttempts },
-      { provide: ConfigService, useValue: buildMockConfig() },
+      { provide: ConfigService, useValue: buildMockConfig(configOverrides) },
     ],
   }).compile();
   return moduleRef.get(AuthService);
@@ -259,6 +265,77 @@ describe('AuthService.confirmSignup', () => {
     await expect(
       service.confirmSignup('new@example.com', '123456', '名前', 'なまえ'),
     ).rejects.toBeInstanceOf(BadGatewayException);
+    expect(userService.createSelfSignup).not.toHaveBeenCalled();
+  });
+});
+
+describe('AuthService.getSignupConfig / セルフ登録可否', () => {
+  let cognitoAuth: MockCognitoAuthClient;
+  let cognitoUser: MockCognitoUserClient;
+  let userService: MockUserService;
+
+  beforeEach(() => {
+    cognitoAuth = buildMockCognitoAuth();
+    cognitoUser = buildMockCognitoUser();
+    userService = buildMockUserService();
+  });
+
+  it('SELF_SIGNUP_ENABLED=true のとき getSignupConfig は enabled:true', async () => {
+    const service = await buildService(
+      cognitoAuth,
+      cognitoUser,
+      userService,
+      undefined,
+      {
+        SELF_SIGNUP_ENABLED: 'true',
+      },
+    );
+    expect(service.getSignupConfig()).toEqual({ enabled: true });
+  });
+
+  it('SELF_SIGNUP_ENABLED 未設定のとき getSignupConfig は enabled:false', async () => {
+    const service = await buildService(
+      cognitoAuth,
+      cognitoUser,
+      userService,
+      undefined,
+      {
+        SELF_SIGNUP_ENABLED: undefined,
+      },
+    );
+    expect(service.getSignupConfig()).toEqual({ enabled: false });
+  });
+
+  it('無効時 signup は ForbiddenException（Cognito を呼ばない）', async () => {
+    const service = await buildService(
+      cognitoAuth,
+      cognitoUser,
+      userService,
+      undefined,
+      {
+        SELF_SIGNUP_ENABLED: 'false',
+      },
+    );
+    await expect(
+      service.signup('new@example.com', 'Passw0rd!'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(cognitoAuth.signUp).not.toHaveBeenCalled();
+  });
+
+  it('無効時 confirmSignup は ForbiddenException（Cognito を呼ばない）', async () => {
+    const service = await buildService(
+      cognitoAuth,
+      cognitoUser,
+      userService,
+      undefined,
+      {
+        SELF_SIGNUP_ENABLED: 'false',
+      },
+    );
+    await expect(
+      service.confirmSignup('new@example.com', '123456', '名前', 'なまえ'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(cognitoAuth.confirmSignUp).not.toHaveBeenCalled();
     expect(userService.createSelfSignup).not.toHaveBeenCalled();
   });
 });

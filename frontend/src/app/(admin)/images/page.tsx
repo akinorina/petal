@@ -10,14 +10,17 @@ import { FormField } from '@/design-system/components/FormField';
 import { Input, Textarea } from '@/design-system/components/Input';
 import { Pagination } from '@/design-system/components/Pagination';
 import { Text } from '@/design-system/components/Text';
-import { ApiError, imageApi } from '@/lib/api';
+import { ApiError } from '@/lib/api';
 import {
   ALLOWED_IMAGE_MIME_TYPES,
   formatImageSize,
   validateImageFile,
 } from '@/lib/image-constants';
 import { processImageFile } from '@/lib/image-process';
-import type { UploadInput } from '@/lib/api-hooks/use-images-api';
+import {
+  useImageDownloadApi,
+  type UploadInput,
+} from '@/lib/api-hooks/use-images-api';
 import type { Schemas } from '@/lib/openapi/client';
 import { useImagesPage } from './use-images-page';
 
@@ -136,6 +139,7 @@ function ImageThumbnail({
   image: ImageItem;
   onDelete: () => void;
 }) {
+  const { getDownloadUrl } = useImageDownloadApi();
   const [url, setUrl] = useState<string | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
@@ -145,8 +149,7 @@ function ImageThumbnail({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setUrl(null);
     setLoadError(false);
-    imageApi
-      .getDownloadUrl(image.id)
+    getDownloadUrl(image.id)
       .then((res) => {
         if (!cancelled) setUrl(res.url);
       })
@@ -156,7 +159,7 @@ function ImageThumbnail({
     return () => {
       cancelled = true;
     };
-  }, [image.id, reloadKey]);
+  }, [image.id, reloadKey, getDownloadUrl]);
 
   const label = image.title || image.originalFilename;
 
@@ -341,7 +344,13 @@ function UploadModal({
         <form onSubmit={handleSubmit}>
           <Dialog.Body>
             <div className="space-y-4">
-              <FormField label="ファイル" isRequired>
+              <div className="ds-formfield">
+                <span className="ds-formfield__label">
+                  ファイル
+                  <span className="ds-formfield__required" aria-hidden="true">
+                    *
+                  </span>
+                </span>
                 <div
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
@@ -424,7 +433,7 @@ function UploadModal({
                     </div>
                   )}
                 </div>
-              </FormField>
+              </div>
               <FormField label="タイトル（任意）">
                 <Input
                   type="text"
