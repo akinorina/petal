@@ -2,7 +2,8 @@
 
 import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ApiError, authApi } from '@/lib/api';
+import { ApiError } from '@/lib/api';
+import { useMePasswordApi } from '@/lib/api-hooks/use-me-api';
 import { setAuthNotice } from '@/lib/auth-session';
 import { useAuth } from '@/contexts/AuthContext';
 import { evaluatePasswordForm } from '@/lib/password-policy';
@@ -10,6 +11,7 @@ import { evaluatePasswordForm } from '@/lib/password-policy';
 export function useMePasswordPage() {
   const router = useRouter();
   const { logout } = useAuth();
+  const { changePassword } = useMePasswordApi();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -24,7 +26,7 @@ export function useMePasswordPage() {
     setError(null);
     setIsSubmitting(true);
     try {
-      await authApi.changePassword({
+      await changePassword({
         previousPassword: currentPassword,
         proposedPassword: newPassword,
       });
@@ -39,7 +41,7 @@ export function useMePasswordPage() {
       );
       setIsSubmitting(false);
     }
-  }, [currentPassword, newPassword, logout, router]);
+  }, [currentPassword, newPassword, changePassword, logout, router]);
 
   return {
     currentPassword,

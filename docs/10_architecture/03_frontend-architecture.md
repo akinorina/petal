@@ -23,8 +23,9 @@ frontend/
     contexts/                  # AuthContext
     design-system/             # UI コンポーネント・トークン
     lib/
-      api.ts                   # ドメイン別 API ラッパ
+      api/                     # ドメイン別 API ラッパ（image/user/auth/mfa/audit-log + shared）
       api-hooks/               # API アクセス専用フック
+      http.ts                  # 認証前 fetch 共通ヘルパ（apiClient を介さない呼び出し用）
       openapi/                 # 型付きクライアント（自動生成 + middleware）
   public/                      # 静的ファイル・PWA アイコン・manifest
   scripts/                     # 運用スクリプト（環境切替など）
@@ -51,17 +52,22 @@ app/login/
 
 ```text
 lib/api-hooks/
-  use-auth-api.ts          # ログイン / ログアウト / パスワードリセット / MFA / 等
+  use-api-resource.ts      # 取得系フックの共通土台（data/isLoading/error + 自動再取得）
+  use-auth-api.ts          # ログイン / ログアウト / サインアップ / パスワードリセット 等
   use-users-api.ts         # ユーザー一覧 / CRUD / 復活 / 招待再送
   use-images-api.ts        # 画像一覧 / アップロード / 削除
   use-image-detail-api.ts  # 画像詳細 / ダウンロード URL / 削除
+  use-me-api.ts            # 自分のプロフィール取得 / 更新 / パスワード変更
   use-me-email-api.ts      # メールアドレス変更
+  use-mfa-api.ts           # MFA 状態 / 設定 / 有効化 / 解除
   use-audit-logs-api.ts    # 監査ログ
 ```
 
+- 取得系フックは共通土台 `useApiResource<T>(fetcher)` の上に実装し、状態管理と自動再取得の重複を避ける。
 - API フックは **取得状態（data / isLoading / error）** と **操作関数（reload / create / update 等）** を返す。
 - 操作関数は失敗時に例外を `throw` し、呼び出し側（ページフック）が UI 文脈に応じたメッセージを `setError` する（API フック内で UI 文言を決め打ちしない）。
-- ページフックは「UI 状態 + API フックのオーケストレーション」だけを行い、`@/lib/api` や `lib/openapi` を直接呼ばない。
+- ページフックは「UI 状態 + API フックのオーケストレーション」だけを行う。
+- ページフックに限らず、UI レイヤ（コンポーネント・Context を含む）からは `@/lib/api` や `lib/openapi` を直接呼ばず、必ず `lib/api-hooks/` のフックを経由する。一覧状態を持たず命令的に呼びたい場合は薄い操作フック（例: `useCurrentUserApi` / `useImageDownloadApi`）を用意する。
 
 ## 認証状態（AuthContext）
 
@@ -76,7 +82,7 @@ lib/api-hooks/
 
 - アクセストークン付与は `lib/openapi/client.ts` の middleware で自動化（`getAccessToken()`）。
 - リフレッシュトークンによる自動更新も middleware で行う（[20_features/01_authentication.md](../20_features/01_authentication.md)）。
-- UI からは `lib/api.ts` の `imageApi` / `userApi` 等を使い、`apiClient` を直接呼ばない（共通エラー処理 `unwrap()` を経由）。
+- UI からは `lib/api/` の `imageApi` / `userApi` 等を使い、`apiClient` を直接呼ばない（共通エラー処理 `unwrap()` を経由）。
 
 ## デザインシステム
 

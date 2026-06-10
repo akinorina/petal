@@ -1,47 +1,35 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { ApiError, mfaApi, userApi } from '@/lib/api';
+import { useState } from 'react';
+import { ApiError } from '@/lib/api';
+import { useMfaApi } from '@/lib/api-hooks/use-mfa-api';
 
 type Step =
   | { kind: 'idle' }
   | { kind: 'setup'; secretCode: string; otpauthUri: string };
 
 export function useMeMfaPage() {
+  const {
+    enabled,
+    isLoading,
+    error,
+    setError,
+    reload,
+    setup,
+    verify,
+    disable: disableMfa,
+  } = useMfaApi();
   const [step, setStep] = useState<Step>({ kind: 'idle' });
-  const [enabled, setEnabled] = useState<boolean | null>(null);
   const [code, setCode] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-
-  const reload = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const me = await userApi.findMe();
-      setEnabled(me.mfaEnabled ?? false);
-    } catch (e) {
-      setError(
-        e instanceof ApiError ? e.message : 'MFA 状態の取得に失敗しました',
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void reload();
-  }, [reload]);
 
   async function startSetup() {
     setError(null);
     setSuccess(null);
     setIsSubmitting(true);
     try {
-      const result = await mfaApi.setup();
+      const result = await setup();
       setStep({
         kind: 'setup',
         secretCode: result.secretCode,
@@ -63,7 +51,7 @@ export function useMeMfaPage() {
     }
     setIsSubmitting(true);
     try {
-      await mfaApi.verify(code);
+      await verify(code);
       setSuccess('MFA を有効化しました。次回ログインからコード入力が必要になります。');
       setStep({ kind: 'idle' });
       setCode('');
@@ -82,7 +70,7 @@ export function useMeMfaPage() {
     if (!confirm('MFA を解除しますか？')) return;
     setIsSubmitting(true);
     try {
-      await mfaApi.disable();
+      await disableMfa();
       setSuccess('MFA を解除しました。');
       await reload();
     } catch (e) {

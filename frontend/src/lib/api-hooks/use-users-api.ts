@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { ApiError, userApi } from '@/lib/api';
+import { useCallback } from 'react';
+import { userApi } from '@/lib/api';
 import type { Schemas } from '@/lib/openapi/client';
+import { useApiResource } from './use-api-resource';
 
 type User = Schemas['UserResponseDto'];
 type CreateUserRequest = Schemas['CreateUserRequestDto'];
@@ -17,39 +18,14 @@ export type UsersQuery = {
 };
 
 export function useUsersApi(query: UsersQuery) {
-  const [items, setItems] = useState<User[]>([]);
-  const [total, setTotal] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
   const { limit, offset, q, role, deleted } = query;
 
-  const reload = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await userApi.findPage({
-        limit,
-        offset,
-        q,
-        role,
-        deleted,
-      });
-      setItems(data.items);
-      setTotal(data.total);
-    } catch (e) {
-      setError(
-        e instanceof ApiError ? e.message : 'データの取得に失敗しました',
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [limit, offset, q, role, deleted]);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void reload();
-  }, [reload]);
+  const fetcher = useCallback(
+    () => userApi.findPage({ limit, offset, q, role, deleted }),
+    [limit, offset, q, role, deleted],
+  );
+  const { data, isLoading, error, setError, reload } =
+    useApiResource<{ items: User[]; total: number }>(fetcher);
 
   const create = useCallback(
     async (data: CreateUserRequest) => {
@@ -92,8 +68,8 @@ export function useUsersApi(query: UsersQuery) {
   );
 
   return {
-    items,
-    total,
+    items: data?.items ?? [],
+    total: data?.total ?? 0,
     isLoading,
     error,
     setError,
