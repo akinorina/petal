@@ -10,9 +10,7 @@ import { LLM_PROVIDER, type LlmProvider } from '../domain/llm-provider';
 
 @Injectable()
 export class ChatService {
-  constructor(
-    @Inject(LLM_PROVIDER) private readonly provider: LlmProvider,
-  ) {}
+  constructor(@Inject(LLM_PROVIDER) private readonly provider: LlmProvider) {}
 
   listModels(): Promise<LlmModel[]> {
     return this.provider.listModels();

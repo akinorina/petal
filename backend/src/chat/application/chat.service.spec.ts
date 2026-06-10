@@ -32,6 +32,7 @@ async function* toAsyncGenerator(
   chunks: ChatChunk[],
 ): AsyncGenerator<ChatChunk> {
   for (const chunk of chunks) {
+    await Promise.resolve();
     yield chunk;
   }
 }
@@ -83,9 +84,9 @@ describe('ChatService.generate', () => {
   });
 
   it('入力検証: messages が空なら ZodError を投げ provider を呼ばない', async () => {
-    await expect(
-      service.generate({ messages: [] }),
-    ).rejects.toBeInstanceOf(ZodError);
+    await expect(service.generate({ messages: [] })).rejects.toBeInstanceOf(
+      ZodError,
+    );
     expect(provider.generate).not.toHaveBeenCalled();
   });
 });
