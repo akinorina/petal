@@ -130,7 +130,7 @@ chat/domain/
 - `ChatGenerationInput = { model?: string; messages: ChatMessage[]; temperature?: number; maxTokens?: number }`
   - `model` 省略時は `LlmConfig` の既定モデル（`LLM_MODEL`、未設定なら接続先既定）。
   - 入力スキーマ（`application` 層が外部から受ける用）は `application/chat.schemas.ts` にも置く（後述）。
-- `ChatChunk = { delta: string; done: boolean }`（ストリームの 1 片。`done: true` は終端マーカー、`delta` は空文字でもよい）。
+- `ChatChunk = { delta: string; done: boolean; finishReason?: string | null; model?: string }`（ストリームの 1 片。`done: true` は終端マーカーで `delta` は空文字、`finishReason`/`model` は終端チャンクにのみ載る。これにより `generate()` が `generateStream()` を単一コードパスで集約できる — Phase 4 精緻化）。
 - `ChatResult = { model: string; content: string; finishReason: string | null }`（集約結果）。
 - `LlmModel = { id: string; ownedBy?: string | null }`（`/v1/models` の 1 件）。
 
@@ -233,4 +233,86 @@ DB 永続化が無く外部副作用（LLM API 呼び出し）のみのため、
 - なし（Phase 4 ドライランで最終確認）。
 
 ---
-（以降、Phase 4 で「実装計画」を追記）
+
+## 13. 実装計画（Phase 4）
+
+### 13.1 変更・追加ファイル
+
+#### 追加（backend/src/chat/）
+
+- `domain/llm-message.ts` … `ChatRole`(`z.enum`) / `ChatMessageSchema` / `ChatMessage`
+- `domain/llm-generation.ts` … `ChatGenerationInputSchema` / `ChatGenerationInput` / `ChatChunk` / `ChatResult`
+- `domain/llm-model.ts` … `LlmModelSchema` / `LlmModel`
+- `domain/llm-provider.ts` … `LLM_PROVIDER`(Symbol) / `LlmProvider`(interface)
+- `application/chat.schemas.ts` … `ChatGenerationInputSchema` の再エクスポート用途は持たず、`application` 入力検証は domain の `ChatGenerationInputSchema` を利用（schemas ファイルは作らず domain に集約）。→ **作らない**
+- `application/chat.service.ts` … `ChatService`
+- `application/chat.service.spec.ts` … ユニットテスト（`LlmProvider` をモック）
+- `infra/llm.config.ts` … `LlmEnvSchema`(Zod) / `LlmConfig`(@Injectable)
+- `infra/openai-compatible.client.ts` … `OpenAiCompatibleClient implements LlmProvider`
+- `chat.module.ts` … モジュール定義
+
+#### 変更
+
+- `src/app.module.ts` … `imports` に `ChatModule` 追加
+- `package.json`（backend）… `openai` 依存追加
+- `.envs/.env.local.example` / `.envs/.env.dev.example` … `LLM_*` 追記
+- `docs/10_architecture/02_backend-architecture.md` … フィーチャ表に `chat`（コミット済み）
+
+> 注: 入力検証スキーマは `domain/llm-generation.ts` の `ChatGenerationInputSchema` に集約し、`application/chat.schemas.ts` は作らない（§5 から変更。重複回避）。
+
+### 13.2 migration・環境変数・依存
+
+- **migration**: なし（永続化スコープ外）。
+- **依存追加**: `pnpm --filter backend add openai`（最新安定版・caret 範囲）。
+- **環境変数**（chat 専用 Zod 検証）:
+  - `LLM_BASE_URL`（必須・URL。例 `http://localhost:1234/v1`）
+  - `LLM_API_KEY`（任意・未設定時は SDK 用に `'not-needed'` を既定値とする。LM Studio 等は無視）
+  - `LLM_MODEL`（任意・既定モデル。入力 `model` も `LLM_MODEL` も無ければ生成時に明示エラー）
+
+### 13.3 作業順序（コミット単位・各完了確認）
+
+1. **依存 + env config**: `openai` 追加、`infra/llm.config.ts`。確認: `pnpm --filter backend build`。
+2. **domain**: `llm-message.ts` / `llm-generation.ts` / `llm-model.ts` / `llm-provider.ts`。確認: build。
+3. **infra client**: `infra/openai-compatible.client.ts`（`LlmProvider` 実装）。確認: build。
+4. **application**: `application/chat.service.ts`。確認: build。
+5. **module 配線**: `chat.module.ts`（`LLM_PROVIDER`→`OpenAiCompatibleClient`、`LlmConfig`、`ChatService` を providers、`ChatService` を exports）+ `app.module.ts` に `ChatModule`。確認: build（DI 解決）。
+6. **テスト**: `application/chat.service.spec.ts`。確認: `pnpm --filter backend test`。
+7. **env example + 設計書整合**: `.envs/.env.local.example` / `.envs/.env.dev.example` 追記。確認: `pnpm --filter backend build` / `pnpm --filter backend test` / `npx markdownlint-cli 'docs/**/*.md'`。
+
+### 13.4 テスト方針
+
+- `chat.service.spec.ts`: `LLM_PROVIDER` を `useValue` でモック（`jest.Mocked<LlmProvider>` 相当）。
+  - `listModels()` がモデル配列を返す。
+  - `generate()` がモック provider の結果を返す。
+  - `generateStream()` を `for await` で収集し、チャンク列と終端 `done:true` を検証。
+  - 入力検証: 不正入力（`messages` 空 等）で Zod が throw すること。
+- infra クライアント（SDK ラッパー）はテスト方針上スコープ外（[testing-strategy](40_processes/02_testing-strategy.md)）。手動シナリオ（§11）で担保。
+
+### 13.5 想定外時の判断ルール
+
+#### 標準セット
+
+- **AI 単独判断 OK**: 軽微な既存コードリファクタ、設計書スコープ内の追加実装。
+- **中断して要相談**: データモデル変更、API 仕様変更、トランザクション境界変更、外部 API 想定差異、設計判断ログを覆す変更。
+
+#### TSK-107 固有
+
+- `openai` SDK の最新版で `chat.completions.create` / `models.list` のシグネチャが本設計の想定（§6）と乖離していた場合 → **中断**（設計の外部 API 想定差異）。
+- ストリームチャンクから `delta.content` を取得する形が SDK 型と異なる場合 → 軽微なら AI 判断で追従可（SDK 型に従う）。型レベルで設計を覆す必要があれば中断。
+- ローカル LLM サーバが無いため infra の実接続確認は不可。**ビルド + ユニットテスト + lint の通過を完了条件とし、実接続は手動シナリオ（Phase 6）に委ねる**。スモークスクリプトは Phase 5 では作らない。
+
+### 13.6 事前解決済みの判断ポイント
+
+| # | 判断ポイント | 解決 |
+| --- | --- | --- |
+| 1 | `openai` のバージョン | 最新安定版を caret 範囲で追加 |
+| 2 | `LLM_API_KEY` 未設定時 | SDK 初期化用に `'not-needed'` を既定 |
+| 3 | `model` も `LLM_MODEL` も無い | 生成時に明示的 `Error`（日本語メッセージ）を throw |
+| 4 | `generate()` の実装 | `generateStream()` を集約（delta 連結 + 終端チャンクの `model`/`finishReason`） |
+| 5 | `ChatChunk` 形 | 終端チャンクに `finishReason`/`model` を載せる（§5 反映済み） |
+| 6 | モデル一覧の検証 | SDK 応答の `data` を `LlmModelSchema.array()` で `parse` |
+| 7 | 入力検証スキーマの置き場所 | `domain/llm-generation.ts` に集約。`application/chat.schemas.ts` は作らない |
+| 8 | `.env.example` の実体 | `.envs/.env.local.example` と `.envs/.env.dev.example` の両方に追記 |
+| 9 | ChatModule の AppModule 組込 | 組み込む（DI 解決のため）。controller 無しで HTTP 非公開 |
+| 10 | migration | 追加しない（永続化スコープ外） |
+| 11 | 認可 | スコープ外（対象リソース未存在）。将来 controller タスクで付与 |
