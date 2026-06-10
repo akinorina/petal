@@ -387,3 +387,84 @@ client → POST /chat/threads/:id/messages  (Authorization: Bearer ...)
 ## 12. 未確定事項
 
 - なし（Phase 3 終了時点で全論点に採用案あり）。SSE の実配信・切断検知・上流エラーの実 HTTP 形は手動シナリオ（Phase 6）で確認する。
+
+---
+
+## 13. 実装計画（Phase 4）
+
+### 13.1 変更・追加ファイル
+
+追加（`backend/src/chat/`）:
+
+- `application/chat.schemas.ts` … `SendMessageSchema` / `SendMessageInput` / `MAX_MESSAGE_CONTENT_LENGTH`（=32768）。
+- `application/chat-error.ts` … `ChatErrorCode` / `ClassifiedChatError` / `classifyLlmError(err)`（`openai` を import しないダックタイピング）。
+- `application/chat-stream.ts` … `ChatStreamEvent`（判別共用体）。
+- `application/chat-completion.service.ts` … `ChatCompletionService`（`ChatThreadService` + `ChatService` を DI）。
+- `application/chat-completion.service.spec.ts` … ユニットテスト。
+- `controller/chat.dto.ts` … `ChatThreadResponseDto` / `ChatMessageResponseDto` / `CreateThreadRequestDto` / `SendMessageRequestDto`。
+- `controller/chat.controller.ts` … `ChatController`（5 エンドポイント）。
+
+変更:
+
+- `chat/chat.module.ts` … `controllers: [ChatController]`、`imports` に `UserModule`、`providers` に `ChatCompletionService` を追加。
+- `docs/10_architecture/06_api-design.md` … `chat` エンドポイント表を追記。
+- `docs/10_architecture/02_backend-architecture.md` … `chat` 行のエンドポイントを更新。
+- `backend/openapi.json` … 再生成（**Phase 6 でメインスレッドが実行**、13.2 参照）。
+
+### 13.2 migration・環境変数・依存・OpenAPI
+
+- **migration**: なし（D5）。
+- **環境変数**: 追加なし（TSK-107 の `LLM_*` を流用）。
+- **依存追加**: なし（`openai@^6.42.0` は導入済み・infra に隔離済み）。
+- **OpenAPI 再生成**: `pnpm openapi:export` は `NestFactory.create(AppModule)` で **postgres 接続を要求する**ため、DB の無いバックグラウンド worktree では実行できない。→ **サブエージェントの完了条件から除外**し、Phase 6 でメインスレッドが DB 接続可能な環境で `cd backend && pnpm openapi:export` を実行し `backend/openapi.json` をコミットする。
+
+### 13.3 作業順序（コミット単位・各完了確認）
+
+各コミット末尾で `cd backend && pnpm build` を通す（C4 は `pnpm test`、C5 は markdownlint）。
+
+1. **C1 application 基盤**: `chat.schemas.ts` / `chat-error.ts` / `chat-stream.ts` を追加。確認: `pnpm build`。
+2. **C2 orchestrator**: `chat-completion.service.ts` を追加。確認: `pnpm build`。
+3. **C3 controller + 配線**: `chat.dto.ts` / `chat.controller.ts` を追加し `chat.module.ts` に controller・`UserModule`・`ChatCompletionService` を登録。確認: `pnpm build`。
+4. **C4 test**: `chat-completion.service.spec.ts` を追加。確認: `cd backend && pnpm test`。
+5. **C5 docs**: `06_api-design.md` / `02_backend-architecture.md` を更新。確認: `npx markdownlint-cli 'docs/**/*.md'`。
+
+最後に `cd backend && pnpm lint` を通し、`git status` で lint 自動修正の取りこぼしが無いか確認する。
+
+### 13.4 テスト方針
+
+- `chat-completion.service.spec.ts`: `ChatThreadService` / `ChatService` を `useValue` でモック（クラストークンで DI）。`chat.service.spec.ts` の `toAsyncGenerator` ヘルパに倣う。網羅シナリオは §10 のテストシナリオに従う（正常 / 非所有 / pre-stream 失敗 / mid-stream 失敗 / 切断部分保存 / 空生成 / 二重保存ガード）。
+- controller はテスト対象外（[specs/00_rules.md §8](specs/00_rules.md) のレイヤー別責務。`image.controller` も spec 無し）。SSE 配信・切断は手動シナリオ（§11）で担保。
+
+### 13.5 想定外時の判断ルール
+
+**AI 単独判断 OK**: image/既存 chat パターン踏襲上の軽微な調整、テストケース追加、命名の微修正、import 整理、SSE フレーム整形の細部。
+
+**中断して最終報告に記録（質問せず停止）**:
+
+- データモデル変更（`chat_threads`/`chat_messages` のカラム追加等が必要になった）。
+- API 仕様変更（§6 のエンドポイント/DTO/SSE イベント形を変える必要が生じた）。
+- トランザクション境界の変更（§8 を覆す必要が生じた）。
+- 既存 TSK-107（`ChatService`/`OpenAiCompatibleClient`）・TSK-108（`ChatThreadService`/リポジトリ/エンティティ/`llm-message.ts`）の**改変が必要**になった。
+- `@Res()` + 例外フィルタで pre-stream エラーを HTTP 化する方式（§4 D3）が NestJS の制約で成立しない。
+- `generator.return()` による LLM ストリーム abort（§4 D4）が `openai` SDK で機能しない。
+
+### 13.6 事前解決済みの判断ポイント
+
+| # | 判断ポイント | 解決 |
+| --- | --- | --- |
+| 1 | SSE は `@Res()` 手書き | `@Res() res: Response`（express、passthrough 無し）。他 4 エンドポイントは通常の DTO 返却。例外フィルタは throw 時も動作する（`@Res()` でも有効） |
+| 2 | pre-stream エラーの HTTP 化 | controller は **最初のイベントを `gen.next()` で取得してから** `res.writeHead(200)`。取得時の throw はヘッダー未送出のため例外フィルタが HTTP 応答 |
+| 3 | pre-stream エラーの throw 型 | orchestrator は `!started` 時に `classifyLlmError` 結果から `new HttpException({code,message,retryable}, httpStatus)` を throw（`ChatThreadService` が `NotFoundException` を throw する既存パターンと同様、application が Nest 例外を投げてよい） |
+| 4 | 認可エラー | `ChatThreadService.addMessage`/`findMessages` の `NotFoundException` がそのまま伝播（try の外で呼ぶ）。controller で再実装しない → 404 |
+| 5 | 切断検知 | `req.on('close', () => { void gen.return(undefined); })`。`gen.return()` で orchestrator の `finally` が走り部分保存。`for await` の break で `ChatService.generateStream`→`openai` SDK の HTTP が abort |
+| 6 | 二重保存ガード | orchestrator に `persisted` フラグ。`persist()` は 1 度だけ実行し、`accumulated.length===0` なら保存しない（`AddMessageInputSchema.content` の `min(1)` 違反も回避） |
+| 7 | アシスタント seq 採番 | `addMessage`（TSK-108）内部の `findMaxSeq()+1`。ユーザーメッセージ保存後に呼ぶため自然に +1。新規トランザクションは導入しない |
+| 8 | LLM へ渡す履歴 | `findMessages`（seq ASC・保存直後のユーザーメッセージ含む）を `{role, content}` に map（`llm-message.ts` の `ChatMessage` 形）。`llm-message.ts` は import しない（型は構造的に一致） |
+| 9 | 入力検証 | controller で `SendMessageSchema.safeParse(body)` → 失敗 `400`（`image.controller` と同方式、ValidationPipe 不使用） |
+| 10 | エラー本文の秘匿 | `classifyLlmError` は日本語の汎用メッセージのみ生成。上流エラー本文・接続先 URL を載せない |
+| 11 | `finishReason` の扱い | DB 非永続（D5）。`done`/`error` イベントにのみ載せる。migration 不要 |
+| 12 | DTO の role enum | `@ApiProperty({ enum: ['system','user','assistant'] })`（`ChatRoleSchema.options` 由来の定数を使用） |
+| 13 | DELETE のステータス | `@HttpCode(204)`（`image.controller` と同様） |
+| 14 | current user 解決 | `UserService.findById(req.user.userId)`（`image.controller` と同方式）。`req.user` 不在は `UnauthorizedException` |
+| 15 | openapi:export の DB 依存 | サブエージェント完了条件から除外。Phase 6 でメインスレッドが実行・コミット（13.2） |
+| 16 | model 等の上流パラメータ | クライアント非公開（D6）。`generateStream({ messages })` のみ。既定モデルは `LLM_MODEL`（手動シナリオ前提で設定） |
