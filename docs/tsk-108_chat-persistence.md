@@ -272,3 +272,73 @@ HTTP エンドポイントはスコープ外のため、確認は migration と�
 ## 10. 未確定事項
 
 - なし（Phase 3 終了時点で全論点に採用案あり）。タイトル自動生成・HTTP API・並行採番の堅牢化は後続タスクで扱う。
+
+---
+
+## 11. 実装計画（Phase 4）
+
+### 11.1 変更・追加ファイル
+
+追加（`backend/src/chat/`）:
+
+- `domain/chat-thread.ts` — `ChatThreadSchema` + `class ChatThread`（`isOwnedBy`）。
+- `domain/chat-message.ts` — `ChatMessageSchema` + `class ChatMessage`（`ChatRoleSchema` は `./llm-message` から import）。
+- `domain/chat-thread.repository.ts` — `CHAT_THREAD_REPOSITORY` + `IChatThreadRepository`。
+- `application/chat-thread.schemas.ts` — `CreateThreadInputSchema` / `AddMessageInputSchema`。
+- `application/chat-thread.service.ts` — `ChatThreadService`。
+- `application/chat-thread.service.spec.ts` — ユニットテスト。
+- `infra/chat-thread.entity.ts` / `infra/chat-message.entity.ts` / `infra/chat-thread.repository.impl.ts`。
+
+変更:
+
+- `chat/chat.module.ts` — `TypeOrmModule.forFeature([...])`・リポジトリ provider・`ChatThreadService` を providers/exports に追加。
+- `database/migrations/1746144006000-CreateChatTables.ts` — 新規追加。
+- `docs/10_architecture/05_database-schema.md` — `chat_threads`/`chat_messages` 追記、ER 図に 2 行追加。
+
+### 11.2 migration・環境変数・依存追加
+
+- migration: `1746144006000-CreateChatTables.ts` を新規追加（2 テーブル）。
+- 環境変数: 追加なし（`.env.example` 変更なし）。
+- 依存追加: なし。
+- エンティティ登録: `app.module.ts` は `autoLoadEntities: true`、`database/data-source.ts` は `entities: ['src/**/*.entity.ts']` のため、新エンティティは追加配線不要（`TypeOrmModule.forFeature` でリポジトリ注入のみ行う）。
+
+### 11.3 作業順序（コミット単位）
+
+各コミット末尾で `cd backend && pnpm build` が通ることを確認する（C4 のみ `pnpm test`、C5 は markdownlint）。
+
+1. **C1 domain**: `chat-thread.ts` / `chat-message.ts` / `chat-thread.repository.ts` を追加。確認: `pnpm build`。
+2. **C2 infra + migration**: 2 エンティティ + `chat-thread.repository.impl.ts` + migration を追加。確認: `pnpm build`。
+3. **C3 application + 配線**: `chat-thread.schemas.ts` / `chat-thread.service.ts` を追加し `chat.module.ts` に登録。確認: `pnpm build`。
+4. **C4 test**: `chat-thread.service.spec.ts` を追加。確認: `cd backend && pnpm test`。
+5. **C5 docs**: `05_database-schema.md` を更新。確認: `npx markdownlint-cli 'docs/**/*.md'`。
+
+最後に `cd backend && pnpm lint` を通し、`git status` で lint 自動修正の取りこぼしが無いか確認する。
+
+### 11.4 テスト方針
+
+- `chat-thread.service.spec.ts`: `IChatThreadRepository` を `jest.Mocked` で DI モック（`{ provide: CHAT_THREAD_REPOSITORY, useValue: mock }`）。`chat.service.spec.ts` の構成（`Test.createTestingModule` + `buildMockRepository()` ヘルパ）に倣う。
+- 網羅シナリオは §8 のテストシナリオに従う（create/find/addMessage の seq 採番/owner ガード/removeThread）。
+- infra（TypeORM 実装）・controller はテスト対象外（[specs/00_rules.md §8](specs/00_rules.md) のレイヤー別責務に従う）。
+
+### 11.5 事前解決済みの判断ポイント
+
+- **seq 採番の実装**: `findMaxSeq` は `repo.maximum()`（number 専用、seq は bigint=string のため不可）を使わず、`createQueryBuilder('m').select('MAX(m.seq)','max').where('m.thread_id = :id',{id}).withDeleted().getRawOne()` で取得。`.withDeleted()` で論理削除済みメッセージも対象に含め seq の再利用を防ぐ。結果は string|null → `null` なら `null` を返し、それ以外は `Number()` 変換。service 側は `null→0`、それ以外は `+1`。
+- **bigint 変換**: `chat_messages.seq` は `@Column({ type: 'bigint' })` で string 入出力。`image.size_bytes` と同様に impl の `toDomain`/`toEntity` で `Number()`/`String()` 変換。
+- **role の DB→domain 検証**: `toDomain` で `ChatRoleSchema.parse(entity.role)` を通して `ChatRole` に絞り込む（`image` の `isAllowedMime` 相当のガード）。
+- **content の長さ**: domain `ChatMessageSchema.content` は `z.string()`（上限・下限なし、`text` 列）。入力 `AddMessageInputSchema.content` は `z.string().min(1)`（空メッセージ追加を拒否）。
+- **title の入力**: `CreateThreadInputSchema.title` は `z.string().max(255).nullable().optional()`。service で `input.title ?? null`。
+- **存在秘匿**: 非所有者・不在はいずれも `NotFoundException`（`image.service` と同方針。`Forbidden` で存在を漏らさない）。
+- **findById とメッセージ取得の分離**: `findById` はスレッドのみ返す。メッセージは `findMessages` で別取得（一覧時に全メッセージを読まない）。
+- **トランザクション**: `softDeleteThread` のみ `dataSource.transaction` を使用。`DataSource` の import は `infra` に限定し application へ漏らさない。
+
+### 11.6 想定外時の判断ルール
+
+**AI 単独判断 OK**: image パターン踏襲上の軽微な調整、テストケースの追加、命名の微修正、import 整理。
+
+**中断して最終報告に記録（質問せず停止）**:
+
+- テーブル/カラムの追加・削除・型変更が必要になった（データモデル変更）。
+- `role` の許可値を増減する必要が生じた。
+- トランザクション境界・集約境界（ChatThread 1 リポジトリ構成）を変更する必要が生じた。
+- 既存 `chat`（TSK-107）コードや `llm-message.ts` の改変が必要になった。
+- migration が既存スキーマと衝突する／`pnpm migration:run` がローカルで通らない。
