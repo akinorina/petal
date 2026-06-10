@@ -70,6 +70,7 @@ backend/
 | `auth` | 認証（ログイン・トークン・パスワード・MFA・サインアップ） | `/auth/*` |
 | `user` | ユーザー管理・自分の情報 | `/users/*` |
 | `image` | 画像のアップロード・一覧・詳細・削除 | `/images/*` |
+| `chat` | LLM チャット生成（プロバイダー抽象・OpenAI 互換接続） | なし（現時点・controller 別タスク） |
 | `audit` | 監査ログ | `/audit-logs` |
 | `common` | ガード・デコレーター・例外・観測性 | （横断） |
 
