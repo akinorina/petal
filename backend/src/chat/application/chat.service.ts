@@ -18,7 +18,7 @@ export class ChatService {
     return this.provider.listModels();
   }
 
-  generate(input: ChatGenerationInput): Promise<ChatResult> {
+  async generate(input: ChatGenerationInput): Promise<ChatResult> {
     const parsed = ChatGenerationInputSchema.parse(input);
     return this.provider.generate(parsed);
   }
