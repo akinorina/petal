@@ -1,0 +1,3 @@
+# ローカル専用の下書き（.local 命名規約・gitignore 済み）は lint 対象外
+*.local.md
+**/*.local.md
