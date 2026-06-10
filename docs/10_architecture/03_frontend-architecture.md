@@ -23,8 +23,9 @@ frontend/
     contexts/                  # AuthContext
     design-system/             # UI コンポーネント・トークン
     lib/
-      api.ts                   # ドメイン別 API ラッパ
+      api/                     # ドメイン別 API ラッパ（image/user/auth/mfa/audit-log + shared）
       api-hooks/               # API アクセス専用フック
+      http.ts                  # 認証前 fetch 共通ヘルパ（apiClient を介さない呼び出し用）
       openapi/                 # 型付きクライアント（自動生成 + middleware）
   public/                      # 静的ファイル・PWA アイコン・manifest
   scripts/                     # 運用スクリプト（環境切替など）
@@ -80,7 +81,7 @@ lib/api-hooks/
 
 - アクセストークン付与は `lib/openapi/client.ts` の middleware で自動化（`getAccessToken()`）。
 - リフレッシュトークンによる自動更新も middleware で行う（[20_features/01_authentication.md](../20_features/01_authentication.md)）。
-- UI からは `lib/api.ts` の `imageApi` / `userApi` 等を使い、`apiClient` を直接呼ばない（共通エラー処理 `unwrap()` を経由）。
+- UI からは `lib/api/` の `imageApi` / `userApi` 等を使い、`apiClient` を直接呼ばない（共通エラー処理 `unwrap()` を経由）。
 
 ## デザインシステム
 
