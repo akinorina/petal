@@ -54,9 +54,7 @@ function buildThread(id: string, ownerUserId: string): ChatThread {
   });
 }
 
-async function buildService(
-  repo: MockRepository,
-): Promise<ChatThreadService> {
+async function buildService(repo: MockRepository): Promise<ChatThreadService> {
   const moduleRef: TestingModule = await Test.createTestingModule({
     providers: [
       ChatThreadService,
@@ -88,7 +86,8 @@ describe('ChatThreadService.createThread', () => {
     expect(result.title).toBe('マイ会話');
     expect(result.ownerUserId).toBe(OWNER_ID);
     expect(repo.saveThread).toHaveBeenCalledTimes(1);
-    const saved = repo.saveThread.mock.calls[0][0] as ChatThread;
+    const saved = (repo.saveThread.mock.calls as Array<[ChatThread]>)[0][0];
+    expect(saved).toBeInstanceOf(ChatThread);
     expect(saved.title).toBe('マイ会話');
     expect(saved.ownerUserId).toBe(OWNER_ID);
   });
@@ -160,9 +159,7 @@ describe('ChatThreadService.addMessage', () => {
     repo = buildMockRepository();
     service = await buildService(repo);
     repo.findById.mockResolvedValue(buildThread(THREAD_ID, OWNER_ID));
-    repo.addMessage.mockImplementation((m: ChatMessage) =>
-      Promise.resolve(m),
-    );
+    repo.addMessage.mockImplementation((m: ChatMessage) => Promise.resolve(m));
   });
 
   it('既存メッセージ無し（max=null）なら seq=0 で追加する', async () => {
