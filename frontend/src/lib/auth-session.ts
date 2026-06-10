@@ -1,6 +1,4 @@
-import { resolveApiBaseUrl } from './api-base-url';
-
-const BASE_URL = resolveApiBaseUrl();
+import { BASE_URL } from './http';
 
 const ACCESS_TOKEN_KEY = 'petal_access_token';
 const REFRESH_TOKEN_KEY = 'petal_refresh_token';
