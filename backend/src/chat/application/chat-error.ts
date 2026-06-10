@@ -30,8 +30,7 @@ function asDuckTypedError(err: unknown): DuckTypedError {
     return {};
   }
   const record = err as Record<string, unknown>;
-  const status =
-    typeof record.status === 'number' ? record.status : undefined;
+  const status = typeof record.status === 'number' ? record.status : undefined;
   const code = typeof record.code === 'string' ? record.code : undefined;
   const message =
     typeof record.message === 'string' ? record.message : undefined;

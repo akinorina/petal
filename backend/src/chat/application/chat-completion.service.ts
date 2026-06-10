@@ -48,11 +48,10 @@ export class ChatCompletionService {
       if (state.persisted) return;
       state.persisted = true;
       if (accumulated.length === 0) return;
-      state.saved = await this.threadService.addMessage(
-        currentUser,
-        threadId,
-        { role: 'assistant', content: accumulated },
-      );
+      state.saved = await this.threadService.addMessage(currentUser, threadId, {
+        role: 'assistant',
+        content: accumulated,
+      });
     };
 
     try {
