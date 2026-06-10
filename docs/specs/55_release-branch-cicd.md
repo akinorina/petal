@@ -41,8 +41,8 @@
 
 - `workflow_dispatch`
 - 入力（任意）:
-    - `tag` … リリースタグ名（例: `v1.2.3`）。空ならタグ付与なし。
-    - `release_notes` … タグ付与時に GitHub Release に含めるノート。
+  - `tag` … リリースタグ名（例: `v1.2.3`）。空ならタグ付与なし。
+  - `release_notes` … タグ付与時に GitHub Release に含めるノート。
 
 ### 処理
 
