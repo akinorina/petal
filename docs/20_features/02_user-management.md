@@ -1,7 +1,7 @@
 # ユーザー管理
 
 管理者（admin）によるユーザーの作成・編集・削除・復活・招待再送と、一覧（ページング/検索/フィルタ）。
-実装: [backend/src/user/](../../backend/src/user/) / フロント [frontend/src/app/(admin)/(admin-only)/users/](../../frontend/src/app/(admin)/(admin-only)/users/), [frontend/src/lib/api-hooks/use-users-api.ts](../../frontend/src/lib/api-hooks/use-users-api.ts)
+実装: [backend/src/user/](../../backend/src/user/) / フロント [frontend/src/app/(admin)/(admin-only)/users/](../../frontend/src/app/%28admin%29/%28admin-only%29/users/), [frontend/src/lib/api-hooks/use-users-api.ts](../../frontend/src/lib/api-hooks/use-users-api.ts)
 
 すべて admin 限定（`@Roles(UserRole.Admin)`）。認可は [05_authorization.md](05_authorization.md) を参照。
 

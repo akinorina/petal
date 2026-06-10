@@ -1,7 +1,7 @@
 # 監査ログ
 
 ユーザー管理操作（作成・更新・削除・復活など）を記録し、管理者が閲覧する。**追記専用**で論理削除しない。
-実装: [backend/src/audit/](../../backend/src/audit/) / フロント [frontend/src/app/(admin)/(admin-only)/audit-logs/](../../frontend/src/app/(admin)/(admin-only)/audit-logs/), [frontend/src/lib/api-hooks/use-audit-logs-api.ts](../../frontend/src/lib/api-hooks/use-audit-logs-api.ts)
+実装: [backend/src/audit/](../../backend/src/audit/) / フロント [frontend/src/app/(admin)/(admin-only)/audit-logs/](../../frontend/src/app/%28admin%29/%28admin-only%29/audit-logs/), [frontend/src/lib/api-hooks/use-audit-logs-api.ts](../../frontend/src/lib/api-hooks/use-audit-logs-api.ts)
 
 ## データモデル
 

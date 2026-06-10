@@ -1,7 +1,7 @@
 # 画像管理
 
 画像のアップロード・一覧・詳細・ダウンロード・削除。ファイル本体は S3、メタデータは `petal.images`。画像は **所有者本人のみ閲覧可**。
-実装: [backend/src/image/](../../backend/src/image/) / フロント [frontend/src/app/(admin)/images/](../../frontend/src/app/(admin)/images/), [frontend/src/lib/api-hooks/use-images-api.ts](../../frontend/src/lib/api-hooks/use-images-api.ts)
+実装: [backend/src/image/](../../backend/src/image/) / フロント [frontend/src/app/(admin)/images/](../../frontend/src/app/%28admin%29/images/), [frontend/src/lib/api-hooks/use-images-api.ts](../../frontend/src/lib/api-hooks/use-images-api.ts)
 
 ## エンドポイント
 
@@ -32,7 +32,7 @@
 ## 一覧 / 詳細
 
 - 一覧: 3 列サムネイルグリッド + Pagination。所有者別の新着順（`IDX_images_owner_created`）。
-- 詳細（[frontend/src/app/(admin)/images/[id]/](../../frontend/src/app/(admin)/images/[id]/)）: Card + FormField でメタ情報を 2 カラム表示。削除確認は design-system Dialog。`formatImageSize` 共通化。
+- 詳細（[frontend/src/app/(admin)/images/[id]/](../../frontend/src/app/%28admin%29/images/[id]/)）: Card + FormField でメタ情報を 2 カラム表示。削除確認は design-system Dialog。`formatImageSize` 共通化。
 - ログイン後のデフォルトページは `/images`。
 - 原典: [specs/46_default-page-images.md](../specs/46_default-page-images.md), [specs/47_image-list-grid.md](../specs/47_image-list-grid.md), [specs/48_image-detail-page.md](../specs/48_image-detail-page.md)
 

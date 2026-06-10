@@ -42,7 +42,7 @@
 
 ## MFA (TOTP)
 
-Cognito Software Token MFA（Optional）。マイページ（[frontend/src/app/(admin)/me/mfa/](../../frontend/src/app/(admin)/me/mfa/)）から設定する。
+Cognito Software Token MFA（Optional）。マイページ（[frontend/src/app/(admin)/me/mfa/](../../frontend/src/app/%28admin%29/me/mfa/)）から設定する。
 
 - `POST /auth/mfa/setup`: TOTP シークレットを発行（QR 表示用）。
 - `POST /auth/mfa/verify`: 認証アプリのコードで有効化（SetUserMFAPreference）。
