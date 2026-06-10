@@ -10,6 +10,7 @@ import { AuditModule } from './audit/audit.module';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { ImageModule } from './image/image.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { ImageModule } from './image/image.module';
     AuthModule,
     ImageModule,
     AuditModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [
