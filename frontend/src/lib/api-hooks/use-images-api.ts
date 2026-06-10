@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { imageApi, uploadToPresignedUrl } from '@/lib/api';
 import type { ImageMimeType } from '@/lib/image-constants';
 import type { Schemas } from '@/lib/openapi/client';
@@ -14,6 +14,17 @@ export type UploadInput = {
   title?: string;
   description?: string;
 };
+
+/**
+ * 画像のダウンロード URL（署名付き URL）を命令的に取得する操作フック。
+ * サムネイル等、一覧状態を持たずに URL だけを都度取得したい用途に使う。
+ */
+export function useImageDownloadApi() {
+  return useMemo(
+    () => ({ getDownloadUrl: (id: string) => imageApi.getDownloadUrl(id) }),
+    [],
+  );
+}
 
 export function useImagesApi() {
   const fetcher = useCallback(() => imageApi.findAll(), []);

@@ -25,6 +25,15 @@ export function useMeApi() {
   return { me: data, isLoading, error, setError, reload, updateProfile };
 }
 
+/**
+ * 現在のユーザー（GET /users/me）を命令的に取得する操作フック。
+ * AuthContext のようにマウント時の自動取得ではなく、任意のタイミングで
+ * role などを取り直したい用途に使う。
+ */
+export function useCurrentUserApi() {
+  return useMemo(() => ({ findMe: () => userApi.findMe() }), []);
+}
+
 /** パスワード変更（POST /auth/change-password）のみを提供する操作フック。 */
 export function useMePasswordApi() {
   return useMemo(

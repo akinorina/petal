@@ -17,7 +17,7 @@ import {
   useAuthApi,
   type LoginResult,
 } from '@/lib/api-hooks/use-auth-api';
-import { userApi } from '@/lib/api';
+import { useCurrentUserApi } from '@/lib/api-hooks/use-me-api';
 import type { Schemas } from '@/lib/openapi/client';
 
 type UserRole = Schemas['UserRole'];
@@ -28,16 +28,6 @@ type AuthState = {
   role: UserRole | null;
   isLoading: boolean;
 };
-
-/** 現在のユーザーのロールを取得する。失敗時は null（一般ユーザー相当に倒す）。 */
-async function fetchRole(): Promise<UserRole | null> {
-  try {
-    const me = await userApi.findMe();
-    return me.role;
-  } catch {
-    return null;
-  }
-}
 
 type AuthContextValue = AuthState & {
   login: (email: string, password: string) => Promise<LoginResult>;
@@ -59,12 +49,23 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const api = useAuthApi();
+  const { findMe } = useCurrentUserApi();
   const [state, setState] = useState<AuthState>({
     isAuthenticated: false,
     email: null,
     role: null,
     isLoading: true,
   });
+
+  // 現在のユーザーのロールを取得する。失敗時は null（一般ユーザー相当に倒す）。
+  const fetchRole = useCallback(async (): Promise<UserRole | null> => {
+    try {
+      const me = await findMe();
+      return me.role;
+    } catch {
+      return null;
+    }
+  }, [findMe]);
 
   useEffect(() => {
     getAccessToken().then(async (token) => {
@@ -85,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading: false,
       });
     });
-  }, []);
+  }, [fetchRole]);
 
   useEffect(() => {
     const handler = () =>
@@ -113,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       return result;
     },
-    [api],
+    [api, fetchRole],
   );
 
   const completeNewPassword = useCallback(
@@ -122,7 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const role = await fetchRole();
       setState({ isAuthenticated: true, email, role, isLoading: false });
     },
-    [api],
+    [api, fetchRole],
   );
 
   const respondMfaChallenge = useCallback(
@@ -131,7 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const role = await fetchRole();
       setState({ isAuthenticated: true, email, role, isLoading: false });
     },
-    [api],
+    [api, fetchRole],
   );
 
   const logout = useCallback(async () => {

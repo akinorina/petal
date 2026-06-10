@@ -66,7 +66,8 @@ lib/api-hooks/
 - 取得系フックは共通土台 `useApiResource<T>(fetcher)` の上に実装し、状態管理と自動再取得の重複を避ける。
 - API フックは **取得状態（data / isLoading / error）** と **操作関数（reload / create / update 等）** を返す。
 - 操作関数は失敗時に例外を `throw` し、呼び出し側（ページフック）が UI 文脈に応じたメッセージを `setError` する（API フック内で UI 文言を決め打ちしない）。
-- ページフックは「UI 状態 + API フックのオーケストレーション」だけを行い、`@/lib/api` や `lib/openapi` を直接呼ばない。
+- ページフックは「UI 状態 + API フックのオーケストレーション」だけを行う。
+- ページフックに限らず、UI レイヤ（コンポーネント・Context を含む）からは `@/lib/api` や `lib/openapi` を直接呼ばず、必ず `lib/api-hooks/` のフックを経由する。一覧状態を持たず命令的に呼びたい場合は薄い操作フック（例: `useCurrentUserApi` / `useImageDownloadApi`）を用意する。
 
 ## 認証状態（AuthContext）
 
