@@ -1,9 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { ApiError, imageApi, uploadToPresignedUrl } from '@/lib/api';
+import { useCallback } from 'react';
+import { imageApi, uploadToPresignedUrl } from '@/lib/api';
 import type { ImageMimeType } from '@/lib/image-constants';
 import type { Schemas } from '@/lib/openapi/client';
+import { useApiResource } from './use-api-resource';
 
 type ImageItem = Schemas['ImageResponseDto'];
 
@@ -15,29 +16,9 @@ export type UploadInput = {
 };
 
 export function useImagesApi() {
-  const [images, setImages] = useState<ImageItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const reload = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await imageApi.findAll();
-      setImages(data);
-    } catch (e) {
-      setError(
-        e instanceof ApiError ? e.message : 'データの取得に失敗しました',
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void reload();
-  }, [reload]);
+  const fetcher = useCallback(() => imageApi.findAll(), []);
+  const { data, isLoading, error, setError, reload } =
+    useApiResource<ImageItem[]>(fetcher);
 
   const upload = useCallback(
     async ({ file, mimeType, title, description }: UploadInput) => {
@@ -67,7 +48,7 @@ export function useImagesApi() {
   );
 
   return {
-    images,
+    images: data ?? [],
     isLoading,
     error,
     setError,

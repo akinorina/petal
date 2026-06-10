@@ -1,37 +1,25 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { ApiError, auditLogApi } from '@/lib/api';
+import { useCallback } from 'react';
+import { auditLogApi } from '@/lib/api';
 import type { Schemas } from '@/lib/openapi/client';
+import { useApiResource } from './use-api-resource';
 
 type AuditLog = Schemas['AuditLogResponseDto'];
 
 export function useAuditLogsApi(limit: number, offset: number) {
-  const [items, setItems] = useState<AuditLog[]>([]);
-  const [total, setTotal] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const fetcher = useCallback(
+    () => auditLogApi.findAll({ limit, offset }),
+    [limit, offset],
+  );
+  const { data, isLoading, error, reload } =
+    useApiResource<{ items: AuditLog[]; total: number }>(fetcher);
 
-  const reload = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await auditLogApi.findAll({ limit, offset });
-      setItems(data.items);
-      setTotal(data.total);
-    } catch (e) {
-      setError(
-        e instanceof ApiError ? e.message : 'データの取得に失敗しました',
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [limit, offset]);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void reload();
-  }, [reload]);
-
-  return { items, total, isLoading, error, reload };
+  return {
+    items: data?.items ?? [],
+    total: data?.total ?? 0,
+    isLoading,
+    error,
+    reload,
+  };
 }
