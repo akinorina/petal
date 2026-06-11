@@ -321,6 +321,44 @@ describe('ChatCompletionService.streamCompletion', () => {
     expect(threadService.addMessage).toHaveBeenCalledTimes(1);
   });
 
+  it('finishReason 欠落 / 空 delta: 空チャンクはスキップし done の finishReason は null', async () => {
+    const savedAssistant = buildMessage({
+      id: assistantMessageId,
+      seq: 1,
+      role: 'assistant',
+      content: 'こん',
+    });
+    threadService.addMessage
+      .mockResolvedValueOnce(buildMessage({ role: 'user' }))
+      .mockResolvedValueOnce(savedAssistant);
+    threadService.findMessages.mockResolvedValue([
+      buildMessage({ role: 'user' }),
+    ]);
+    chatService.generateStream.mockReturnValue(
+      toAsyncGenerator([
+        { delta: 'こん', done: false },
+        // 空 delta かつ非 done のチャンクは yield されず無視される
+        { delta: '', done: false },
+        // finishReason 欠落の done チャンク
+        { delta: '', done: true },
+      ]),
+    );
+
+    const events = await collect(
+      service.streamCompletion(currentUser, threadId, input),
+    );
+
+    expect(events).toEqual([
+      { type: 'delta', delta: 'こん' },
+      {
+        type: 'done',
+        messageId: assistantMessageId,
+        seq: 1,
+        finishReason: null,
+      },
+    ]);
+  });
+
   it('二重保存ガード: 正常終了後に finally が走っても assistant 保存は 1 回のみ', async () => {
     threadService.addMessage
       .mockResolvedValueOnce(buildMessage({ role: 'user' }))

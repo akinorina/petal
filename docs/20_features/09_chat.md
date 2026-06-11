@@ -1,0 +1,159 @@
+# LLM チャット
+
+ローカル/リモートの **OpenAI 互換エンドポイント**を介して LLM と対話するチャット機能。
+ユーザーごとに会話スレッドを永続化し、応答をストリーミング（SSE）で逐次表示する。
+実装: [backend/src/chat/](../../backend/src/chat/) / フロント
+[frontend/src/app/(admin)/chat/](../../frontend/src/app/%28admin%29/chat/)。
+
+原典: [tsk-107](../tsk-107_llm-provider-and-local-client.md)（プロバイダ抽象・ローカルクライアント） /
+[tsk-108](../tsk-108_chat-persistence.md)（永続化） /
+[tsk-109](../tsk-109_chat-send-receive-api.md)（送受信 API） /
+[tsk-110](../tsk-110_chat-frontend.md)（フロント）。
+
+## アーキテクチャ
+
+オニオン構成（`src/chat/{domain,application,infra,controller}/`）。
+
+- **domain**: `LlmProvider` 抽象（DI シンボル `LLM_PROVIDER`）・`ChatThread` / `ChatMessage`
+  エンティティ・`IChatThreadRepository`。外部 SDK を参照しない。
+- **application**: `ChatThreadService`（スレッド/メッセージ CRUD・所有者認可）・
+  `ChatService`（生成のラッパ）・`ChatCompletionService`（送信フローのオーケストレーション）・
+  `classifyLlmError`（上流エラー分類）。
+- **infra**: `OpenAiCompatibleClient`（`openai` SDK で `LlmProvider` を実装）・
+  `ChatThreadRepositoryImpl`（TypeORM）・`LlmConfig`（env 検証）。
+- **controller**: `ChatController`。SSE 応答を直接 `Response` に書き出す。
+
+LLM プロバイダは `LLM_PROVIDER` シンボルに `OpenAiCompatibleClient` を束ねる
+（[chat.module.ts](../../backend/src/chat/chat.module.ts)）。接続先を OpenAI 互換 API に
+切り替えるだけでローカル LLM（LM Studio 等）・リモート双方に対応する。
+
+## データモデル
+
+`petal.chat_threads`（[chat-thread.entity.ts](../../backend/src/chat/infra/chat-thread.entity.ts)）:
+
+| カラム | 説明 |
+| ------ | ---- |
+| id | UUID（PK） |
+| owner_user_id | 所有ユーザー（FK → users, `onDelete: RESTRICT`） |
+| title | スレッドタイトル（nullable・最大 255） |
+| created_at / updated_at | 日時 |
+| deleted_at | 論理削除（`@DeleteDateColumn`） |
+
+- `IDX_chat_threads_owner_created`（owner_user_id, created_at）で所有者別一覧を取得。
+
+`petal.chat_messages`（[chat-message.entity.ts](../../backend/src/chat/infra/chat-message.entity.ts)）:
+
+| カラム | 説明 |
+| ------ | ---- |
+| id | UUID（PK） |
+| thread_id | 所属スレッド（FK → chat_threads, `onDelete: RESTRICT`） |
+| seq | スレッド内連番（bigint・0 始まり） |
+| role | `user` / `assistant`（最大 20） |
+| content | 本文（text） |
+| created_at / updated_at | 日時 |
+| deleted_at | 論理削除（`@DeleteDateColumn`） |
+
+- migration: [1746144006000-CreateChatTables.ts](../../backend/database/migrations/1746144006000-CreateChatTables.ts)。
+- `seq` は追加時に `findMaxSeq + 1`（無ければ 0）で採番する。
+
+## 認可
+
+- すべての操作は **所有者本人のみ**。`ChatThreadService.findThreadForOwner` が
+  `thread.isOwnedBy(currentUser.id)` を検証し、非所有なら `NotFoundException`
+  （存在秘匿のため 404）。送信・履歴取得・削除すべてこのチェックを通る。
+
+## API
+
+すべて `@Controller('chat')`・Bearer 認証
+（[chat.controller.ts](../../backend/src/chat/controller/chat.controller.ts)）。
+
+| メソッド | パス | 概要 |
+| -------- | ---- | ---- |
+| POST | `/chat/threads` | スレッド作成（`title` 任意） |
+| GET | `/chat/threads` | 自分のスレッド一覧 |
+| GET | `/chat/threads/:id/messages` | スレッドのメッセージ一覧 |
+| POST | `/chat/threads/:id/messages` | メッセージ送信＋応答ストリーム（SSE） |
+| DELETE | `/chat/threads/:id` | スレッド論理削除（204） |
+
+- 入力は Zod 検証（`CreateThreadInputSchema` / `SendMessageSchema`）。本文は 1〜32768 文字。
+
+## 送信フローとストリーミング
+
+`POST /chat/threads/:id/messages` は `text/event-stream` を返す。フローは
+`ChatCompletionService.streamCompletion`（[chat-completion.service.ts](../../backend/src/chat/application/chat-completion.service.ts)）:
+
+1. ユーザーメッセージを保存（非所有なら `NotFoundException` が伝播し SSE 開始前に 404）。
+2. スレッドの履歴をロードし LLM へ渡す。
+3. プロバイダのストリームを `delta` イベントとして逐次転送。
+4. 完了時にアシスタント全文を保存し `done` イベント（messageId / seq / finishReason）を送出。
+   生成が空文字なら保存せず messageId / seq は `null`。
+
+SSE イベント（[chat-stream.ts](../../backend/src/chat/application/chat-stream.ts)）:
+
+| event | data |
+| ----- | ---- |
+| `delta` | `{ type, delta }` 部分テキスト |
+| `done` | `{ type, messageId, seq, finishReason }` 完了 |
+| `error` | `{ type, code, message, retryable }` ストリーム開始後エラー |
+
+- **切断時**: クライアント切断（`req.on('close')`）で generator を `return` し、
+  `finally` で受信済み部分テキストをアシスタントメッセージとして保存する（部分保存）。
+- 保存は二重ガード（`state.persisted`）で `finally` 重複実行時も 1 回のみ。
+
+## エラー分類
+
+`classifyLlmError`（[chat-error.ts](../../backend/src/chat/application/chat-error.ts)）が
+上流エラーをダックタイピング（`status` / `code`）で分類する。**接続先 URL・上流本文などの
+秘密情報はメッセージに含めない**。
+
+| 条件 | code | retryable | HTTP |
+| ---- | ---- | --------- | ---- |
+| status 429 | `LLM_RATE_LIMITED` | true | 429 |
+| status ≥ 500 | `LLM_UPSTREAM_UNAVAILABLE` | true | 502 |
+| status 4xx（429 以外） | `LLM_BAD_REQUEST` | false | 502 |
+| 接続エラー（ECONNREFUSED 等） | `LLM_UPSTREAM_UNAVAILABLE` | true | 502 |
+| その他 | `LLM_GENERATION_FAILED` | true | 502 |
+
+- **ストリーム開始前**（delta 未送出）のエラーは `HttpException` 化し、Nest の例外フィルタが
+  HTTP ステータスで応答する（ヘッダー未送出のため）。
+- **ストリーム開始後**のエラーは部分保存のうえ `error` イベントで通知する。
+- フロントは `code` / `retryable` でリトライ可否を判断する。
+
+## 環境変数
+
+chat フィーチャ専用。Zod スキーマは
+[llm.config.ts](../../backend/src/chat/infra/llm.config.ts) の `LlmEnvSchema`。
+example は [backend/.envs/.env.local.example](../../backend/.envs/.env.local.example) /
+[.env.dev.example](../../backend/.envs/.env.dev.example) に記載。
+
+| 変数 | 必須 | 説明 |
+| ---- | ---- | ---- |
+| `LLM_BASE_URL` | ○ | 接続先 OpenAI 互換エンドポイント（URL）。例: `http://localhost:1234/v1` |
+| `LLM_API_KEY` | — | API キー。未設定時は SDK 用に `not-needed` を既定（LM Studio 等は無視） |
+| `LLM_MODEL` | — | 既定モデル。入力 model も `LLM_MODEL` も無いと生成時にエラー |
+
+- `LLM_API_KEY` は秘密情報のため `NEXT_PUBLIC_*` に置かない（backend のみ保持）。
+
+## フロントエンド
+
+`(admin)` 配下にチャット UI を配置（[frontend/src/app/(admin)/chat/](../../frontend/src/app/%28admin%29/chat/)）。
+ページは View に専念し、ステート/副作用は同居フックへ切り出す（[frontend-architecture](../10_architecture/03_frontend-architecture.md)）。
+
+- 一覧 `chat/page.tsx` ＋ `use-chat-page.ts`
+- 新規 `chat/new/page.tsx` ＋ `use-chat-new-page.ts`
+- 既存スレッド `chat/[threadId]/page.tsx` ＋ `use-chat-thread-page.ts`
+- 会話表示 `ChatConversation.tsx` ＋ `use-chat-conversation.ts`（SSE 受信・ストリーミング描画）
+
+## テスト
+
+Application 層をユニットテストで担保（[testing-strategy](../40_processes/02_testing-strategy.md)）。
+`ChatThreadService` / `ChatService` / `ChatCompletionService` / `classifyLlmError` の
+spec を同居配置。送信フローは正常系・空生成・pre/mid-stream エラー・切断・finishReason 欠落を網羅。
+
+## 関連ドキュメント
+
+- 要求仕様 → [00_overview/02_requirements.md](../00_overview/02_requirements.md)
+- アーキテクチャ → [10_architecture/](../10_architecture/)
+- テスト方針 → [40_processes/02_testing-strategy.md](../40_processes/02_testing-strategy.md)
+- DB スキーマ → [10_architecture/05_database-schema.md](../10_architecture/05_database-schema.md)
+</content>
