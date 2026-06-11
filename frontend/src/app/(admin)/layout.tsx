@@ -43,6 +43,9 @@ export default function AdminLayout({
               <NavLink href="/images" active={pathname.startsWith('/images')}>
                 画像
               </NavLink>
+              <NavLink href="/chat" active={pathname.startsWith('/chat')}>
+                チャット
+              </NavLink>
               {role === 'admin' && (
                 <>
                   <NavLink href="/users" active={pathname.startsWith('/users')}>
