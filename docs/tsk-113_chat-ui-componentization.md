@@ -205,4 +205,74 @@ function useChatPanel(props: ChatPanelProps) {
 
 ## 未確定事項
 
-- なし（Phase 4 実装議論でファイル単位の作業順序・判断ポイントを確定する）。
+- なし。
+
+---
+
+## 実装計画（Phase 4）
+
+### 変更・追加・削除ファイル
+
+#### 追加（`frontend/src/components/chat/`）
+
+- `ChatPanel.tsx` — 公開コンポーネント。`useChatPanel` を呼び、loading / notFound / 会話を出し分け、`className` を転送。
+- `use-chat-panel.ts` — 内部フック。mode に応じ `useChatMessagesApi` + `useChatActionsApi` + `useChatConversation` を配線。
+- `index.ts` — barrel。`ChatPanel` と型 `ChatPanelProps` のみ export。
+
+#### 移設（`git mv` で履歴保持）
+
+- `app/(admin)/chat/ChatConversation.tsx` → `components/chat/ChatConversation.tsx`（高さ系クラス変更＋`className` prop 追加）。
+- `app/(admin)/chat/use-chat-conversation.ts` → `components/chat/use-chat-conversation.ts`（ロジック無変更。`import` は絶対パス `@/...` のため移設後もそのまま有効）。
+
+#### 変更
+
+- `app/(admin)/chat/[threadId]/page.tsx` — `<ChatPanel mode="thread" threadId className="h-[70vh]">` を描画。back link は維持、loading/notFound 分岐は撤去（パネルが担当）。
+- `app/(admin)/chat/[threadId]/use-chat-thread-page.ts` — `useParams` から `{ threadId }` を返すだけに縮退。
+- `app/(admin)/chat/new/page.tsx` — `<ChatPanel mode="new" onThreadCreated className="h-[70vh]">` を描画。
+- `app/(admin)/chat/new/use-chat-new-page.ts` — `router.replace('/chat/:id')` を行う `{ onThreadCreated }` を返すだけに縮退。
+- `docs/20_features/09_chat.md`「フロントエンド」節 / `docs/10_architecture/03_frontend-architecture.md` のディレクトリ構成。
+
+#### 削除
+
+移設に伴い `app/(admin)/chat/ChatConversation.tsx` / `use-chat-conversation.ts` は消える（`git mv` の結果）。スレッド一覧 `chat/page.tsx` / `use-chat-page.ts` は変更なし。
+
+### migration・環境変数・依存追加
+
+- なし（フロントエンドのみ。DB・env・依存追加なし）。
+
+### 作業順序（コミット単位）
+
+1. **コミット1: `components/chat/` に ChatPanel を新設し会話 UI を移設、ページを配線し直す**
+   - `git mv` で 2 ファイルを移設 → `ChatConversation.tsx` を編集（root を `flex h-full flex-col`＋`className` 受け取り、リストに `overflow-y-auto`、コンポーザの `sticky bottom-0` 除去）→ `use-chat-panel.ts` / `ChatPanel.tsx` / `index.ts` を追加 → 4 つのページ/フックを書き換え。
+   - 移設とページ配線は相互依存（ページが移設ファイルを参照）のため **同一コミット**でビルドを緑に保つ。
+   - 完了確認: `pnpm --filter frontend build` と `pnpm --filter frontend lint` が通る。`git status` で lint 自動修正の取りこぼしが無いことを確認。
+2. **コミット2: ドキュメント更新**
+   - `09_chat.md`「フロントエンド」節を `<ChatPanel>`（`components/chat/`）中心の記述へ更新。`03_frontend-architecture.md` のディレクトリ構成に `components/chat/`（ChatPanel）を追記し、`chat/` 配下の「共有 use-chat-conversation / ChatConversation」の記述を改める。
+   - 完了確認: `npx markdownlint-cli 'docs/**/*.md'` が通る。
+
+### テスト方針
+
+- フロントエンドに会話 UI のユニットテストは存在せず（テストは backend application 層中心。[02_testing-strategy.md](40_processes/02_testing-strategy.md)）、本タスクは挙動を変えない移設・配線のため新規テストは追加しない。
+- 担保は **型チェック / `frontend build` / `frontend lint` / 手動動作確認シナリオ7件**で行う。
+
+### 想定外時の判断ルール
+
+- **AI 単独判断 OK**: 移設に伴う import パス調整、`useCallback` 依存配列の最適化（下記 JP1）、className 結合の素朴な実装、軽微な既存コードリファクタ、本設計書スコープ内の追加。
+- **中断して要相談（質問せず停止し最終報告に記録）**:
+  - 送信・ストリーミング・空生成・切断・notFound・新規遷移のいずれかで **現状と異なる挙動**が避けられないと判明した場合。
+  - `<ChatPanel>` の公開 API（props 形）を設計書と変えざるを得ない場合。
+  - スレッド一覧ページ・backend・API・DB に変更が波及する場合。
+  - `h-[70vh]` でページ表示が破綻し、レイアウト構造（admin layout 等）の変更が必要になった場合。
+
+### 事前解決済みの判断ポイント
+
+- **JP1（useCallback 依存）**: discriminated union の `props` 全体を依存配列に入れると毎レンダーで `resolveThreadId` / `onStreamSettled` の identity が変わる。`use-chat-panel.ts` 冒頭で
+  `const threadId = props.mode === 'thread' ? props.threadId : null;`
+  `const onThreadCreated = props.mode === 'new' ? props.onThreadCreated : undefined;`
+  と取り出し、`useCallback` 依存は `[props.mode, threadId, actions]` / `[props.mode, onThreadCreated, messagesApi]` のように **個別フィールド**を使う。
+- **JP2（className 転送）**: `ChatConversationProps` に `className?: string` を追加し root で `['flex h-full flex-col', className].filter(Boolean).join(' ')` のように結合（`cn` ヘルパは未導入なので既存同様の素朴結合）。`ChatPanel` は loading / notFound / 会話の各分岐に `className` を渡す。
+- **JP3（notFound 表示）**: notFound 時も `className`（= ページの `h-[70vh]`）を適用したコンテナに `Alert variant="danger"`「会話が見つかりません」を表示。back link はページ側に常設。
+- **JP4（loading 表示）**: loading 時は `className` を適用したコンテナを `flex items-center justify-center` にし「読み込み中...」を中央表示（既存文言踏襲）。
+- **JP5（new モードの空表示）**: `mode: 'new'` では `useChatMessagesApi(null)` が fetch せず `messages=[]` / `error=null` / `isLoading=false` を返すため、`isLoading`/`notFound` は false、`buildMessages([])` で既存新規ページと一致。
+- **JP6（コミット粒度）**: 移設ファイルを参照するページがあるため、移設・編集・ページ配線は**コミット1にまとめて**ビルドを緑に保つ（部分コミットでビルドを壊さない）。
+- **JP7（ページフック縮退）**: thread/new のページフックは削除せず、`{ threadId }` / `{ onThreadCreated }` を返す薄いフックとして残す（frontend-architecture の「ページは View・ロジックはフック」を維持・対称性確保）。
