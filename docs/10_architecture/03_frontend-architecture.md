@@ -15,7 +15,7 @@ frontend/
       (admin)/                 # 認証必須ルートグループ
         images/                # 画像一覧
           [id]/                # 画像詳細
-        chat/                  # チャット一覧（共有 use-chat-conversation / ChatConversation）
+        chat/                  # チャット一覧（会話 UI は components/chat/ の <ChatPanel> を描画）
           new/                 # 新規会話（初回送信で遅延作成）
           [threadId]/          # 既存会話（ストリーミング送受信）
         me/                    # マイページ（profile / password / email / mfa）
@@ -23,6 +23,7 @@ frontend/
           users/               # ユーザー管理
           audit-logs/          # 監査ログ
     components/                # 共有コンポーネント
+      chat/                    # 自己完結チャット部品 <ChatPanel>（公開は ChatPanel のみ）
     contexts/                  # AuthContext
     design-system/             # UI コンポーネント・トークン
     lib/

@@ -8,7 +8,8 @@
 原典: [tsk-107](../tsk-107_llm-provider-and-local-client.md)（プロバイダ抽象・ローカルクライアント） /
 [tsk-108](../tsk-108_chat-persistence.md)（永続化） /
 [tsk-109](../tsk-109_chat-send-receive-api.md)（送受信 API） /
-[tsk-110](../tsk-110_chat-frontend.md)（フロント）。
+[tsk-110](../tsk-110_chat-frontend.md)（フロント） /
+[tsk-113](../tsk-113_chat-ui-componentization.md)（会話 UI の部品化 `<ChatPanel>`）。
 
 ## アーキテクチャ
 
@@ -136,13 +137,23 @@ example は [backend/.envs/.env.local.example](../../backend/.envs/.env.local.ex
 
 ## フロントエンド
 
-`(admin)` 配下にチャット UI を配置（[frontend/src/app/(admin)/chat/](../../frontend/src/app/%28admin%29/chat/)）。
-ページは View に専念し、ステート/副作用は同居フックへ切り出す（[frontend-architecture](../10_architecture/03_frontend-architecture.md)）。
+会話 UI は自己完結した再利用部品 `<ChatPanel>`（[frontend/src/components/chat/](../../frontend/src/components/chat/)）に切り出してある。
+`(admin)/chat/` 配下のページはそれを描画するだけで、ページは View に専念し、ステート/副作用は同居フックへ切り出す（[frontend-architecture](../10_architecture/03_frontend-architecture.md)）。
 
 - 一覧 `chat/page.tsx` ＋ `use-chat-page.ts`
-- 新規 `chat/new/page.tsx` ＋ `use-chat-new-page.ts`
-- 既存スレッド `chat/[threadId]/page.tsx` ＋ `use-chat-thread-page.ts`
-- 会話表示 `ChatConversation.tsx` ＋ `use-chat-conversation.ts`（SSE 受信・ストリーミング描画）
+- 新規 `chat/new/page.tsx` ＋ `use-chat-new-page.ts`（`onThreadCreated` 供給に縮退）
+- 既存スレッド `chat/[threadId]/page.tsx` ＋ `use-chat-thread-page.ts`（`threadId` 供給に縮退）
+
+`<ChatPanel>`（`components/chat/`）は `threadId` を渡すだけで API 配線・送信・SSE
+ストリーミング描画・ローディング/notFound 表示まで内部で完結する自己完結部品。
+
+- `mode` prop: `"thread"`（`threadId` 指定で既存スレッド表示）/ `"new"`（初回送信で遅延作成し、
+  完了後に `onThreadCreated(threadId)` を呼ぶ。新規ページはこれで確定スレッドへ遷移）。
+- 高さは親に追従（`h-full` + 内部スクロール）し、枠は埋め込み側が `className` で与える
+  （ページは `h-[70vh]`）。モーダル/サイドバー等へもドロップするだけで埋め込める。
+- 内部部品 `ChatConversation.tsx` / `use-chat-conversation.ts`（会話プレゼン・送信
+  オーケストレーション）は `components/chat/` 内の非公開実装で、barrel は `ChatPanel` /
+  `ChatPanelProps` のみ公開する。
 
 ## テスト
 

@@ -12,11 +12,13 @@ type ChatConversationProps = {
   isStreaming: boolean;
   error: string | null;
   onSend: (content: string) => void;
+  className?: string;
 };
 
 /**
  * 会話のプレゼンテーション（メッセージリスト + コンポーザ + Alert）。
- * 新規/既存ページ共通で使う（D5）。
+ * `<ChatPanel>` の内部部品（components/chat/ 配下の非公開実装）。
+ * 高さは親コンテナに追従し（`h-full` + 内部スクロール）、`className` で枠を受け取る。
  */
 export function ChatConversation({
   messages,
@@ -24,6 +26,7 @@ export function ChatConversation({
   isStreaming,
   error,
   onSend,
+  className,
 }: ChatConversationProps) {
   const [input, setInput] = useState('');
   const listEndRef = useRef<HTMLDivElement>(null);
@@ -51,8 +54,8 @@ export function ChatConversation({
   const showEmpty = messages.length === 0 && !isStreaming;
 
   return (
-    <div className="flex flex-col" style={{ minHeight: '60vh' }}>
-      <div className="flex-1 space-y-4 pb-4">
+    <div className={['flex h-full flex-col', className].filter(Boolean).join(' ')}>
+      <div className="flex-1 space-y-4 overflow-y-auto pb-4">
         {showEmpty ? (
           <p className="py-12 text-center text-sm text-zinc-400">
             メッセージを送信して会話を始めましょう。
@@ -79,7 +82,7 @@ export function ChatConversation({
         </Alert>
       )}
 
-      <div className="sticky bottom-0 flex items-end gap-2 border-t border-zinc-200 bg-white pt-3">
+      <div className="flex items-end gap-2 border-t border-zinc-200 bg-white pt-3">
         <Textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}

@@ -1,13 +1,12 @@
 'use client';
 
 import NextLink from 'next/link';
+import { ChatPanel } from '@/components/chat';
 import { Text } from '@/design-system/components/Text';
-import { ChatConversation } from '../ChatConversation';
 import { useChatNewPage } from './use-chat-new-page';
 
 export default function ChatNewPage() {
-  const { messages, streamingText, isStreaming, error, send } =
-    useChatNewPage();
+  const { onThreadCreated } = useChatNewPage();
 
   return (
     <div className="space-y-4">
@@ -20,12 +19,10 @@ export default function ChatNewPage() {
         </Text>
       </div>
 
-      <ChatConversation
-        messages={messages}
-        streamingText={streamingText}
-        isStreaming={isStreaming}
-        error={error}
-        onSend={send}
+      <ChatPanel
+        mode="new"
+        onThreadCreated={onThreadCreated}
+        className="h-[70vh]"
       />
     </div>
   );
