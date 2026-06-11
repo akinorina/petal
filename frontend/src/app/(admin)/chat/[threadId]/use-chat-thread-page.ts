@@ -30,7 +30,9 @@ export function useChatThreadPage() {
     messages: conversation.buildMessages(messagesApi.messages),
     streamingText: conversation.streamingText,
     isStreaming: conversation.isStreaming,
-    isLoading: messagesApi.isLoading,
+    // 全画面ローディングは初回取得時のみ。送信後の reload で会話が
+    // 「読み込み中」に差し替わってチラつくのを防ぐ。
+    isLoading: messagesApi.isLoading && messagesApi.messages.length === 0,
     // 取得エラー（404 等）と送信エラーを統合表示。
     error: conversation.error ?? messagesApi.error,
     notFound: messagesApi.error !== null && messagesApi.messages.length === 0,
