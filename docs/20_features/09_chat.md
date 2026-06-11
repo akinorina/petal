@@ -8,7 +8,8 @@
 原典: [tsk-107](../tsk-107_llm-provider-and-local-client.md)（プロバイダ抽象・ローカルクライアント） /
 [tsk-108](../tsk-108_chat-persistence.md)（永続化） /
 [tsk-109](../tsk-109_chat-send-receive-api.md)（送受信 API） /
-[tsk-110](../tsk-110_chat-frontend.md)（フロント）。
+[tsk-110](../tsk-110_chat-frontend.md)（フロント） /
+[tsk-113](../tsk-113_chat-ui-componentization.md)（会話 UI の部品化 `<ChatPanel>`）。
 
 ## アーキテクチャ
 
