@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert } from '@/design-system/components/Alert';
 import { Button } from '@/design-system/components/Button';
 import { Textarea } from '@/design-system/components/Input';
+import { MarkdownContent } from './MarkdownContent';
 import type { OptimisticMessage } from './use-chat-conversation';
 
 type ChatConversationProps = {
@@ -116,13 +117,17 @@ function MessageBubble({
     <div className={isUser ? 'flex justify-end' : 'flex justify-start'}>
       <div
         className={[
-          'max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2 text-sm',
+          'max-w-[80%] rounded-2xl px-4 py-2 text-sm',
           isUser
-            ? 'bg-blue-600 text-white'
+            ? 'whitespace-pre-wrap bg-blue-600 text-white'
             : 'bg-zinc-100 text-zinc-900',
         ].join(' ')}
       >
-        {message.content}
+        {isUser ? (
+          message.content
+        ) : (
+          <MarkdownContent content={message.content} />
+        )}
         {pending && (
           <span className="ml-1 inline-block animate-pulse text-zinc-400">
             …
