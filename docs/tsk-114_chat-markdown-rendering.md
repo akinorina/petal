@@ -186,3 +186,79 @@ export function MarkdownContent({ content }: MarkdownContentProps): JSX.Element;
 ## 未確定事項
 
 - なし。
+
+---
+
+## 実装計画（Phase 4）
+
+### 変更・追加ファイル
+
+#### 追加（`frontend/src/components/chat/`）
+
+- `MarkdownContent.tsx` — 内部部品。`react-markdown` + `remark-gfm` で描画し、`a` のみ
+  `target="_blank"` / `rel="noopener noreferrer"` に上書き。ルートは `<div className="chat-markdown">`。
+  barrel（`index.ts`）には追加しない。
+- `MarkdownContent.css` — `.chat-markdown` スコープの要素スタイル。`:where()` で詳細度 0
+  （design-system の `Button.css` と同じ流儀）。値はデザイントークンのみ使用。
+
+#### 変更
+
+- `frontend/src/components/chat/ChatConversation.tsx` — `MessageBubble` の assistant 分岐を
+  `<MarkdownContent content={message.content} />` に置き換え。`whitespace-pre-wrap` は
+  user バブルのみに付与。pending インジケータ（`…`）は従来どおりバブル内・コンテンツ直後に置く。
+- `frontend/package.json` — `react-markdown` / `remark-gfm` を dependencies に追加。
+- `docs/20_features/09_chat.md` — フロントエンド節に Markdown 表示（MarkdownContent）を追記。
+
+### migration・環境変数・依存追加
+
+- migration / 環境変数: なし（フロントエンドのみ）。
+- 依存追加: `pnpm --filter frontend add react-markdown remark-gfm`（react-markdown ^10 / remark-gfm ^4。
+  いずれも React 19 対応。型同梱のため `@types/*` 不要）。
+
+### 作業順序（コミット単位）
+
+1. **コミット1: `feat(tsk-114): アシスタントメッセージを Markdown 表示する`**
+   - 依存追加 → `MarkdownContent.tsx` / `MarkdownContent.css` 新設 → `ChatConversation.tsx` の
+     `MessageBubble` を書き換え。
+   - 完了確認: `pnpm --filter frontend build` と `pnpm --filter frontend lint` が通る。
+     `git status` で lint 自動修正・lockfile の取りこぼしが無いことを確認（`pnpm-lock.yaml` を含めてコミット）。
+2. **コミット2: `docs(tsk-114): チャットの Markdown 表示に伴うドキュメント更新`**
+   - `09_chat.md` のフロントエンド節へ `MarkdownContent`（react-markdown + remark-gfm、assistant のみ）を追記。
+   - 完了確認: `npx markdownlint-cli 'docs/**/*.md'` が通る。
+
+### テスト方針
+
+- フロントエンドの UI ユニットテストは導入されていないため新規テストは追加しない
+  （[02_testing-strategy.md](40_processes/02_testing-strategy.md) のとおり backend application 層中心）。
+- 担保は **型チェック / `frontend build` / `frontend lint` / 手動動作確認シナリオ 6 件**で行う。
+
+### 想定外時の判断ルール
+
+- **AI 単独判断 OK**: CSS の密度・余白の微調整（トークン使用の範囲内）、軽微な既存コードリファクタ、
+  設計書スコープ内の追加実装。
+- **中断して要相談（質問せず停止し最終報告に記録）**:
+  - `react-markdown` / `remark-gfm` が React 19 / Next 16 でビルドエラーになり、**別ライブラリへの変更**や
+    メジャーバージョン固定以外で回避できない場合（D1 を覆すため）。
+  - user メッセージ表示・送信・ストリーミングの挙動変更が避けられないと判明した場合。
+  - `<ChatPanel>` の公開 API や barrel の公開範囲を変えざるを得ない場合。
+  - backend・API・DB に変更が波及する場合。
+
+### 事前解決済みの判断ポイント
+
+- **JP1（CSS の読み込み方法）**: `MarkdownContent.tsx` 冒頭で `import './MarkdownContent.css'`。
+  design-system の `Button.tsx` と同一パターンで、Next.js App Router で動作実績あり。
+- **JP2（pending インジケータの位置）**: `…` の `<span>` は従来どおりバブル内・コンテンツ直後に置く。
+  Markdown はブロック要素のため `…` は最終ブロックの下の行に表示される（従来は文末に連結）。
+  軽微な見た目差として許容する（ストリーミング中のみの一時表示のため）。
+- **JP3（本文フォントサイズ）**: `.chat-markdown` は基本サイズを指定せずバブルの `text-sm`（14px）を継承。
+  見出しは h1/h2 = `--font-size-lg`、h3 以下 = `--font-size-base` 程度に抑える（バブル内コンパクト密度）。
+- **JP4（配色トークン）**: ライト/ダーク自動切替のためプリミティブ（`--color-neutral-*`）ではなく
+  セマンティックトークン（`--text-*` / `--surface-*` / `--border-*` / `--accent-*`）を優先して使う。
+- **JP5（空文字ストリーミング）**: ストリーミング開始直後は `content=''` で `MarkdownContent` が空描画 +
+  `…` のみ表示。従来挙動と同等で問題なし。
+- **JP6（whitespace-pre-wrap の扱い）**: バブルの共通クラスから外し、user 分岐のみに付与する
+  （assistant 側に残すと Markdown ソースの改行が二重解釈されるため）。
+- **JP7（バージョン指定）**: `react-markdown@^10` / `remark-gfm@^4`（2026-06 時点の最新メジャー）。
+  どちらも型定義同梱・ESM。Next.js のトランスパイルで問題なし。
+- **JP8（リンク上書きの型）**: react-markdown の `components.a` に渡す関数は同梱型
+  （`Components['a']`）に従い、`props` をそのまま `<a>` へ展開して `target` / `rel` のみ追加する。
