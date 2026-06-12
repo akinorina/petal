@@ -9,7 +9,8 @@
 [tsk-108](../tsk-108_chat-persistence.md)（永続化） /
 [tsk-109](../tsk-109_chat-send-receive-api.md)（送受信 API） /
 [tsk-110](../tsk-110_chat-frontend.md)（フロント） /
-[tsk-113](../tsk-113_chat-ui-componentization.md)（会話 UI の部品化 `<ChatPanel>`）。
+[tsk-113](../tsk-113_chat-ui-componentization.md)（会話 UI の部品化 `<ChatPanel>`） /
+[tsk-114](../tsk-114_chat-markdown-rendering.md)（アシスタントメッセージの Markdown 表示）。
 
 ## アーキテクチャ
 
