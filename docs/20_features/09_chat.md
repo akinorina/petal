@@ -155,6 +155,12 @@ example は [backend/.envs/.env.local.example](../../backend/.envs/.env.local.ex
 - 内部部品 `ChatConversation.tsx` / `use-chat-conversation.ts`（会話プレゼン・送信
   オーケストレーション）は `components/chat/` 内の非公開実装で、barrel は `ChatPanel` /
   `ChatPanelProps` のみ公開する。
+- アシスタントメッセージ（ストリーミング中含む）は内部部品 `MarkdownContent.tsx`
+  （react-markdown + remark-gfm）で Markdown（GFM: 表・打ち消し線・タスクリスト・自動リンク）
+  として整形描画する。スタイルは `MarkdownContent.css`（`.chat-markdown` スコープ、
+  デザイントークンのみ使用）。リンクは新規タブ（`rel="noopener noreferrer"`）で開き、
+  生 HTML は描画しない（`rehype-raw` 不使用）。ユーザーメッセージは従来どおり
+  プレーンテキスト（`whitespace-pre-wrap`）表示。
 
 ## テスト
 
