@@ -12,7 +12,7 @@ frontend/
       signup/                  # セルフサインアップ
       forgot-password/         # パスワードリセット
       ~offline/                # オフラインフォールバック（PWA）
-      (admin)/                 # 認証必須ルートグループ
+      (authenticated)/                 # 認証必須ルートグループ
         images/                # 画像一覧
           [id]/                # 画像詳細
         chat/                  # チャット一覧（会話 UI は components/chat/ の <ChatPanel> を描画）

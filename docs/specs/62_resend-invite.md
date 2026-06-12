@@ -199,8 +199,8 @@ DB 変更なし。Cognito の `UserStatus` を都度参照する。
 
 - `src/lib/api.ts`（変更）: `userApi.resendInvite(id)` 追加
 - `src/lib/api-hooks/use-users-api.ts`（変更）: `resendInvite(id)` 追加
-- `src/app/(admin)/users/use-users-page.ts`（変更）: `handleResendInvite` + 成功メッセージ state + `modal.type === 'resend-invite'` 追加
-- `src/app/(admin)/users/page.tsx`（変更）: 行アクションに「招待メール再送」（`invitationPending` 時のみ）+ 確認ダイアログ + 成功メッセージ表示
+- `src/app/(authenticated)/users/use-users-page.ts`（変更）: `handleResendInvite` + 成功メッセージ state + `modal.type === 'resend-invite'` 追加
+- `src/app/(authenticated)/users/page.tsx`（変更）: 行アクションに「招待メール再送」（`invitationPending` 時のみ）+ 確認ダイアログ + 成功メッセージ表示
 - `src/lib/openapi/schema.d.ts`（再生成）
 
 migration / 環境変数 / 依存追加: なし。

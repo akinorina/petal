@@ -7,7 +7,7 @@
 
 ### 対象
 
-- 画像管理ページ（`frontend/src/app/(admin)/images/page.tsx`）の `UploadModal` 内ファイル選択 UI を、**ドラッグ＆ドロップ**に対応させる。
+- 画像管理ページ（`frontend/src/app/(authenticated)/images/page.tsx`）の `UploadModal` 内ファイル選択 UI を、**ドラッグ＆ドロップ**に対応させる。
 - 既存のファイル選択（クリック → OS ダイアログ）も継続して利用可能にする（D&D ゾーン内のクリックで OS ダイアログを開く動線に統合）。
 - 不正ファイル（許可外 MIME・サイズ超過・複数ファイル投下時の余剰）に対するクライアント側エラー表示。
 

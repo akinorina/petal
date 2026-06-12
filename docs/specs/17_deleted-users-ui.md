@@ -121,7 +121,7 @@ async findAll(@Query() query: ListUsersQueryDto): Promise<UserResponseDto[]> {
 
 ### 4.1 画面構成
 
-`app/(admin)/users/page.tsx` を改修:
+`app/(authenticated)/users/page.tsx` を改修:
 
 - ページ最上部に **タブ（または segmented control）** を配置:
   - 「アクティブ」（デフォルト）

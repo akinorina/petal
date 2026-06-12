@@ -192,8 +192,8 @@ DB スキーマ変更なし。インデックス追加なし（判断 2 を参�
 
 - `src/lib/api.ts`（変更）: `userApi.findPage(query)` に切替（旧 `findAll` 撤去）
 - `src/lib/api-hooks/use-users-api.ts`（変更）: `useUsersApi(query)` で `items` / `total` を返す
-- `src/app/(admin)/users/use-users-page.ts`（変更）: URL クエリ駆動の状態管理（`q` / `role` / `deleted` / `page`）、デバウンス検索、ページ番号 → offset 変換
-- `src/app/(admin)/users/page.tsx`（変更）: 検索 `Input` + ロール `Select` + 既存 `Pagination` を追加。タブはそのまま使うが `deleted` クエリ同期に書き換え
+- `src/app/(authenticated)/users/use-users-page.ts`（変更）: URL クエリ駆動の状態管理（`q` / `role` / `deleted` / `page`）、デバウンス検索、ページ番号 → offset 変換
+- `src/app/(authenticated)/users/page.tsx`（変更）: 検索 `Input` + ロール `Select` + 既存 `Pagination` を追加。タブはそのまま使うが `deleted` クエリ同期に書き換え
 - `src/lib/openapi/schema.d.ts`（再生成）
 
 migration / 環境変数 / 依存追加: なし。

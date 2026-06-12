@@ -151,10 +151,10 @@ DB スキーマ変更なし（既存 `petal.users` の name / name_kana を更�
 #### frontend
 
 - `src/lib/api.ts`（変更）: `userApi.updateMyProfile(body)`
-- `src/app/(admin)/me/page.tsx`（新規）: プロフィール表示 + 氏名/ふりがな編集
-- `src/app/(admin)/me/use-me-page.ts`（新規）: `userApi.findMe` で読込・`updateMyProfile` で保存
-- `src/app/(admin)/me/email/page.tsx` / `me/mfa/page.tsx`（変更）: nav に「プロフィール」(/me) を追加
-- `src/app/(admin)/layout.tsx`（変更）: ヘッダー email リンクを `/me/email` → `/me`
+- `src/app/(authenticated)/me/page.tsx`（新規）: プロフィール表示 + 氏名/ふりがな編集
+- `src/app/(authenticated)/me/use-me-page.ts`（新規）: `userApi.findMe` で読込・`updateMyProfile` で保存
+- `src/app/(authenticated)/me/email/page.tsx` / `me/mfa/page.tsx`（変更）: nav に「プロフィール」(/me) を追加
+- `src/app/(authenticated)/layout.tsx`（変更）: ヘッダー email リンクを `/me/email` → `/me`
 - `src/lib/openapi/schema.d.ts`（再生成）
 
 migration / 環境変数 / 依存追加: なし。

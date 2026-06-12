@@ -1,7 +1,7 @@
 # セルフサービス（自分のアカウント）
 
 ユーザー自身が行う操作: セルフサインアップ・プロフィール変更・パスワード変更・メールアドレス変更。
-マイページ [frontend/src/app/(admin)/me/](../../frontend/src/app/%28admin%29/me/) に導線を集約。実装: [backend/src/auth/](../../backend/src/auth/), [backend/src/user/](../../backend/src/user/)
+マイページ [frontend/src/app/(authenticated)/me/](../../frontend/src/app/%28authenticated%29/me/) に導線を集約。実装: [backend/src/auth/](../../backend/src/auth/), [backend/src/user/](../../backend/src/user/)
 
 ## セルフサインアップ
 
@@ -14,7 +14,7 @@
 ## プロフィール変更
 
 - `PATCH /users/me`（要認証）: 自身の `name` / `nameKana` のみ更新。`role` / `email` は Zod で無視。監査ログなし。
-- マイページ `/me`（[frontend/src/app/(admin)/me/](../../frontend/src/app/%28admin%29/me/)）。
+- マイページ `/me`（[frontend/src/app/(authenticated)/me/](../../frontend/src/app/%28authenticated%29/me/)）。
 - 原典: [specs/59_my-profile.md](../specs/59_my-profile.md)
 
 ## パスワード変更

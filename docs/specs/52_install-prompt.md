@@ -175,7 +175,7 @@ UA で iOS 判定、かつスタンドアロン未起動、かつ localStorage �
 
 - T1 / T2 の manifest / SerwistProvider / UpdateNotice の構成を変更しない。
   `InstallPrompt` は `UpdateNotice` の隣に並べてマウントする。
-- 既存の `(admin)` 認証ガード等、業務 UI には介入しない。バナー / モーダルは認証状態に
+- 既存の `(authenticated)` 認証ガード等、業務 UI には介入しない。バナー / モーダルは認証状態に
   関わらず表示する（インストール導線は誰でも見せて良い）。
 - backend / migrations / `.env.example` の変更なし。
 - design-system: `Button` / `Dialog` 既存コンポーネントを再利用する。iOS 案内モーダルは

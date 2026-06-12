@@ -7,7 +7,7 @@
 
 ### 対象
 
-- 画像管理ページ `/images`（`frontend/src/app/(admin)/images/page.tsx`）を、テキストカード中心の現行表示から **サムネイル中心のグリッド表示** に刷新する。
+- 画像管理ページ `/images`（`frontend/src/app/(authenticated)/images/page.tsx`）を、テキストカード中心の現行表示から **サムネイル中心のグリッド表示** に刷新する。
 - 各サムネイルは `GET /images/:id/download-url`（既存）が返す署名付き URL を `<img>` の `src` に使って表示する。
 - 1 ページあたり **12 件**（3 列 × 4 行）を表示し、design-system `Pagination`（`variant="numbered"`）でページ送りする（クライアントサイドページング）。
 - 画像 0 件時は既存 `EmptyState` を維持。

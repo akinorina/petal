@@ -20,7 +20,7 @@
   - `POST /users/me/email/verify` — Cognito の `VerifyUserAttribute` でコードを確定し、DB の `users.email` も新値に更新する。
   - 新メールアドレスの DB 重複チェック（PATCH 時・verify 時の両方で実施）。
 - **Frontend**:
-  - `/me/email` ページを `(admin)` レイアウト下に新設（2 ステップ: 新メアド入力 → コード入力）。
+  - `/me/email` ページを `(authenticated)` レイアウト下に新設（2 ステップ: 新メアド入力 → コード入力）。
   - サイドナビ／ヘッダーから当該ページへの導線を追加。
 
 ### 非対象
@@ -259,7 +259,7 @@ DB スキーマ・リポジトリ I/F は変更不要（`save(user)` で email �
 
 ## 5. フロントエンド実装
 
-### 5.1 新規ページ `frontend/app/(admin)/me/email/page.tsx` + `use-me-email-page.ts`
+### 5.1 新規ページ `frontend/app/(authenticated)/me/email/page.tsx` + `use-me-email-page.ts`
 
 ステート:
 
@@ -277,7 +277,7 @@ UI:
 
 ### 5.2 ナビゲーション追加
 
-`frontend/app/(admin)/layout.tsx` のヘッダー右側、メールアドレス表示部分をリンク化して `/me/email` へ遷移させる。
+`frontend/app/(authenticated)/layout.tsx` のヘッダー右側、メールアドレス表示部分をリンク化して `/me/email` へ遷移させる。
 
 ### 5.3 API クライアント
 
@@ -366,9 +366,9 @@ UI:
 | 生成 | `frontend/lib/openapi/schema.d.ts` | `pnpm --filter frontend openapi:gen` で再生成 |
 | 修正 | `frontend/lib/api.ts` | `userApi` に `requestEmailChange(email)` / `confirmEmailChange(code)` を追加 |
 | 修正 | `frontend/lib/api-hooks/use-users-api.ts` | 既存 `useUsersApi` に `requestEmailChange` / `confirmEmailChange` を露出 |
-| 新規 | `frontend/app/(admin)/me/email/page.tsx` | View 専用（フックを呼び JSX を return） |
-| 新規 | `frontend/app/(admin)/me/email/use-me-email-page.ts` | `Step = { kind: 'request' } \| { kind: 'confirm'; pendingEmail }` ステート、API 呼び出し、エラーハンドリング |
-| 修正 | `frontend/app/(admin)/layout.tsx` | ヘッダーの email 表示を `/me/email` への `<Link>` に変更 |
+| 新規 | `frontend/app/(authenticated)/me/email/page.tsx` | View 専用（フックを呼び JSX を return） |
+| 新規 | `frontend/app/(authenticated)/me/email/use-me-email-page.ts` | `Step = { kind: 'request' } \| { kind: 'confirm'; pendingEmail }` ステート、API 呼び出し、エラーハンドリング |
+| 修正 | `frontend/app/(authenticated)/layout.tsx` | ヘッダーの email 表示を `/me/email` への `<Link>` に変更 |
 | 修正 | `frontend/lib/cognito.ts` | verify 成功後にローカルストレージの `EMAIL_KEY` を新値へ更新する `updateStoredEmail(newEmail)` を追加 |
 | 修正 | `frontend/contexts/AuthContext.tsx` | `setEmail(newEmail)`（または `refreshEmail()`）を露出。verify 成功後にページフックから呼ぶ |
 

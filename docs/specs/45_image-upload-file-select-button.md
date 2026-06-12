@@ -7,7 +7,7 @@
 
 ### 対象
 
-- 画像管理ページ（`frontend/src/app/(admin)/images/page.tsx`）の `UploadModal` 内 D&D ゾーンに、**design-system の `Button`**（`variant="secondary"`）として「ファイルを選択」ボタンを明示的に配置する。
+- 画像管理ページ（`frontend/src/app/(authenticated)/images/page.tsx`）の `UploadModal` 内 D&D ゾーンに、**design-system の `Button`**（`variant="secondary"`）として「ファイルを選択」ボタンを明示的に配置する。
 - ボタン押下で OS のファイル選択ダイアログを開き、選択結果は D&D 経由と同じ `handleFiles` パイプラインで処理する。
 - ファイル選択済みの状態では「ファイルを変更」ボタンに変化し、再選択を促す。
 
