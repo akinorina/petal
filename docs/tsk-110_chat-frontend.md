@@ -10,7 +10,7 @@
 
 ### 一行サマリ
 
-`(admin)` 配下にチャット画面を追加し、ストリーミング表示・履歴閲覧・エラー表示を
+`(authenticated)` 配下にチャット画面を追加し、ストリーミング表示・履歴閲覧・エラー表示を
 backend chat API（TSK-109）と連携させて実装する。
 
 ### 背景・動機
@@ -20,7 +20,7 @@ PRJ-16 のユーザー接点。TSK-107/108/109 で実装したチャット API �
 
 ### 完了条件（課題シート原文 → 本設計での確定）
 
-- [ ] `(admin)` 配下にチャットページ（`page.tsx`）を追加し、ステート/副作用を
+- [ ] `(authenticated)` 配下にチャットページ（`page.tsx`）を追加し、ステート/副作用を
       `use-<page>-page.ts` フックに切り出している
 - [ ] `lib/api` + `lib/api-hooks` にチャット API クライアント/フックを追加している
 - [ ] ~~モデル選択 UI からモデルを選び~~ → **スコープ外に降格**（§1 参照）。送信→ストリーミング表示ができる
@@ -45,7 +45,7 @@ PRJ-16 のユーザー接点。TSK-107/108/109 で実装したチャット API �
 - プロジェクト: PRJ-16（Petal LLMチャット実装）
 - バックエンド設計: [tsk-109_chat-send-receive-api.md](tsk-109_chat-send-receive-api.md)（API 契約の一次情報）
 - フロントエンドアーキテクチャ: [docs/10_architecture/03_frontend-architecture.md](10_architecture/03_frontend-architecture.md)
-- 参考実装: `frontend/src/app/(admin)/images/`（page + use-images-page）, `frontend/src/lib/api-hooks/`
+- 参考実装: `frontend/src/app/(authenticated)/images/`（page + use-images-page）, `frontend/src/lib/api-hooks/`
 
 ---
 
@@ -53,7 +53,7 @@ PRJ-16 のユーザー接点。TSK-107/108/109 で実装したチャット API �
 
 ### 対象
 
-`(admin)` 配下にチャット機能を追加する。`images/` 同様、ページは View・ロジックは同居フック、
+`(authenticated)` 配下にチャット機能を追加する。`images/` 同様、ページは View・ロジックは同居フック、
 API アクセスは `lib/api` + `lib/api-hooks` に分離する。
 
 ### 対象外（このタスクで実装しない）— Phase 2 で確定
@@ -122,7 +122,7 @@ API アクセスは `lib/api` + `lib/api-hooks` に分離する。
 - `lib/api/shared.ts`（`apiClient` / `unwrap` / `ApiError`）
 - `lib/auth-session.ts`（`getAccessToken` / `refreshAccessToken`）, `lib/http.ts`（`BASE_URL`）
 - `@/design-system`（`Button` / `Alert` / `Input` / `Textarea` / `Dialog` / `EmptyState` / `Text` ほか）
-- `app/(admin)/layout.tsx`（TopBar ナビ。チャットリンクを追加）
+- `app/(authenticated)/layout.tsx`（TopBar ナビ。チャットリンクを追加）
 
 ---
 
@@ -285,13 +285,13 @@ user 送信(content):
 
 ## 9. 既存設計との差分
 
-- `frontend/src/app/(admin)/chat/` を新設（`page` / `new` / `[threadId]` + 各 `use-*-page.ts` +
+- `frontend/src/app/(authenticated)/chat/` を新設（`page` / `new` / `[threadId]` + 各 `use-*-page.ts` +
   共有 `use-chat-conversation.ts` + `ChatConversation.tsx`）。
 - `frontend/src/lib/api/chat.ts`（REST ラッパ + SSE 生 fetch）と `frontend/src/lib/api/index.ts`
   への re-export を追加。
 - `frontend/src/lib/api-hooks/use-chat-api.ts`（`useChatThreadsApi` / `useChatMessagesApi` /
   `useChatActionsApi`）を追加。
-- `frontend/src/app/(admin)/layout.tsx` の TopBar ナビに「チャット」リンクを追加（全ロール表示。
+- `frontend/src/app/(authenticated)/layout.tsx` の TopBar ナビに「チャット」リンクを追加（全ロール表示。
   画像と同じ位置）。
 - `frontend/src/lib/openapi/schema.d.ts` を再生成（chat DTO/パスを追加）。
 - バックエンド・migration・環境変数の変更は **なし**。
@@ -311,10 +311,10 @@ user 送信(content):
 - [ ] `lib/api-hooks/use-chat-api.ts`: `useChatThreadsApi`（threads/isLoading/error/setError/reload/remove）
       / `useChatMessagesApi(threadId|null)`（null は空・無 fetch）/ `useChatActionsApi`
       （createThread / streamMessage を memo 化）。
-- [ ] `app/(admin)/chat/page.tsx` + `use-chat-page.ts`: スレッド一覧 + 新規ボタン + 削除。
-- [ ] `app/(admin)/chat/new/page.tsx` + `use-chat-new-page.ts`: 遅延作成 + ストリーム + 完了後遷移。
-- [ ] `app/(admin)/chat/[threadId]/page.tsx` + `use-chat-thread-page.ts`: 既存会話の取得 + 送信ストリーム + 再取得。
-- [ ] 共有 `app/(admin)/chat/use-chat-conversation.ts` と `ChatConversation.tsx`。
+- [ ] `app/(authenticated)/chat/page.tsx` + `use-chat-page.ts`: スレッド一覧 + 新規ボタン + 削除。
+- [ ] `app/(authenticated)/chat/new/page.tsx` + `use-chat-new-page.ts`: 遅延作成 + ストリーム + 完了後遷移。
+- [ ] `app/(authenticated)/chat/[threadId]/page.tsx` + `use-chat-thread-page.ts`: 既存会話の取得 + 送信ストリーム + 再取得。
+- [ ] 共有 `app/(authenticated)/chat/use-chat-conversation.ts` と `ChatConversation.tsx`。
 - [ ] `layout.tsx` に「チャット」ナビ追加。
 - [ ] モデル選択 UI・リトライ UI は作らない（スコープ外）。
 - [ ] `cd frontend && pnpm build` が通る。`cd frontend && pnpm lint` が通る。
@@ -355,16 +355,16 @@ user 送信(content):
 
 - `frontend/src/lib/api/chat.ts` … `chatApi`（REST）+ `streamChatMessage`（SSE 生 fetch）+ `ChatStreamHandlers`。
 - `frontend/src/lib/api-hooks/use-chat-api.ts` … `useChatThreadsApi` / `useChatMessagesApi` / `useChatActionsApi`。
-- `frontend/src/app/(admin)/chat/page.tsx` / `use-chat-page.ts` … スレッド一覧。
-- `frontend/src/app/(admin)/chat/new/page.tsx` / `use-chat-new-page.ts` … 新規会話。
-- `frontend/src/app/(admin)/chat/[threadId]/page.tsx` / `use-chat-thread-page.ts` … 既存会話。
-- `frontend/src/app/(admin)/chat/use-chat-conversation.ts` … 共有会話フック（D5）。
-- `frontend/src/app/(admin)/chat/ChatConversation.tsx` … 共有プレゼンテーション。
+- `frontend/src/app/(authenticated)/chat/page.tsx` / `use-chat-page.ts` … スレッド一覧。
+- `frontend/src/app/(authenticated)/chat/new/page.tsx` / `use-chat-new-page.ts` … 新規会話。
+- `frontend/src/app/(authenticated)/chat/[threadId]/page.tsx` / `use-chat-thread-page.ts` … 既存会話。
+- `frontend/src/app/(authenticated)/chat/use-chat-conversation.ts` … 共有会話フック（D5）。
+- `frontend/src/app/(authenticated)/chat/ChatConversation.tsx` … 共有プレゼンテーション。
 
 変更:
 
 - `frontend/src/lib/api/index.ts` … `chat` の re-export を追加。
-- `frontend/src/app/(admin)/layout.tsx` … TopBar ナビに「チャット」リンク追加。
+- `frontend/src/app/(authenticated)/layout.tsx` … TopBar ナビに「チャット」リンク追加。
 - `frontend/src/lib/openapi/schema.d.ts` … `pnpm openapi:gen` で再生成（生成物・コミット対象）。
 - `docs/10_architecture/03_frontend-architecture.md` … ディレクトリ構成に `chat/` を追記（軽微）。
 

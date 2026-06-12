@@ -161,10 +161,10 @@ DB 変更なし（パスワードは Cognito 管理）。
 #### frontend
 
 - `src/lib/api.ts`（変更）: `authApi.changePassword(body)`（`apiClient.POST('/auth/change-password')`）
-- `src/app/(admin)/me/password/page.tsx`（新規）: 現在/新/確認 + `PasswordPolicyChecklist`
-- `src/app/(admin)/me/password/use-me-password-page.ts`（新規）: 成功後にセッションクリア + `/login` 遷移、再ログイン用メッセージ伝達
+- `src/app/(authenticated)/me/password/page.tsx`（新規）: 現在/新/確認 + `PasswordPolicyChecklist`
+- `src/app/(authenticated)/me/password/use-me-password-page.ts`（新規）: 成功後にセッションクリア + `/login` 遷移、再ログイン用メッセージ伝達
 - `src/app/login/...`（変更・必要時）: 再ログイン誘導メッセージの表示（`sessionStorage` 経由）
-- `src/app/(admin)/me/page.tsx` / `me/email/page.tsx` / `me/mfa/page.tsx`（変更）: nav に「パスワード変更」追加
+- `src/app/(authenticated)/me/page.tsx` / `me/email/page.tsx` / `me/mfa/page.tsx`（変更）: nav に「パスワード変更」追加
 - `src/lib/openapi/schema.d.ts`（再生成）
 
 migration / 環境変数 / 依存追加: なし。

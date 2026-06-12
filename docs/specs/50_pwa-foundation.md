@@ -69,7 +69,7 @@ PRJ-10「Petal PWA 化」の最初のタスク。Service Worker・Web App Manife
 
 - **採用案**: backend API（別オリジン）を **NetworkOnly** とし、ページシェルは NetworkFirst。
 - **理由**:
-  - Petal は**クライアントサイド認証**で、`(admin)` レイアウトが `isAuthenticated` で描画を
+  - Petal は**クライアントサイド認証**で、`(authenticated)` レイアウトが `isAuthenticated` で描画を
     ゲートする。ページ HTML 自体はユーザーデータを含まず、機密データは別オリジンの backend API
     （`NEXT_PUBLIC_API_BASE_URL`）レスポンスにのみ存在する。
   - したがって機密漏れ防止の本質は「API レスポンスをキャッシュしないこと」。API オリジンへの
@@ -77,7 +77,7 @@ PRJ-10「Petal PWA 化」の最初のタスク。Service Worker・Web App Manife
   - ページシェルは機密でないため、NetworkFirst でオフライン閲覧を可能にしてオフライン耐性を
     確保する（Notion 受け入れ条件「既に表示したページが閲覧できる」を満たす）。
 - **却下案**:
-  - 案 X: 認証ページ（`(admin)` 配下）も NetworkOnly — Notion の字義通りだが、サーバレンダ前提の
+  - 案 X: 認証ページ（`(authenticated)` 配下）も NetworkOnly — Notion の字義通りだが、サーバレンダ前提の
     表現。クライアント認証の実態では HTML は機密でなく、オフライン耐性を不必要に損なうため却下。
 
 ### 判断 4: Serwist の統合方式（configurator モード）

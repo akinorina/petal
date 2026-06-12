@@ -6,7 +6,7 @@
 
 ### 対象
 
-- `UploadModal`（`frontend/src/app/(admin)/images/page.tsx`）に「カメラで撮影」ボタンを追加し、OS 標準カメラを起動してそのまま画像をアップロードできるようにする。
+- `UploadModal`（`frontend/src/app/(authenticated)/images/page.tsx`）に「カメラで撮影」ボタンを追加し、OS 標準カメラを起動してそのまま画像をアップロードできるようにする。
 - 撮影・ファイル選択双方に適用するアップロード前処理（EXIF Orientation 補正・リサイズ・圧縮）を共通ユーティリティとして実装する。
 - 前処理後の Blob を既存アップロード API（`POST /images`）に送信し、成功後の遷移を既存と統一する。
 
@@ -130,7 +130,7 @@ D&D (`handleDrop`) / ファイル選択 / カメラ撮影のすべてが `handle
 | --- | --- |
 | `frontend/src/lib/image-process.ts` | **新規追加**。`processImageFile` 関数 |
 | `frontend/src/lib/image-constants.ts` | `MAX_UPLOAD_LONG_EDGE` / `UPLOAD_JPEG_QUALITY` 定数を追加 |
-| `frontend/src/app/(admin)/images/page.tsx` | `UploadModal` に cameraInputRef・「カメラで撮影」ボタン追加、`handleFilesWithProcess` に変更 |
+| `frontend/src/app/(authenticated)/images/page.tsx` | `UploadModal` に cameraInputRef・「カメラで撮影」ボタン追加、`handleFilesWithProcess` に変更 |
 
 バックエンド / migrations / `.env.example` の変更なし。
 

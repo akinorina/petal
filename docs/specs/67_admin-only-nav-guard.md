@@ -25,22 +25,22 @@
 | メニュー出し分け | 一般ユーザーには TopBar の「ユーザー」「監査ログ」メニュー自体を**非表示** |
 | 直接 URL アクセス時 | **403**（権限がありません）を表示。当初 Notion では 404 だったが Phase 3 で 403 に変更 |
 | role の取得・保持 | **AuthContext を拡張**。起動時・ログイン後に `GET /users/me` で role を取得し state 保持。`useAuth()` から参照 |
-| 403 ゲートの実現 | **ネスト route group `(admin)/(admin-only)/`** を新設し `/users`・`/audit-logs` を移動。その layout で `role !== 'admin'` なら 403 を表示 |
+| 403 ゲートの実現 | **ネスト route group `(authenticated)/(admin-only)/`** を新設し `/users`・`/audit-logs` を移動。その layout で `role !== 'admin'` なら 403 を表示 |
 | スコープ外 | backend のガード追加（既存で充足）／role を持たない他ページ（画像・/me 等）の挙動変更 |
 
 ---
 
 ## 1. 課題サマリ
 
-ログイン後シェル（route group `(admin)`）の TopBar から、一般ユーザー（`role === 'user'`）に対して「ユーザー」「監査ログ」メニューを非表示にし、かつ `/users`・`/audit-logs` へ直接アクセスした場合は 403 を表示する。role は `GET /users/me` を唯一の取得源とし、`AuthContext` に保持して「メニュー出し分け」と「ページガード」の両方を同一ソースで判定する。backend API は既に admin 限定でガード済みのため変更しない。
+ログイン後シェル（route group `(authenticated)`）の TopBar から、一般ユーザー（`role === 'user'`）に対して「ユーザー」「監査ログ」メニューを非表示にし、かつ `/users`・`/audit-logs` へ直接アクセスした場合は 403 を表示する。role は `GET /users/me` を唯一の取得源とし、`AuthContext` に保持して「メニュー出し分け」と「ページガード」の両方を同一ソースで判定する。backend API は既に admin 限定でガード済みのため変更しない。
 
 ## 2. スコープ
 
 ### 対象
 
 - frontend: `AuthContext` を拡張し `role: UserRole | null` を保持（起動時・ログイン系成功時に `userApi.findMe()` で取得）。
-- frontend: `(admin)/layout.tsx` の TopBar で「ユーザー」「監査ログ」NavLink を `role === 'admin'` のときのみ描画。
-- frontend: ネスト route group `(admin)/(admin-only)/` を新設し、`users/`・`audit-logs/` ディレクトリを移動（URL は不変）。
+- frontend: `(authenticated)/layout.tsx` の TopBar で「ユーザー」「監査ログ」NavLink を `role === 'admin'` のときのみ描画。
+- frontend: ネスト route group `(authenticated)/(admin-only)/` を新設し、`users/`・`audit-logs/` ディレクトリを移動（URL は不変）。
 - frontend: `(admin-only)/layout.tsx` で `role !== 'admin'` のとき 403 ビュー（`Forbidden403`）を表示。
 - frontend: 403 ビュー用コンポーネント `Forbidden403` を新設（design-system の `EmptyState` を利用、トップ `/images` への導線付き）。
 
@@ -74,18 +74,18 @@
 ### 判断 3: role の保持場所 → **AuthContext 拡張（採用） / 専用フック（却下）**
 
 - **採用**: `AuthContext` の state に `role` を追加。`useAuth()` から参照。
-- **理由**: メニュー出し分け（親 `(admin)/layout.tsx`）とページガード（`(admin-only)/layout.tsx`）が同一の単一ソースを共有でき、二重 fetch を避けられる。`(admin)/layout` は既に `useAuth()` を利用。
+- **理由**: メニュー出し分け（親 `(authenticated)/layout.tsx`）とページガード（`(admin-only)/layout.tsx`）が同一の単一ソースを共有でき、二重 fetch を避けられる。`(authenticated)/layout` は既に `useAuth()` を利用。
 - **却下**: 専用フックで都度 findMe。メニューとガードで二重取得になり、ローディング整合も取りにくい。
 
 ### 判断 4: 403 ゲートの実現 → **ネスト route group の layout（採用）**
 
-- **採用**: `(admin)/(admin-only)/layout.tsx` を新設し `/users`・`/audit-logs` を配下に移動。layout で role を判定し 403 を出す。route group はパスに影響しないため URL は不変。
-- **理由**: 両ルートを 1 箇所でガードでき（DRY）、将来の admin 専用ページもグループに足すだけ。既存の `(admin)` route group 方針に沿う。
+- **採用**: `(authenticated)/(admin-only)/layout.tsx` を新設し `/users`・`/audit-logs` を配下に移動。layout で role を判定し 403 を出す。route group はパスに影響しないため URL は不変。
+- **理由**: 両ルートを 1 箇所でガードでき（DRY）、将来の admin 専用ページもグループに足すだけ。既存の `(authenticated)` route group 方針に沿う。
 - **却下**: 各 `use-*-page` フックで判定（ルートごとに重複）／共有 `<RequireAdmin>` ラッパー（各 page.tsx に記述が要りラップ漏れリスク）。
 
 ### 判断 5: ローディング中のちらつき防止 → **AuthContext の `isLoading` で role 取得完了まで待つ（採用）**
 
-- 起動時は token 確認後に findMe を await し、role が確定してから `isLoading=false` にする。`(admin)/layout` は `isLoading` 中「読み込み中...」を表示するため、admin メニューや本文が一瞬見えてから消える事象を防ぐ。
+- 起動時は token 確認後に findMe を await し、role が確定してから `isLoading=false` にする。`(authenticated)/layout` は `isLoading` 中「読み込み中...」を表示するため、admin メニューや本文が一瞬見えてから消える事象を防ぐ。
 - クライアント遷移時は role が既に context にあるため即時判定。
 
 ## 5. データモデル
@@ -106,28 +106,28 @@ backend の API 変更なし。既存 `GET /users/me`（`UserResponseDto` に `r
 - `logout` / `AUTH_CLEARED_EVENT`: `role = null`。
 - 取得処理は内部ヘルパ `fetchRole(): Promise<UserRole | null>`（findMe → role、失敗時 null）に集約。
 
-### 7.2 TopBar メニュー出し分け（`src/app/(admin)/layout.tsx` + `use-admin-layout.ts`）
+### 7.2 TopBar メニュー出し分け（`src/app/(authenticated)/layout.tsx` + `use-admin-layout.ts`）
 
 - `use-admin-layout` が `useAuth()` から `role` を返す。
 - 「ユーザー」「監査ログ」の `NavLink` を `role === 'admin'` のときのみ描画。「画像」「{email}（/me）」「ログアウト」は従来通り常時表示。
 
-### 7.3 admin-only ガード（`src/app/(admin)/(admin-only)/layout.tsx`・新規）
+### 7.3 admin-only ガード（`src/app/(authenticated)/(admin-only)/layout.tsx`・新規）
 
 - `'use client'`。`useAuth()` から `role` / `isLoading` を取得。
-- `isLoading` 中は `null`（親 `(admin)/layout` が「読み込み中...」を表示しているため二重表示しない）。
+- `isLoading` 中は `null`（親 `(authenticated)/layout` が「読み込み中...」を表示しているため二重表示しない）。
 - `role !== 'admin'` → `<Forbidden403 />` を返す。
 - それ以外 → `children` をそのまま描画。
 
-### 7.4 Forbidden403 ビュー（`src/app/(admin)/(admin-only)/Forbidden403.tsx`・新規）
+### 7.4 Forbidden403 ビュー（`src/app/(authenticated)/(admin-only)/Forbidden403.tsx`・新規）
 
 - design-system の `EmptyState` を用い、「アクセス権限がありません」＋「このページを表示する権限がありません。」＋トップ（`/images`）への導線を表示。
-- 親 `(admin)/layout` の `<main>` 内に描画されるため、TopBar（admin メニュー非表示版）は表示されたまま本文に 403 が出る。
+- 親 `(authenticated)/layout` の `<main>` 内に描画されるため、TopBar（admin メニュー非表示版）は表示されたまま本文に 403 が出る。
 
 ### 7.5 ディレクトリ移動
 
-- `src/app/(admin)/users/` → `src/app/(admin)/(admin-only)/users/`
-- `src/app/(admin)/audit-logs/` → `src/app/(admin)/(admin-only)/audit-logs/`
-- URL（`/users`・`/audit-logs`）は route group のため不変。`/images`・`/me`・`/images/[id]` は `(admin)` 直下のまま。
+- `src/app/(authenticated)/users/` → `src/app/(authenticated)/(admin-only)/users/`
+- `src/app/(authenticated)/audit-logs/` → `src/app/(authenticated)/(admin-only)/audit-logs/`
+- URL（`/users`・`/audit-logs`）は route group のため不変。`/images`・`/me`・`/images/[id]` は `(authenticated)` 直下のまま。
 
 ## 8. トランザクション境界
 
@@ -137,7 +137,7 @@ DB 書き込みなし・外部副作用なしのため対象外。
 
 - [docs/21_role-cognito-group-sync.md](21_role-cognito-group-sync.md)（TSK-10）で確立した「`GET /users/me` が role を返す」「backend は `@Roles` でガード」を**フロント側で利用**する初のケース。backend ロジックは不変。
 - `AuthContext` がこれまで `email` / `isAuthenticated` のみ保持していたところに `role` を追加。
-- route group `(admin)` 配下に `(admin-only)` を 1 段追加。
+- route group `(authenticated)` 配下に `(admin-only)` を 1 段追加。
 
 ## 10. 完了条件（具体化）
 
@@ -189,13 +189,13 @@ Admin の確認:
   - `login` / `completeNewPassword` / `respondMfaChallenge` 成功時: `fetchRole()` を await して `role` をセット。
   - `logout` / `AUTH_CLEARED_EVENT` ハンドラ: `role: null`。
   - `updateEmail` は `setState((prev) => ...)` で role を保持（変更なし）。
-- `src/app/(admin)/use-admin-layout.ts`（変更）: `useAuth()` から `role` を取り出し返却に追加。
-- `src/app/(admin)/layout.tsx`（変更）: `useAdminLayout()` から `role` を受け取り、「ユーザー」「監査ログ」の `NavLink` を `role === 'admin'` のときのみ描画。「画像」「email/ログアウト」は常時表示。
-- `src/app/(admin)/(admin-only)/layout.tsx`（新規）: `'use client'`。`useAuth()` の `role` / `isLoading` で分岐。`isLoading` → `null`、`role !== 'admin'` → `<Forbidden403 />`、それ以外 → `children`。
-- `src/app/(admin)/(admin-only)/Forbidden403.tsx`（新規）: design-system `EmptyState`（title「アクセス権限がありません」/ description「このページを表示する権限がありません。」/ `primaryAction` = `next/link` の `/images` 導線 `ds-link` スタイル）。
+- `src/app/(authenticated)/use-admin-layout.ts`（変更）: `useAuth()` から `role` を取り出し返却に追加。
+- `src/app/(authenticated)/layout.tsx`（変更）: `useAdminLayout()` から `role` を受け取り、「ユーザー」「監査ログ」の `NavLink` を `role === 'admin'` のときのみ描画。「画像」「email/ログアウト」は常時表示。
+- `src/app/(authenticated)/(admin-only)/layout.tsx`（新規）: `'use client'`。`useAuth()` の `role` / `isLoading` で分岐。`isLoading` → `null`、`role !== 'admin'` → `<Forbidden403 />`、それ以外 → `children`。
+- `src/app/(authenticated)/(admin-only)/Forbidden403.tsx`（新規）: design-system `EmptyState`（title「アクセス権限がありません」/ description「このページを表示する権限がありません。」/ `primaryAction` = `next/link` の `/images` 導線 `ds-link` スタイル）。
 - ディレクトリ移動（`git mv`、URL 不変・相対 import は同梱移動で不変）:
-  - `src/app/(admin)/users/` → `src/app/(admin)/(admin-only)/users/`
-  - `src/app/(admin)/audit-logs/` → `src/app/(admin)/(admin-only)/audit-logs/`
+  - `src/app/(authenticated)/users/` → `src/app/(authenticated)/(admin-only)/users/`
+  - `src/app/(authenticated)/audit-logs/` → `src/app/(authenticated)/(admin-only)/audit-logs/`
 
 migration / 依存追加 / 環境変数: **不要**。backend 変更・openapi 再生成: **不要**。
 
@@ -228,7 +228,7 @@ migration / 依存追加 / 環境変数: **不要**。backend 変更・openapi �
 | 1 | frontend の `UserRole` 型源 | `Schemas['UserRole']`（`@/lib/openapi/client`）。`'admin' \| 'user'` |
 | 2 | `fetchRole` の配置 | モジュールスコープの純関数。`userApi.findMe()` → `role`、例外時 `null` |
 | 3 | role 取得タイミング | 起動時 + login/completeNewPassword/respondMfaChallenge 成功時。await してから `setState`（ちらつき防止） |
-| 4 | ローディング整合 | role 確定まで `isLoading=true`。`(admin)/layout` の「読み込み中...」で吸収。`(admin-only)/layout` は `isLoading` 中 `null` |
+| 4 | ローディング整合 | role 確定まで `isLoading=true`。`(authenticated)/layout` の「読み込み中...」で吸収。`(admin-only)/layout` は `isLoading` 中 `null` |
 | 5 | 取得失敗時の扱い | `role=null` → 一般ユーザー相当（メニュー非表示・403）にフェイルセーフ |
 | 6 | 403 ビューの導線 | `EmptyState` + `next/link` で `/images` へ（`ds-link` スタイル、TopBar と同様） |
 | 7 | ディレクトリ移動の影響 | `git mv` で履歴保持。相対 import（`./use-*-page`）は同梱移動で不変、`@/` 絶対 import も不変。URL も route group のため不変 |

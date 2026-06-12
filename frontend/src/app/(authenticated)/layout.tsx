@@ -5,9 +5,9 @@ import { TopBar } from '@/design-system/components/TopBar';
 import { Popover } from '@/design-system/components/Popover';
 import { Avatar } from '@/design-system/components/Avatar';
 import { ListItem } from '@/design-system/components/ListItem';
-import { useAdminLayout } from './use-admin-layout';
+import { useAuthenticatedLayout } from './use-authenticated-layout';
 
-export default function AdminLayout({
+export default function AuthenticatedLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -20,7 +20,7 @@ export default function AdminLayout({
     isLoading,
     handleLogout,
     goToProfile,
-  } = useAdminLayout();
+  } = useAuthenticatedLayout();
 
   if (isLoading) {
     return (

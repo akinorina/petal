@@ -7,7 +7,7 @@
 
 ### 対象
 
-- 画像詳細ページ `/images/[id]`（`frontend/src/app/(admin)/images/[id]/page.tsx`）を、PRJ-8 で整えた design-system 規約に揃えて再構成する。
+- 画像詳細ページ `/images/[id]`（`frontend/src/app/(authenticated)/images/[id]/page.tsx`）を、PRJ-8 で整えた design-system 規約に揃えて再構成する。
 - 既存実装にあった以下の課題を解消する:
   - メタ情報セクションが `<dl>/<dt>/<dd>` 手書きで、他ページ（`Card` + `FormField`）と統一感がない
   - 削除確認に **ブラウザネイティブ `confirm()`** を使っている（一覧ページは design-system `Dialog`）

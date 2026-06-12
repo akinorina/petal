@@ -3,7 +3,7 @@
 ローカル/リモートの **OpenAI 互換エンドポイント**を介して LLM と対話するチャット機能。
 ユーザーごとに会話スレッドを永続化し、応答をストリーミング（SSE）で逐次表示する。
 実装: [backend/src/chat/](../../backend/src/chat/) / フロント
-[frontend/src/app/(admin)/chat/](../../frontend/src/app/%28admin%29/chat/)。
+[frontend/src/app/(authenticated)/chat/](../../frontend/src/app/%28authenticated%29/chat/)。
 
 原典: [tsk-107](../tsk-107_llm-provider-and-local-client.md)（プロバイダ抽象・ローカルクライアント） /
 [tsk-108](../tsk-108_chat-persistence.md)（永続化） /
@@ -139,7 +139,7 @@ example は [backend/.envs/.env.local.example](../../backend/.envs/.env.local.ex
 ## フロントエンド
 
 会話 UI は自己完結した再利用部品 `<ChatPanel>`（[frontend/src/components/chat/](../../frontend/src/components/chat/)）に切り出してある。
-`(admin)/chat/` 配下のページはそれを描画するだけで、ページは View に専念し、ステート/副作用は同居フックへ切り出す（[frontend-architecture](../10_architecture/03_frontend-architecture.md)）。
+`(authenticated)/chat/` 配下のページはそれを描画するだけで、ページは View に専念し、ステート/副作用は同居フックへ切り出す（[frontend-architecture](../10_architecture/03_frontend-architecture.md)）。
 
 - 一覧 `chat/page.tsx` ＋ `use-chat-page.ts`
 - 新規 `chat/new/page.tsx` ＋ `use-chat-new-page.ts`（`onThreadCreated` 供給に縮退）

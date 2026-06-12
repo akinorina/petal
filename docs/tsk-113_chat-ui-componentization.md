@@ -26,7 +26,7 @@ LLM チャットの会話 UI を、任意の場所（モーダル・サイドバ
 
 ## 課題サマリ
 
-既存のチャット会話 UI は `app/(admin)/chat/` 配下に閉じており、専用ページからしか使えない。
+既存のチャット会話 UI は `app/(authenticated)/chat/` 配下に閉じており、専用ページからしか使えない。
 プレゼン層 `ChatConversation` と送信フック `useChatConversation` は新規/既存ページ間で共有済みだが、
 API アクセスフック（`useChatMessagesApi` 等）やページ固有ロジック（遷移・ローディング・notFound）と
 ページ側で組み合わされており、単体では持ち出せない。本タスクはこれを **`threadId` を渡すだけで内部
@@ -172,7 +172,7 @@ function useChatPanel(props: ChatPanelProps) {
 
 | 項目 | Before | After |
 | --- | --- | --- |
-| 会話 UI の所在 | `app/(admin)/chat/`（ページ固有配線） | `src/components/chat/`（自己完結 `<ChatPanel>`） |
+| 会話 UI の所在 | `app/(authenticated)/chat/`（ページ固有配線） | `src/components/chat/`（自己完結 `<ChatPanel>`） |
 | 公開単位 | `ChatConversation`（プレゼンのみ。API 配線はページ） | `<ChatPanel>`（API 配線込み） |
 | 高さ | `minHeight: 60vh` + `sticky` コンポーザ | 親追従 `h-full` + 内部スクロール |
 | 新規遷移 | ページフックが `router.replace` | `onThreadCreated` コールバック（ページが遷移） |
@@ -184,7 +184,7 @@ function useChatPanel(props: ChatPanelProps) {
 ## 完了条件（具体化版）
 
 - [ ] `src/components/chat/`（`ChatPanel.tsx` / `use-chat-panel.ts` / `ChatConversation.tsx` / `use-chat-conversation.ts` / `index.ts`）が存在し、barrel が `ChatPanel` / `ChatPanelProps` のみ公開する。
-- [ ] `app/(admin)/chat/ChatConversation.tsx` と `app/(admin)/chat/use-chat-conversation.ts` は移設により削除されている。
+- [ ] `app/(authenticated)/chat/ChatConversation.tsx` と `app/(authenticated)/chat/use-chat-conversation.ts` は移設により削除されている。
 - [ ] `chat/new/page.tsx` と `chat/[threadId]/page.tsx` が `<ChatPanel>` 経由で描画し、各ページフックは `onThreadCreated` / `threadId` の供給に絞られている。
 - [ ] `<ChatPanel>` が親の高さに追従し（`h-full` + 内部スクロール）、ページでは `h-[70vh]` で表示される。
 - [ ] 送信・ストリーミング・空生成・切断・notFound・新規遷移の挙動が現状と一致（手動シナリオ全通過）。
@@ -221,20 +221,20 @@ function useChatPanel(props: ChatPanelProps) {
 
 #### 移設（`git mv` で履歴保持）
 
-- `app/(admin)/chat/ChatConversation.tsx` → `components/chat/ChatConversation.tsx`（高さ系クラス変更＋`className` prop 追加）。
-- `app/(admin)/chat/use-chat-conversation.ts` → `components/chat/use-chat-conversation.ts`（ロジック無変更。`import` は絶対パス `@/...` のため移設後もそのまま有効）。
+- `app/(authenticated)/chat/ChatConversation.tsx` → `components/chat/ChatConversation.tsx`（高さ系クラス変更＋`className` prop 追加）。
+- `app/(authenticated)/chat/use-chat-conversation.ts` → `components/chat/use-chat-conversation.ts`（ロジック無変更。`import` は絶対パス `@/...` のため移設後もそのまま有効）。
 
 #### 変更
 
-- `app/(admin)/chat/[threadId]/page.tsx` — `<ChatPanel mode="thread" threadId className="h-[70vh]">` を描画。back link は維持、loading/notFound 分岐は撤去（パネルが担当）。
-- `app/(admin)/chat/[threadId]/use-chat-thread-page.ts` — `useParams` から `{ threadId }` を返すだけに縮退。
-- `app/(admin)/chat/new/page.tsx` — `<ChatPanel mode="new" onThreadCreated className="h-[70vh]">` を描画。
-- `app/(admin)/chat/new/use-chat-new-page.ts` — `router.replace('/chat/:id')` を行う `{ onThreadCreated }` を返すだけに縮退。
+- `app/(authenticated)/chat/[threadId]/page.tsx` — `<ChatPanel mode="thread" threadId className="h-[70vh]">` を描画。back link は維持、loading/notFound 分岐は撤去（パネルが担当）。
+- `app/(authenticated)/chat/[threadId]/use-chat-thread-page.ts` — `useParams` から `{ threadId }` を返すだけに縮退。
+- `app/(authenticated)/chat/new/page.tsx` — `<ChatPanel mode="new" onThreadCreated className="h-[70vh]">` を描画。
+- `app/(authenticated)/chat/new/use-chat-new-page.ts` — `router.replace('/chat/:id')` を行う `{ onThreadCreated }` を返すだけに縮退。
 - `docs/20_features/09_chat.md`「フロントエンド」節 / `docs/10_architecture/03_frontend-architecture.md` のディレクトリ構成。
 
 #### 削除
 
-移設に伴い `app/(admin)/chat/ChatConversation.tsx` / `use-chat-conversation.ts` は消える（`git mv` の結果）。スレッド一覧 `chat/page.tsx` / `use-chat-page.ts` は変更なし。
+移設に伴い `app/(authenticated)/chat/ChatConversation.tsx` / `use-chat-conversation.ts` は消える（`git mv` の結果）。スレッド一覧 `chat/page.tsx` / `use-chat-page.ts` は変更なし。
 
 ### migration・環境変数・依存追加
 

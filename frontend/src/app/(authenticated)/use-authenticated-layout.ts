@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
-export function useAdminLayout() {
+export function useAuthenticatedLayout() {
   const router = useRouter();
   const pathname = usePathname();
   const { isAuthenticated, isLoading, email, role, logout } = useAuth();
