@@ -6,6 +6,7 @@ service: petal-backend
 
 provider:
   name: aws
+  stage: ${env:STAGE, 'dev'}
   runtime: nodejs22.x
   region: ap-northeast-1
   memorySize: 512
@@ -19,6 +20,13 @@ provider:
     S3_BUCKET: ${env:S3_BUCKET}
     CORS_ORIGINS: ${env:CORS_ORIGINS}
     SKIP_AUTH: ${env:SKIP_AUTH, 'false'}
+    SKIP_AUTH_USER_ID: ${env:SKIP_AUTH_USER_ID, ''}
+    SELF_SIGNUP_ENABLED: ${env:SELF_SIGNUP_ENABLED, ''}
+    LOGIN_LOCKOUT_MAX_ATTEMPTS: ${env:LOGIN_LOCKOUT_MAX_ATTEMPTS, ''}
+    LOGIN_LOCKOUT_DURATION_MINUTES: ${env:LOGIN_LOCKOUT_DURATION_MINUTES, ''}
+    LLM_BASE_URL: ${env:LLM_BASE_URL, ''}
+    LLM_API_KEY: ${env:LLM_API_KEY, ''}
+    LLM_MODEL: ${env:LLM_MODEL, ''}
   iam:
     role:
       statements:

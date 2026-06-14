@@ -14,15 +14,26 @@ import { LlmConfig } from './llm.config';
 // 公式 openai SDK を baseURL 上書きで利用する。外部 SDK 呼び出しはこの infra に隔離する。
 @Injectable()
 export class OpenAiCompatibleClient implements LlmProvider {
-  private readonly client: OpenAI;
+  private cachedClient: OpenAI | undefined;
   private readonly defaultModel: string | undefined;
 
-  constructor(config: LlmConfig) {
-    this.client = new OpenAI({
-      baseURL: config.baseUrl,
-      apiKey: config.apiKey,
-    });
+  constructor(private readonly config: LlmConfig) {
     this.defaultModel = config.defaultModel;
+  }
+
+  // OpenAI クライアントは初回利用時に生成する（遅延初期化）。
+  // LLM_BASE_URL 未設定時はアプリ起動を妨げず、チャット利用時のみ明確なエラーを返す。
+  private get client(): OpenAI {
+    if (!this.config.baseUrl) {
+      throw new Error(
+        'LLM が未設定です。環境変数 LLM_BASE_URL を設定してください。',
+      );
+    }
+    this.cachedClient ??= new OpenAI({
+      baseURL: this.config.baseUrl,
+      apiKey: this.config.apiKey,
+    });
+    return this.cachedClient;
   }
 
   async listModels(): Promise<LlmModel[]> {

@@ -34,6 +34,9 @@ direnv allow
 
 # 環境変数を設定（.envs/ からコピーして値を埋め、symlink を作成）
 cp .envs/.env.local.example .envs/.env.local
+# Cognito ユーザープールを作成。作成したユーザープールの「認証フロー」の次の２つをONにする：
+# - ALLOW_USER_PASSWORD_AUTH
+# - ALLOW_ADMIN_USER_PASSWORD_AUTH
 # Cognito ユーザープールの値 `COGNITO_USER_POOL_ID` `COGNITO_CLIENT_ID` `COGNITO_CLIENT_SECRET` を .envs/.env.local に設定
 # `ADMIN_EMAIL` `ADMIN_PASSWORD` を設定、これがADMINアカウントのID、PASSWORDになります。
 
