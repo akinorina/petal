@@ -1,7 +1,7 @@
-# backend — DEV 環境（AWS Lambda / Neon / S3）
+# backend — PROD 環境（AWS Lambda / Neon / S3）
 
 ローカル開発手順は [README.md](README.md) を参照。
-本ドキュメントでは、AWS Lambda にデプロイしてリモートで動作させる **DEV 環境** の構築・設定・デプロイ・撤去手順をまとめる。
+本ドキュメントでは、AWS Lambda にデプロイしてリモートで動作させる **PROD 環境** の構築・設定・デプロイ・撤去手順をまとめる。
 
 ## 構成
 
@@ -9,8 +9,8 @@
 | ------ | ------------ | ---- |
 | API ランタイム | AWS Lambda (Node.js 22.x) + Amazon API Gateway (HTTP API) | Serverless Framework v4 でデプロイ |
 | DB | Neon (PostgreSQL) | Pooler 接続（アプリ）/ Direct 接続（マイグレーション） |
-| 認証 | AWS Cognito User Pool（PROD 用 `petal-dev`） | |
-| 画像ストレージ | AWS S3（`petal-images-dev`） | |
+| 認証 | AWS Cognito User Pool（PROD 用 `petal-prod`） | |
+| 画像ストレージ | AWS S3（`petal-images-prod`） | |
 | デプロイ用 IAM | IAM ユーザー `petal-deploy` | `AWS_PROFILE=petal-deploy` で利用 |
 | リージョン | `ap-northeast-1` | |
 
@@ -21,8 +21,8 @@
   - Node.js 22.x / pnpm / direnv
   - AWS CLI v2
 - Neon アカウント / プロジェクト
-- AWS Cognito の DEV 用 User Pool（`petal-dev`）が作成済み
-- フロントエンド（Amplify）の DEV ホスト名が決まっている（CORS 設定で利用）
+- AWS Cognito の PROD 用 User Pool（`petal-prod`）が作成済み
+- フロントエンド（Amplify）の PROD ホスト名が決まっている（CORS 設定で利用）
 
 ## 1. AWS 側リソースの準備
 
@@ -43,7 +43,7 @@ aws configure --profile petal-deploy
 - IAM: Lambda 実行ロールの作成・削除（`iam:PassRole` 含む）
 - CloudWatch Logs: ロググループの作成・削除
 - Cognito: `serverless.yml` の `iam.role.statements` に列挙された各アクション
-- S3（アプリ用バケット `petal-images-dev`）: `PutObject` / `GetObject` / `DeleteObject` / `HeadObject`
+- S3（アプリ用バケット `petal-images-prod`）: `PutObject` / `GetObject` / `DeleteObject` / `HeadObject`
 - S3（Serverless Framework デプロイバケット `serverless-framework-deployments-ap-northeast-1-*`）: `ListBucket` / `ListBucketVersions` / `GetObject` / `GetObjectVersion` / `PutObject` / `DeleteObject` / `DeleteObjectVersion`
 
 > **メモ**: `ListBucketVersions` / `DeleteObjectVersion` は `serverless remove` 時に必要。これが無いとスタック撤去がエラーになる。
@@ -179,13 +179,13 @@ aws configure --profile petal-deploy
 }
 ```
 
-### 1.2 S3 バケット `petal-images-dev`
+### 1.2 S3 バケット `petal-images-prod`
 
 画像アップロード用バケットを `ap-northeast-1` に作成する。
 
 ```bash
 aws s3api create-bucket \
-  --bucket petal-images-dev \
+  --bucket petal-images-prod \
   --region ap-northeast-1 \
   --create-bucket-configuration LocationConstraint=ap-northeast-1 \
   --profile petal-deploy
@@ -194,7 +194,7 @@ aws s3api create-bucket \
 - パブリックアクセスはブロックしたまま、アプリからは presigned URL でアクセスする想定。
 - 必要に応じて CORS / ライフサイクル / 暗号化を設定。
 
-### 1.3 Cognito User Pool （　PROD 用 `petal-dev`　）
+### 1.3 Cognito User Pool （　PROD 用 `petal-prod`　）
 
 AWS Console から User Pool と App Client を作成する。App Client では **クライアントシークレットを有効**にする（アプリ側で `COGNITO_CLIENT_SECRET` を利用するため）。
 
@@ -215,13 +215,13 @@ Neon Console で `petal` プロジェクト / データベースを作成し、�
 
 ## 2. ローカル設定
 
-### 2.1 `.envs/.env.dev` の作成
+### 2.1 `.envs/.env.prod` の作成
 
 ```bash
-cp .envs/.env.dev.example .envs/.env.dev
+cp .envs/.env.prod.example .envs/.env.prod
 ```
 
-`.envs/.env.dev` を編集し、上記 1.2〜1.4 で取得した値を埋める。`.env.dev.example` のキー一覧：
+`.envs/.env.prod` を編集し、上記 1.2〜1.4 で取得した値を埋める。`.env.prod.example` のキー一覧：
 
 | 変数 | 用途 |
 | ---- | ---- |
@@ -230,30 +230,30 @@ cp .envs/.env.dev.example .envs/.env.dev
 | `COGNITO_REGION` / `COGNITO_USER_POOL_ID` / `COGNITO_CLIENT_ID` / `COGNITO_CLIENT_SECRET` | Cognito（DEV） |
 | `SKIP_AUTH` / `SKIP_AUTH_USER_ID` | DEV では `SKIP_AUTH=false` |
 | `CORS_ORIGINS` | Amplify の DEV URL（カンマ区切りで複数指定可。例: `https://main.xxxxxxxxxx.amplifyapp.com`） |
-| `S3_BUCKET` | `petal-images-dev` |
+| `S3_BUCKET` | `petal-images-prod` |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_NAME` / `ADMIN_NAME_KANA` | 初期 Admin 作成スクリプト用 |
 
-> `.envs/.env.dev` は機密情報を含むためコミット禁止。
+> `.envs/.env.prod` は機密情報を含むためコミット禁止。
 
 ### 2.2 環境切り替え
 
 ローカルから DEV 用コマンド（マイグレーション・admin 作成）を実行する場合は、`.env` シンボリックリンクを切り替える。
 
 ```bash
-pnpm use-env dev          # backend/.env → backend/.envs/.env.dev
+pnpm use-env prod          # backend/.env → backend/.envs/.env.dev
 direnv reload             # direnv を使っているなら反映
 ```
 
-> `pnpm deploy:dev` / `pnpm deploy:remove:dev` はスクリプト内で `.envs/.env.dev` を読み込むため、`use-env` の切り替えは不要。
+> `pnpm deploy:prod` / `pnpm deploy:remove:prod` はスクリプト内で `.envs/.env.prod` を読み込むため、`use-env` の切り替えは不要。
 
-## 3. 初回セットアップ （ DEV ）
+## 3. 初回セットアップ （ PROD ）
 
 ### 3.1 マイグレーション適用
 
 Neon の Direct 接続を使ってマイグレーションを実行する。
 
 ```bash
-pnpm use-env dev
+pnpm use-env prod
 pnpm migration:run
 ```
 
@@ -262,7 +262,7 @@ pnpm migration:run
 ### 3.2 初期 Admin の作成
 
 ```bash
-pnpm use-env dev
+pnpm use-env prod
 pnpm create-admin
 ```
 
@@ -273,12 +273,12 @@ pnpm create-admin
 ### 4.1 フルデプロイ（CloudFormation スタック含む）
 
 ```bash
-pnpm deploy:dev
+pnpm deploy:prod
 ```
 
 このコマンドは内部で以下を順に実行する。
 
-1. `.envs/.env.dev` を `set -a` で環境変数にロード
+1. `.envs/.env.prod` を `set -a` で環境変数にロード
 2. `nest build` で TypeScript をコンパイル
 3. `pnpm bundle:lambda`（esbuild）で `lambda.js` にバンドル
 4. `AWS_PROFILE=petal-deploy serverless deploy --region ap-northeast-1`
@@ -290,24 +290,24 @@ pnpm deploy:dev
 `serverless.yml` の構成変更が無く、コード差分だけを反映したい場合：
 
 ```bash
-pnpm deploy:function:dev
+pnpm deploy:function:prod
 ```
 
-CloudFormation を経由せず Lambda 関数本体のコードのみ差し替えるため高速。`provider.environment` や IAM ポリシーを変えた時は使えない（その場合は `deploy:dev`）。
+CloudFormation を経由せず Lambda 関数本体のコードのみ差し替えるため高速。`provider.environment` や IAM ポリシーを変えた時は使えない（その場合は `deploy:prod`）。
 
 ### 4.3 マイグレーションの追加
 
 スキーマ変更を加えた際は、ローカルでマイグレーションを生成 → DEV の Neon に適用 → デプロイ、の順で行う。
 
 ```bash
-pnpm use-env dev
+pnpm use-env prod
 pnpm migration:generate database/migrations/<名前>   # ローカルのエンティティ差分から生成
 # 動作確認後コミット
 
-pnpm use-env dev
+pnpm use-env prod
 pnpm migration:run                                    # Neon (DEV) に適用
 
-pnpm deploy:dev                                       # アプリをデプロイ
+pnpm deploy:prod                                       # アプリをデプロイ
 ```
 
 ## 5. 動作確認
@@ -334,17 +334,17 @@ pnpm openapi:export
 DEV 環境のスタック（Lambda / API Gateway / IAM ロール / CloudWatch Logs ロググループ）を削除する。
 
 ```bash
-pnpm deploy:remove:dev
+pnpm deploy:remove:prod
 ```
 
-> S3 バケット（`petal-images-dev`）と Cognito User Pool、Neon のデータは `serverless remove` の対象外。必要に応じて手動で削除する。
+> S3 バケット（`petal-images-prod`）と Cognito User Pool、Neon のデータは `serverless remove` の対象外。必要に応じて手動で削除する。
 
 ## 7. トラブルシューティング
 
 | 症状 | 想定原因 / 対処 |
 | ---- | -------------- |
 | `serverless deploy` / `remove` で `is not authorized to perform: s3:...` | `petal-deploy` の IAM ポリシー不足。1.1 のポリシー一覧を確認（特に `ListBucketVersions` / `DeleteObjectVersion`）。 |
-| `migration:run` が Pooler 経由でハング・失敗 | `DATABASE_URL_DIRECT` が未設定 / 反映されていない。`pnpm use-env dev` を再実行し direnv を reload。 |
+| `migration:run` が Pooler 経由でハング・失敗 | `DATABASE_URL_DIRECT` が未設定 / 反映されていない。`pnpm use-env prod` を再実行し direnv を reload。 |
 | Lambda から 5xx・タイムアウト | CloudWatch Logs を確認。`DATABASE_URL`（Pooler）や Cognito 認証情報の値ずれが多い。 |
-| CORS エラー | `CORS_ORIGINS` が Amplify の現行 URL と一致しているか確認。変更後は `pnpm deploy:dev` でスタック反映。 |
-| `deploy:function:dev` 後に環境変数が反映されない | `provider.environment` の変更は `deploy:function` では反映されない。`pnpm deploy:dev` を使う。 |
+| CORS エラー | `CORS_ORIGINS` が Amplify の現行 URL と一致しているか確認。変更後は `pnpm deploy:prod` でスタック反映。 |
+| `deploy:function:prod` 後に環境変数が反映されない | `provider.environment` の変更は `deploy:function` では反映されない。`pnpm deploy:prod` を使う。 |
