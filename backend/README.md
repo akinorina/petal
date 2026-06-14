@@ -40,6 +40,10 @@ cp .envs/.env.local.example .envs/.env.local
 # .envs/.env.local を編集して DB / Cognito の設定値を埋める
 bash scripts/use-env.sh local
 
+# LocalStack 用の HTTPS 証明書を生成
+# （mkcert で certs/localhost+2.pem を用意済みであること。LocalStack が起動時にマウントするため docker compose の前に実行）
+bash scripts/localstack/generate-localstack-cert.sh
+
 # DB 起動（Docker）
 docker compose up -d
 

@@ -11,7 +11,8 @@ set -euo pipefail
 #
 # mkcert の証明書を更新した場合は本スクリプトを再実行すること。
 
-cd "$(dirname "$0")/.."
+# certs/ はリポジトリルートに置かれているため、backend/scripts/localstack/ から 3 階層上へ移動する。
+cd "$(dirname "$0")/../../.."
 
 CERT=certs/localhost+2.pem
 KEY=certs/localhost+2-key.pem
