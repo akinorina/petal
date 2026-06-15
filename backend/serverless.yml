@@ -12,11 +12,15 @@ provider:
   memorySize: 512
   timeout: 30
   environment:
-    DATABASE_URL: ${env:DATABASE_URL}
+    STAGE: ${self:provider.stage}
+    # 機密値（DATABASE_URL / COGNITO_CLIENT_SECRET / 各 LLM の *_API_KEY）は
+    # AWS Secrets Manager の petal-backend-secrets-<stage> から Lambda 起動時に
+    # 読み込む（src/lambda.ts の loadSecrets）。LOCAL では未設定のためスキップ。
+    SECRETS_MANAGER_SECRET_ID: petal-backend-secrets-${self:provider.stage}
+    # --- 非機密の設定（デプロイ時に .env から注入）---
     COGNITO_REGION: ${env:COGNITO_REGION}
     COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID}
     COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
-    COGNITO_CLIENT_SECRET: ${env:COGNITO_CLIENT_SECRET}
     S3_BUCKET: ${env:S3_BUCKET}
     CORS_ORIGINS: ${env:CORS_ORIGINS}
     SKIP_AUTH: ${env:SKIP_AUTH, 'false'}
@@ -24,9 +28,13 @@ provider:
     SELF_SIGNUP_ENABLED: ${env:SELF_SIGNUP_ENABLED, ''}
     LOGIN_LOCKOUT_MAX_ATTEMPTS: ${env:LOGIN_LOCKOUT_MAX_ATTEMPTS, ''}
     LOGIN_LOCKOUT_DURATION_MINUTES: ${env:LOGIN_LOCKOUT_DURATION_MINUTES, ''}
-    LLM_BASE_URL: ${env:LLM_BASE_URL, ''}
-    LLM_API_KEY: ${env:LLM_API_KEY, ''}
-    LLM_MODEL: ${env:LLM_MODEL, ''}
+    LLM_PROVIDER: ${env:LLM_PROVIDER, 'local'}
+    CLAUDE_MODEL: ${env:CLAUDE_MODEL, ''}
+    GEMINI_MODEL: ${env:GEMINI_MODEL, ''}
+    OPENAI_MODEL: ${env:OPENAI_MODEL, ''}
+    OPENAI_BASE_URL: ${env:OPENAI_BASE_URL, ''}
+    LOCALLLM_BASE_URL: ${env:LOCALLLM_BASE_URL, ''}
+    LOCALLLM_MODEL: ${env:LOCALLLM_MODEL, ''}
   iam:
     role:
       statements:
@@ -63,6 +71,12 @@ provider:
             - s3:DeleteObject
             - s3:HeadObject
           Resource: arn:aws:s3:::${env:S3_BUCKET}/*
+        - Effect: Allow
+          Action:
+            - secretsmanager:GetSecretValue
+          Resource:
+            # 末尾の -* は Secrets Manager が ARN に付与するランダム 6 文字に対応
+            - arn:aws:secretsmanager:ap-northeast-1:*:secret:petal-backend-secrets-${self:provider.stage}-*
 
 package:
   patterns:
