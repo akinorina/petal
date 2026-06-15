@@ -9,20 +9,21 @@ export default function ChatNewPage() {
   const { onThreadCreated } = useChatNewPage();
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <NextLink href="/chat" className="ds-link ds-link--inline text-sm">
-          ← 一覧に戻る
-        </NextLink>
-        <Text as="h1" variant="heading-md">
-          新規チャット
-        </Text>
-      </div>
+    <div className="flex h-full flex-col gap-4">
+      <Text as="h1" variant="heading-md" className="flex-none">
+        新規チャット
+      </Text>
+      <NextLink
+        href="/chat"
+        className="ds-link ds-link--inline flex-none text-sm"
+      >
+        ← 一覧に戻る
+      </NextLink>
 
       <ChatPanel
         mode="new"
         onThreadCreated={onThreadCreated}
-        className="h-[70vh]"
+        className="flex-1 min-h-0"
       />
     </div>
   );

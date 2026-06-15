@@ -152,16 +152,26 @@ Claude / Gemini / OpenAI（本家）/ LocalLLM の 4 provider を provider 別�
 `(authenticated)/chat/` 配下のページはそれを描画するだけで、ページは View に専念し、ステート/副作用は同居フックへ切り出す（[frontend-architecture](../10_architecture/03_frontend-architecture.md)）。
 
 - 一覧 `chat/page.tsx` ＋ `use-chat-page.ts`
-- 新規 `chat/new/page.tsx` ＋ `use-chat-new-page.ts`（`onThreadCreated` 供給に縮退）
-- 既存スレッド `chat/[threadId]/page.tsx` ＋ `use-chat-thread-page.ts`（`threadId` 供給に縮退）
+- 新規 `chat/new/page.tsx` ＋ `use-chat-new-page.ts`（`onThreadCreated` 供給）
+- 既存スレッド `chat/[threadId]/page.tsx` ＋ `use-chat-thread-page.ts`（`threadId` 供給に加え、
+  `useChatThreadsApi` から一致スレッドの `title`（null は「無題の会話」）を引いて返す）
+
+各チャットページは `flex h-full flex-col gap-4` で「タイトル → 戻りリンク → `<ChatPanel>`」を
+**縦積み**する（タイトル・戻りリンクは `flex-none`、`<ChatPanel>` は `flex-1 min-h-0`）。
+新規ページのタイトルは固定文言「新規チャット」、既存スレッドページはスレッドタイトルを上部に表示する
+（タイトルは chat UI 内部には持たせずページ側のヘッダに置く。タイトル編集は別タスク）。
 
 `<ChatPanel>`（`components/chat/`）は `threadId` を渡すだけで API 配線・送信・SSE
 ストリーミング描画・ローディング/notFound 表示まで内部で完結する自己完結部品。
+chat UI 自体は「会話コンテンツ + 入力欄」の 2 部構成。
 
 - `mode` prop: `"thread"`（`threadId` 指定で既存スレッド表示）/ `"new"`（初回送信で遅延作成し、
   完了後に `onThreadCreated(threadId)` を呼ぶ。新規ページはこれで確定スレッドへ遷移）。
-- 高さは親に追従（`h-full` + 内部スクロール）し、枠は埋め込み側が `className` で与える
-  （ページは `h-[70vh]`）。モーダル/サイドバー等へもドロップするだけで埋め込める。
+- 高さは親に追従（`h-full` + 内部スクロール）し、枠は埋め込み側が `className` で与える。
+  チャットページは `flex-1 min-h-0` を渡すため chat UI は利用可能領域（ビューポート − TopBar）
+  いっぱいに追従し、会話が長くなっても会話枠内だけがスクロールしてページ全体は動かない
+  （認証レイアウト `(authenticated)/layout.tsx` を `h-dvh` flex 化し `<main>` を唯一の
+  スクロールコンテナにしている）。モーダル/サイドバー等へもドロップするだけで埋め込める。
 - 内部部品 `ChatConversation.tsx` / `use-chat-conversation.ts`（会話プレゼン・送信
   オーケストレーション）は `components/chat/` 内の非公開実装で、barrel は `ChatPanel` /
   `ChatPanelProps` のみ公開する。
