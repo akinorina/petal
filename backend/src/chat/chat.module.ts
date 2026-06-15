@@ -11,6 +11,7 @@ import { LLM_PROVIDER, LLM_PROVIDER_REGISTRY } from './domain/llm-provider';
 import { ChatMessageEntity } from './infra/chat-message.entity';
 import { ChatThreadEntity } from './infra/chat-thread.entity';
 import { ChatThreadRepositoryImpl } from './infra/chat-thread.repository.impl';
+import { buildLlmProviders } from './infra/llm-provider.factory';
 import { LlmConfig } from './infra/llm.config';
 
 @Module({
@@ -21,7 +22,16 @@ import { LlmConfig } from './infra/llm.config';
   controllers: [ChatController],
   providers: [
     LlmConfig,
-    LlmProviderRegistry,
+    // 設定済み provider を infra factory で構築し、純粋なレジストリへ渡す。
+    {
+      provide: LlmProviderRegistry,
+      useFactory: (config: LlmConfig) =>
+        new LlmProviderRegistry(
+          buildLlmProviders(config),
+          config.activeProviderId,
+        ),
+      inject: [LlmConfig],
+    },
     // レジストリ本体を引ける DI トークン（将来のリクエスト単位アクセス用）。
     { provide: LLM_PROVIDER_REGISTRY, useExisting: LlmProviderRegistry },
     // Chat が使う有効 provider（env LLM_PROVIDER で指定された 1 つ）。

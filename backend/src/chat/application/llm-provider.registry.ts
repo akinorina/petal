@@ -1,18 +1,6 @@
-import { Injectable } from '@nestjs/common';
 import type { ChatChunk, ChatResult } from '../domain/llm-generation';
 import type { LlmModel } from '../domain/llm-model';
 import { type LlmProvider, type ProviderId } from '../domain/llm-provider';
-import { ClaudeClient } from '../infra/claude.client';
-import { GeminiClient } from '../infra/gemini.client';
-import { LlmConfig } from '../infra/llm.config';
-import { OpenAiCompatibleClient } from '../infra/openai-compatible.client';
-
-const ALL_PROVIDER_IDS: readonly ProviderId[] = [
-  'claude',
-  'gemini',
-  'openai',
-  'local',
-];
 
 // active provider が未設定のときに getActive() が返す遅延スタブ。
 // 利用時に provider 固有の明確なエラーを投げ、アプリ起動自体は妨げない。
@@ -40,36 +28,16 @@ class UnconfiguredProvider implements LlmProvider {
   }
 }
 
-// 設定済みの全 provider を id で保持するレジストリ。
+// 設定済みの provider を id で保持する純粋なレジストリ（application 層・infra 非依存）。
+// 具象の生成は infra の buildLlmProviders が担い、ここには構築済みの Map を渡す。
 // Chat は getActive() で 1 つを使うが、get(id) で任意の provider を取り出して
 // 複数同時アクセス（fan-out）する用途も同じ API で satisfied。
-@Injectable()
 export class LlmProviderRegistry {
-  // 設定済み（isConfigured=true）の provider のみを保持する。
-  private readonly providers = new Map<ProviderId, LlmProvider>();
-  private readonly activeId: ProviderId;
-
-  constructor(config: LlmConfig) {
-    this.activeId = config.activeProviderId;
-    for (const id of ALL_PROVIDER_IDS) {
-      if (config.isConfigured(id)) {
-        this.providers.set(id, LlmProviderRegistry.build(id, config));
-      }
-    }
-  }
-
-  private static build(id: ProviderId, config: LlmConfig): LlmProvider {
-    switch (id) {
-      case 'claude':
-        return new ClaudeClient(config.claudeConfig);
-      case 'gemini':
-        return new GeminiClient(config.geminiConfig);
-      case 'openai':
-        return new OpenAiCompatibleClient(config.openaiConfig);
-      case 'local':
-        return new OpenAiCompatibleClient(config.localConfig);
-    }
-  }
+  constructor(
+    // 設定済み（isConfigured=true）の provider のみを保持する。
+    private readonly providers: Map<ProviderId, LlmProvider>,
+    private readonly activeId: ProviderId,
+  ) {}
 
   // Chat が使う有効 provider。未設定なら遅延スタブ（利用時に明確エラー）。
   getActive(): LlmProvider {

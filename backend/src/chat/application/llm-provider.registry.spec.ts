@@ -1,17 +1,14 @@
-import type { ConfigService } from '@nestjs/config';
 import type { ChatGenerationInput } from '../domain/llm-generation';
-import { ClaudeClient } from '../infra/claude.client';
-import { GeminiClient } from '../infra/gemini.client';
-import { LlmConfig } from '../infra/llm.config';
-import { OpenAiCompatibleClient } from '../infra/openai-compatible.client';
+import type { LlmProvider, ProviderId } from '../domain/llm-provider';
 import { LlmProviderRegistry } from './llm-provider.registry';
 
-// ダミー ConfigService（env を Record から返す。実 API には一切接続しない）。
-function buildConfig(env: Record<string, string>): LlmConfig {
-  const configService = {
-    get: (key: string): string | undefined => env[key],
-  } as unknown as ConfigService;
-  return new LlmConfig(configService);
+// 実 API に接続しないダミー provider。
+function fakeProvider(): LlmProvider {
+  return {
+    listModels: jest.fn(),
+    generate: jest.fn(),
+    generateStream: jest.fn(),
+  };
 }
 
 const input: ChatGenerationInput = {
@@ -19,65 +16,35 @@ const input: ChatGenerationInput = {
 };
 
 describe('LlmProviderRegistry', () => {
-  it('設定済み provider のみ availableIds に並ぶ', () => {
-    const registry = new LlmProviderRegistry(
-      buildConfig({
-        LLM_PROVIDER: 'claude',
-        CLAUDE_API_KEY: 'sk-claude',
-        GEMINI_API_KEY: 'sk-gemini',
-      }),
-    );
+  const claude = fakeProvider();
+  const gemini = fakeProvider();
+  const map = new Map<ProviderId, LlmProvider>([
+    ['claude', claude],
+    ['gemini', gemini],
+  ]);
+
+  it('availableIds は保持中の id 一覧', () => {
+    const registry = new LlmProviderRegistry(map, 'claude');
     expect(registry.availableIds().sort()).toEqual(['claude', 'gemini']);
     expect(registry.has('claude')).toBe(true);
     expect(registry.has('openai')).toBe(false);
-    expect(registry.has('local')).toBe(false);
   });
 
-  it('get(id) が provider 別の具象を返す（openai/local は OpenAI 互換）', () => {
-    const registry = new LlmProviderRegistry(
-      buildConfig({
-        LLM_PROVIDER: 'claude',
-        CLAUDE_API_KEY: 'sk-claude',
-        GEMINI_API_KEY: 'sk-gemini',
-        OPENAI_API_KEY: 'sk-openai',
-        LOCALLLM_BASE_URL: 'http://localhost:1234/v1',
-      }),
-    );
-    expect(registry.get('claude')).toBeInstanceOf(ClaudeClient);
-    expect(registry.get('gemini')).toBeInstanceOf(GeminiClient);
-    expect(registry.get('openai')).toBeInstanceOf(OpenAiCompatibleClient);
-    expect(registry.get('local')).toBeInstanceOf(OpenAiCompatibleClient);
+  it('getActive は activeId のエントリを返す', () => {
+    expect(new LlmProviderRegistry(map, 'gemini').getActive()).toBe(gemini);
   });
 
-  it('getActive() が LLM_PROVIDER 指定の provider を返す', () => {
-    const registry = new LlmProviderRegistry(
-      buildConfig({ LLM_PROVIDER: 'gemini', GEMINI_API_KEY: 'sk-gemini' }),
-    );
-    expect(registry.getActive()).toBeInstanceOf(GeminiClient);
+  it('get は該当エントリ／未登録 id は明確なエラー', () => {
+    const registry = new LlmProviderRegistry(map, 'claude');
+    expect(registry.get('claude')).toBe(claude);
+    expect(() => registry.get('openai')).toThrow(/openai/);
   });
 
-  it('LLM_PROVIDER 未指定なら既定 local', () => {
-    const registry = new LlmProviderRegistry(
-      buildConfig({ LOCALLLM_BASE_URL: 'http://localhost:1234/v1' }),
-    );
-    expect(registry.getActive()).toBeInstanceOf(OpenAiCompatibleClient);
-    expect(registry.availableIds()).toEqual(['local']);
-  });
-
-  it('未登録 id への get は明確なエラー', () => {
-    const registry = new LlmProviderRegistry(
-      buildConfig({
-        LLM_PROVIDER: 'local',
-        LOCALLLM_BASE_URL: 'http://localhost:1234/v1',
-      }),
-    );
-    expect(() => registry.get('claude')).toThrow(/claude/);
-  });
-
-  describe('active が未設定（必須 env 欠落）のとき', () => {
-    it('has は false だが getActive は遅延スタブを返し、利用時に明確なエラー', async () => {
+  describe('active が未設定（map に無い）のとき', () => {
+    it('has は false、getActive は遅延スタブで利用時に明確なエラー', async () => {
       const registry = new LlmProviderRegistry(
-        buildConfig({ LLM_PROVIDER: 'claude' }), // CLAUDE_API_KEY 無し
+        new Map<ProviderId, LlmProvider>(),
+        'claude',
       );
       expect(registry.has('claude')).toBe(false);
 
