@@ -33,9 +33,9 @@ export default function AuthenticatedLayout({
   if (!isAuthenticated) return null;
 
   return (
-    <div className="min-h-full">
+    <div className="flex h-dvh flex-col">
       <TopBar
-        className="admin-topbar"
+        className="admin-topbar shrink-0"
         start={
           <div className="flex items-center gap-6">
             <span className="text-sm font-semibold">Petal</span>
@@ -99,7 +99,9 @@ export default function AuthenticatedLayout({
           </div>
         }
       />
-      <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
+      <main className="mx-auto w-full max-w-5xl flex-1 min-h-0 overflow-y-auto px-4 py-8">
+        {children}
+      </main>
     </div>
   );
 }
