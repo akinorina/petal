@@ -56,7 +56,7 @@ export function ChatConversation({
 
   return (
     <div className={['flex h-full flex-col', className].filter(Boolean).join(' ')}>
-      <div className="flex-1 space-y-4 overflow-y-auto pb-4">
+      <div className="flex-1 min-h-0 space-y-4 overflow-y-auto pb-4">
         {showEmpty ? (
           <p className="py-12 text-center text-sm text-zinc-400">
             メッセージを送信して会話を始めましょう。
