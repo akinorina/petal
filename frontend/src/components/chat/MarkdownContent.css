@@ -1,0 +1,155 @@
+/*
+ * チャットバブル内の Markdown 表示用スタイル。
+ * セレクタは :where() でラップして詳細度を 0 にしている（Button.css と同じ流儀）。
+ * 値は design-system のデザイントークンのみ使用し、生の色値・px 直書きを避ける。
+ * 本文サイズは指定せず、バブル側の text-sm を継承する。
+ */
+
+:where(.chat-markdown) {
+  line-height: var(--line-height-normal);
+  overflow-wrap: break-word;
+}
+
+/* ── ブロック間隔 ── */
+:where(.chat-markdown p),
+:where(.chat-markdown ul),
+:where(.chat-markdown ol),
+:where(.chat-markdown pre),
+:where(.chat-markdown table),
+:where(.chat-markdown blockquote) {
+  margin-block: var(--space-2);
+}
+
+:where(.chat-markdown > :first-child) {
+  margin-block-start: 0;
+}
+
+:where(.chat-markdown > :last-child) {
+  margin-block-end: 0;
+}
+
+/* ── 見出し（バブル内向けに控えめなサイズ差） ── */
+:where(.chat-markdown h1),
+:where(.chat-markdown h2),
+:where(.chat-markdown h3),
+:where(.chat-markdown h4),
+:where(.chat-markdown h5),
+:where(.chat-markdown h6) {
+  margin-block: var(--space-3) var(--space-2);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-snug);
+}
+
+:where(.chat-markdown h1),
+:where(.chat-markdown h2) {
+  font-size: var(--font-size-lg);
+}
+
+:where(.chat-markdown h3),
+:where(.chat-markdown h4),
+:where(.chat-markdown h5),
+:where(.chat-markdown h6) {
+  font-size: var(--font-size-base);
+}
+
+/* ── リスト（Tailwind リセットの打ち消し：マーカー + インデント） ── */
+:where(.chat-markdown ul) {
+  list-style-type: disc;
+}
+
+:where(.chat-markdown ol) {
+  list-style-type: decimal;
+}
+
+:where(.chat-markdown ul),
+:where(.chat-markdown ol) {
+  padding-inline-start: var(--space-5);
+}
+
+:where(.chat-markdown li) {
+  margin-block: var(--space-1);
+}
+
+:where(.chat-markdown li > ul),
+:where(.chat-markdown li > ol) {
+  margin-block: var(--space-1);
+}
+
+/* GFM タスクリストはチェックボックスを使うためマーカーを消す */
+:where(.chat-markdown li:has(> input[type='checkbox'])) {
+  list-style-type: none;
+}
+
+:where(.chat-markdown li > input[type='checkbox']) {
+  margin-inline-end: var(--space-1);
+}
+
+/* ── コード ── */
+:where(.chat-markdown code) {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+  padding: var(--space-0-5) var(--space-1);
+}
+
+:where(.chat-markdown pre) {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  overflow-x: auto;
+}
+
+:where(.chat-markdown pre code) {
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+}
+
+/* ── 表（はみ出し時は横スクロール） ── */
+:where(.chat-markdown table) {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+:where(.chat-markdown th),
+:where(.chat-markdown td) {
+  border: 1px solid var(--border-default);
+  padding: var(--space-1) var(--space-2);
+}
+
+:where(.chat-markdown th) {
+  background: var(--surface-sunken);
+  font-weight: var(--font-weight-semibold);
+  text-align: left;
+}
+
+/* ── 引用 ── */
+:where(.chat-markdown blockquote) {
+  border-inline-start: var(--space-0-5) solid var(--border-strong);
+  padding-inline-start: var(--space-3);
+  color: var(--text-secondary);
+}
+
+/* ── リンク ── */
+:where(.chat-markdown a) {
+  color: var(--accent-default);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+:where(.chat-markdown a):hover {
+  color: var(--accent-hover);
+}
+
+/* ── 区切り線 ── */
+:where(.chat-markdown hr) {
+  margin-block: var(--space-3);
+  border: 0;
+  border-top: 1px solid var(--border-default);
+}

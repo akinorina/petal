@@ -20,7 +20,7 @@
 ## 2. 既存設計との関係
 
 - [docs/11_user-info_and_authentication.md](11_user-info_and_authentication.md) — ログインフロー設計。本タスクはログイン成功後の **遷移先**のみを差し替え、認証ロジック自体は無変更。
-- [docs/12_image-management.md](12_image-management.md) — 画像ページの仕様。`/images` ルートが認証必須であることに依存する（既存どおり `(admin)` レイアウト配下）。
+- [docs/12_image-management.md](12_image-management.md) — 画像ページの仕様。`/images` ルートが認証必須であることに依存する（既存どおり `(authenticated)` レイアウト配下）。
 - DB / API / 外部 SaaS の変更なし。トランザクション境界の検討事項なし（[00_rules.md §4](00_rules.md) 対象外）。
 
 ## 3. 変更点詳細
@@ -48,7 +48,7 @@
 
 ### 3.3 ナビゲーションの並び順
 
-`frontend/src/app/(admin)/layout.tsx` 内 `<nav>` の `NavLink` 順序を変更:
+`frontend/src/app/(authenticated)/layout.tsx` 内 `<nav>` の `NavLink` 順序を変更:
 
 ```diff
 - <NavLink href="/users" ...>ユーザー</NavLink>

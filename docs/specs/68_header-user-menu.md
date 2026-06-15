@@ -34,13 +34,13 @@
 
 ## 1. 課題サマリ
 
-ログイン後シェル（route group `(admin)`）の TopBar 右スロット（`end`）が、現在「メールアドレスのテキストリンク（`/me`）＋ ログアウトボタン」を横並びで表示しており、狭幅端末でメールアドレスが折り返してログアウトボタンを潰している。これを**固定幅のユーザーアイコン（Avatar）1 つ**に置き換え、クリックで開くメニュー（Popover）内に「メールアドレス表示／プロフィール遷移／ログアウト」を集約する。frontend のみの変更。
+ログイン後シェル（route group `(authenticated)`）の TopBar 右スロット（`end`）が、現在「メールアドレスのテキストリンク（`/me`）＋ ログアウトボタン」を横並びで表示しており、狭幅端末でメールアドレスが折り返してログアウトボタンを潰している。これを**固定幅のユーザーアイコン（Avatar）1 つ**に置き換え、クリックで開くメニュー（Popover）内に「メールアドレス表示／プロフィール遷移／ログアウト」を集約する。frontend のみの変更。
 
 ## 2. スコープ
 
 ### 対象
 
-- `frontend/src/app/(admin)/layout.tsx` の TopBar `end` スロット
+- `frontend/src/app/(authenticated)/layout.tsx` の TopBar `end` スロット
 - 上記から呼ぶ既存フック `use-admin-layout.ts`（`email` / `role` / `handleLogout` は既存で充足。変更不要の見込み）
 
 ### 対象外
@@ -115,7 +115,7 @@
 
 ## 7. 既存設計との差分
 
-- [docs/67_admin-only-nav-guard.md](67_admin-only-nav-guard.md) で整備した `(admin)/layout.tsx` の TopBar 構成のうち、**`end` スロットのみ**を変更する。`start` スロット（ロゴ＋ナビ、admin 出し分け）は変更しない。
+- [docs/67_admin-only-nav-guard.md](67_admin-only-nav-guard.md) で整備した `(authenticated)/layout.tsx` の TopBar 構成のうち、**`end` スロットのみ**を変更する。`start` スロット（ロゴ＋ナビ、admin 出し分け）は変更しない。
 - `Popover` / `Avatar` は design-system に実装済みだが app 配下で初めて使用する。
 
 ## 8. 完了条件（具体化版）
@@ -151,8 +151,8 @@
 
 | ファイル | 変更内容 |
 | ---- | ---- |
-| `frontend/src/app/(admin)/layout.tsx` | TopBar `end` スロットを「メールリンク＋ログアウトボタン」から `Popover` + `Avatar` + `ListItem` のユーザーメニューに置換。`Popover` / `Avatar` / `ListItem` を import 追加。`goToProfile` をフックから受け取る |
-| `frontend/src/app/(admin)/use-admin-layout.ts` | `goToProfile`（`router.push('/me')`）ハンドラを追加し返り値に含める |
+| `frontend/src/app/(authenticated)/layout.tsx` | TopBar `end` スロットを「メールリンク＋ログアウトボタン」から `Popover` + `Avatar` + `ListItem` のユーザーメニューに置換。`Popover` / `Avatar` / `ListItem` を import 追加。`goToProfile` をフックから受け取る |
+| `frontend/src/app/(authenticated)/use-admin-layout.ts` | `goToProfile`（`router.push('/me')`）ハンドラを追加し返り値に含める |
 
 - migration / 環境変数 / 依存追加: **なし**。
 
@@ -183,7 +183,7 @@
 
 ### 11.3 作業順序（コミット単位）
 
-1. **コミット 1**: `use-admin-layout.ts` に `goToProfile` を追加 → `(admin)/layout.tsx` の `end` スロットをユーザーメニューに置換。
+1. **コミット 1**: `use-admin-layout.ts` に `goToProfile` を追加 → `(authenticated)/layout.tsx` の `end` スロットをユーザーメニューに置換。
    - 完了確認: `cd frontend && pnpm build` が通る／`pnpm lint` が通る／手動シナリオ（§9）を確認。
 
 実装は 1 コミットにまとめる（同一の振る舞い変更で分割の意味が薄いため）。

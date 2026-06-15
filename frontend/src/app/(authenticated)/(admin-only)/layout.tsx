@@ -6,7 +6,7 @@ import { Forbidden403 } from './Forbidden403';
 /**
  * admin 限定ルート（/users・/audit-logs）のガード。
  * 一般ユーザー（role !== 'admin'）には 403 ビューを表示する。
- * ローディング中は親 (admin)/layout が「読み込み中...」を表示しているため null を返す。
+ * ローディング中は親 (authenticated)/layout が「読み込み中...」を表示しているため null を返す。
  */
 export default function AdminOnlyLayout({
   children,

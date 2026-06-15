@@ -300,8 +300,8 @@ QR コード描画: 軽量な `qrcode` ライブラリ（or `qrcode.react`）を
 | `lib/api.ts` | `mfaApi.setup / verifyMfaSetup / disable` 追加 |
 | `lib/openapi/schema.d.ts` | OpenAPI 再生成 |
 | `app/login/...` | MFA コード入力画面の表示分岐 |
-| `app/(admin)/me/mfa/page.tsx` + フック | 新規 MFA 設定ページ |
-| `app/(admin)/me/...` ナビ | MFA 設定リンク |
+| `app/(authenticated)/me/mfa/page.tsx` + フック | 新規 MFA 設定ページ |
+| `app/(authenticated)/me/...` ナビ | MFA 設定リンク |
 | `package.json` | `qrcode.react`（または同等）依存追加 |
 
 ### Docs

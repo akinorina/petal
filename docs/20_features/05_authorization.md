@@ -31,7 +31,7 @@
 
 - `AuthContext` が role（`GET /users/me`）を保持。
 - TopBar の「ユーザー」「監査ログ」リンクは **admin 時のみ表示**。
-- ネスト route group `(admin)/(admin-only)/` の layout で `role !== 'admin'` を 403 表示にする。
+- ネスト route group `(authenticated)/(admin-only)/` の layout で `role !== 'admin'` を 403 表示にする。
 - backend が既存の `@Roles(Admin)` で守るため、フロントは UX 上の補助（バックエンドが最終防衛線）。
 - 原典: [specs/67_admin-only-nav-guard.md](../specs/67_admin-only-nav-guard.md)
 

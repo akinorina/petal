@@ -64,11 +64,41 @@ PostgreSQL（Neon / ローカルは Docker）。スキーマ名は `petal`。ORM
 
 定義: [backend/src/auth/infra/login-attempt.entity.ts](../../backend/src/auth/infra/login-attempt.entity.ts)
 
+### chat_threads
+
+| カラム | 型 | 制約 |
+| ------ | -- | ---- |
+| id | uuid | PK |
+| owner_user_id | uuid | FK → users（`onDelete: RESTRICT`） |
+| title | varchar(255) | nullable |
+| created_at / updated_at | timestamptz | |
+| deleted_at | timestamptz | nullable（論理削除） |
+
+インデックス: `IDX_chat_threads_owner_created (owner_user_id, created_at)` — 所有者別の新着順一覧用。
+定義: [backend/src/chat/infra/chat-thread.entity.ts](../../backend/src/chat/infra/chat-thread.entity.ts)
+
+### chat_messages
+
+| カラム | 型 | 制約 |
+| ------ | -- | ---- |
+| id | uuid | PK |
+| thread_id | uuid | FK → chat_threads（`onDelete: RESTRICT`） |
+| seq | bigint | スレッド内連番（0 始まり） |
+| role | varchar(20) | CHECK `role IN ('system','user','assistant')` |
+| content | text | |
+| created_at / updated_at | timestamptz | |
+| deleted_at | timestamptz | nullable（論理削除） |
+
+制約: `UQ_chat_messages_thread_seq UNIQUE (thread_id, seq)` — スレッド内 seq の一意性（並び順にも利用）。
+定義: [backend/src/chat/infra/chat-message.entity.ts](../../backend/src/chat/infra/chat-message.entity.ts)
+
 ## ER 図
 
 ```text
 users 1 ──< images        （owner_user_id, onDelete: RESTRICT）
 users 1 ──< audit_logs     （actor_user_id / target_user_id, FK 制約なしの参照）
+users 1 ──< chat_threads   （owner_user_id, onDelete: RESTRICT）
+chat_threads 1 ──< chat_messages （thread_id, onDelete: RESTRICT）
 login_attempts             （email を主キーに独立）
 ```
 
@@ -97,7 +127,7 @@ pnpm migration:revert                               # 直前を取り消し
 pnpm migration:show                                 # 適用状況
 ```
 
-既存マイグレーション: スキーマ作成 → users → images → users への email 追加 → audit_logs → login_attempts。
+既存マイグレーション: スキーマ作成 → users → images → users への email 追加 → audit_logs → login_attempts → chat_threads / chat_messages。
 
 ## Neon 固有の接続設定
 

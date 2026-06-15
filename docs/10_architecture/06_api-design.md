@@ -59,6 +59,18 @@ REST API。バックエンド（NestJS）が OpenAPI 仕様を生成し、フロ
 | GET | /images/:id/download-url | 🔑 | 署名付きダウンロード URL |
 | DELETE | /images/:id | 🔑 | 画像削除（論理） |
 
+### chat（[backend/src/chat/controller/chat.controller.ts](../../backend/src/chat/controller/chat.controller.ts)）
+
+送信エンドポイントのレスポンスは SSE（`text/event-stream`）。フロントは fetch の ReadableStream で消費する（`event: delta`/`done`/`error`）。
+
+| メソッド | パス | Auth | 概要 |
+| -------- | ---- | ---- | ---- |
+| POST | /chat/threads | 🔑 | スレッド作成 |
+| GET | /chat/threads | 🔑 | 自分のスレッド一覧（新着順） |
+| GET | /chat/threads/:id/messages | 🔑 | メッセージ一覧（seq 昇順） |
+| POST | /chat/threads/:id/messages | 🔑 | 送信 + ストリーム応答（SSE） |
+| DELETE | /chat/threads/:id | 🔑 | スレッド論理削除（メッセージ連鎖） |
+
 ### audit-logs（[backend/src/audit/controller/audit-log.controller.ts](../../backend/src/audit/controller/audit-log.controller.ts)）
 
 | メソッド | パス | Auth | 概要 |

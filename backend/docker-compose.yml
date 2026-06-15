@@ -30,6 +30,11 @@ services:
     volumes:
       - localstack_data:/var/lib/localstack
       - ./localstack/init:/etc/localstack/init/ready.d
+      # mkcert 証明書で HTTPS を提供する（LAN 端末からの mixed content 対策）。
+      # scripts/localstack/generate-localstack-cert.sh で生成する。
+      - ../certs/localstack/server.test.pem:/var/lib/localstack/cache/server.test.pem:ro
+      - ../certs/localstack/server.test.pem.crt:/var/lib/localstack/cache/server.test.pem.crt:ro
+      - ../certs/localstack/server.test.pem.key:/var/lib/localstack/cache/server.test.pem.key:ro
     healthcheck:
       test:
         - CMD-SHELL

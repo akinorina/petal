@@ -12,18 +12,22 @@ frontend/
       signup/                  # セルフサインアップ
       forgot-password/         # パスワードリセット
       ~offline/                # オフラインフォールバック（PWA）
-      (admin)/                 # 認証必須ルートグループ
+      (authenticated)/                 # 認証必須ルートグループ
         images/                # 画像一覧
           [id]/                # 画像詳細
+        chat/                  # チャット一覧（会話 UI は components/chat/ の <ChatPanel> を描画）
+          new/                 # 新規会話（初回送信で遅延作成）
+          [threadId]/          # 既存会話（ストリーミング送受信）
         me/                    # マイページ（profile / password / email / mfa）
         (admin-only)/          # admin のみ（layout で role ガード）
           users/               # ユーザー管理
           audit-logs/          # 監査ログ
     components/                # 共有コンポーネント
+      chat/                    # 自己完結チャット部品 <ChatPanel>（公開は ChatPanel のみ）
     contexts/                  # AuthContext
     design-system/             # UI コンポーネント・トークン
     lib/
-      api/                     # ドメイン別 API ラッパ（image/user/auth/mfa/audit-log + shared）
+      api/                     # ドメイン別 API ラッパ（image/user/auth/mfa/audit-log/chat + shared）
       api-hooks/               # API アクセス専用フック
       http.ts                  # 認証前 fetch 共通ヘルパ（apiClient を介さない呼び出し用）
       openapi/                 # 型付きクライアント（自動生成 + middleware）
@@ -61,6 +65,7 @@ lib/api-hooks/
   use-me-email-api.ts      # メールアドレス変更
   use-mfa-api.ts           # MFA 状態 / 設定 / 有効化 / 解除
   use-audit-logs-api.ts    # 監査ログ
+  use-chat-api.ts          # チャット スレッド一覧 / メッセージ / 送信ストリーム
 ```
 
 - 取得系フックは共通土台 `useApiResource<T>(fetcher)` の上に実装し、状態管理と自動再取得の重複を避ける。

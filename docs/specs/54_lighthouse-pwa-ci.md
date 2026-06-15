@@ -72,7 +72,7 @@ PRJ-10「Petal PWA 化」の仕上げタスク。Lighthouse の PWA installabili
 
 - **採用案**: `http://localhost:3000/login` を計測対象にする。
 - **理由**:
-  - Petal はクライアントサイド認証で、`/` は `(admin)` レイアウトの認証ガードによりログイン
+  - Petal はクライアントサイド認証で、`/` は `(authenticated)` レイアウトの認証ガードによりログイン
     ページへリダイレクトされる。Lighthouse が初期ロードでリダイレクト先を計測しても結果は同じ
     だが、明示的に `/login` を指定して挙動を安定化させる。
   - `manifest.webmanifest` と `sw.js` は全ページ共通で配信されるため、installable 監査の結果は

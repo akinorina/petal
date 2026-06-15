@@ -8,5 +8,10 @@ allowBuilds:
   # pnpm の node ラッパシム経由の起動と衝突する。プレビルト
   # (@esbuild/<platform>) で動作するため build はスキップする。
   esbuild: false
+  # @google/genai の prepare/build は patch-package・rollup・api-extractor 等の
+  # dev ツールを要するが、published パッケージは dist 同梱で build 不要。スキップする。
+  '@google/genai': false
+  # protobufjs の postinstall はライブラリ利用には不要（require は build なしで動く）。
+  protobufjs: false
   serverless: true
   unrs-resolver: true

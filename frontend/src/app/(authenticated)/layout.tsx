@@ -5,9 +5,9 @@ import { TopBar } from '@/design-system/components/TopBar';
 import { Popover } from '@/design-system/components/Popover';
 import { Avatar } from '@/design-system/components/Avatar';
 import { ListItem } from '@/design-system/components/ListItem';
-import { useAdminLayout } from './use-admin-layout';
+import { useAuthenticatedLayout } from './use-authenticated-layout';
 
-export default function AdminLayout({
+export default function AuthenticatedLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -20,7 +20,7 @@ export default function AdminLayout({
     isLoading,
     handleLogout,
     goToProfile,
-  } = useAdminLayout();
+  } = useAuthenticatedLayout();
 
   if (isLoading) {
     return (
@@ -33,15 +33,18 @@ export default function AdminLayout({
   if (!isAuthenticated) return null;
 
   return (
-    <div className="min-h-full">
+    <div className="flex h-dvh flex-col">
       <TopBar
-        className="admin-topbar"
+        className="admin-topbar shrink-0"
         start={
           <div className="flex items-center gap-6">
             <span className="text-sm font-semibold">Petal</span>
             <nav className="flex items-center gap-4 text-sm">
               <NavLink href="/images" active={pathname.startsWith('/images')}>
                 画像
+              </NavLink>
+              <NavLink href="/chat" active={pathname.startsWith('/chat')}>
+                チャット
               </NavLink>
               {role === 'admin' && (
                 <>
@@ -96,7 +99,9 @@ export default function AdminLayout({
           </div>
         }
       />
-      <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
+      <main className="mx-auto w-full max-w-5xl flex-1 min-h-0 overflow-y-auto px-4 py-8">
+        {children}
+      </main>
     </div>
   );
 }

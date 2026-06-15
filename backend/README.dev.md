@@ -1,6 +1,7 @@
 # backend — DEV 環境（AWS Lambda / Neon / S3）
 
-ローカル開発手順は [README.md](README.md) を参照。本ドキュメントでは、AWS Lambda にデプロイしてリモートで動作させる **DEV 環境** の構築・設定・デプロイ・撤去手順をまとめる。
+ローカル開発手順は [README.md](README.md) を参照。
+本ドキュメントでは、AWS Lambda にデプロイしてリモートで動作させる **DEV 環境** の構築・設定・デプロイ・撤去手順をまとめる。
 
 ## 構成
 
@@ -8,7 +9,7 @@
 | ------ | ------------ | ---- |
 | API ランタイム | AWS Lambda (Node.js 22.x) + Amazon API Gateway (HTTP API) | Serverless Framework v4 でデプロイ |
 | DB | Neon (PostgreSQL) | Pooler 接続（アプリ）/ Direct 接続（マイグレーション） |
-| 認証 | AWS Cognito User Pool（DEV 用 `petal-dev`） | |
+| 認証 | AWS Cognito User Pool（PROD 用 `petal-dev`） | |
 | 画像ストレージ | AWS S3（`petal-images-dev`） | |
 | デプロイ用 IAM | IAM ユーザー `petal-deploy` | `AWS_PROFILE=petal-deploy` で利用 |
 | リージョン | `ap-northeast-1` | |
@@ -193,7 +194,7 @@ aws s3api create-bucket \
 - パブリックアクセスはブロックしたまま、アプリからは presigned URL でアクセスする想定。
 - 必要に応じて CORS / ライフサイクル / 暗号化を設定。
 
-### 1.3 Cognito User Pool （　DEV 用 `petal-dev`　）
+### 1.3 Cognito User Pool （　PROD 用 `petal-dev`　）
 
 AWS Console から User Pool と App Client を作成する。App Client では **クライアントシークレットを有効**にする（アプリ側で `COGNITO_CLIENT_SECRET` を利用するため）。
 
@@ -245,7 +246,7 @@ direnv reload             # direnv を使っているなら反映
 
 > `pnpm deploy:dev` / `pnpm deploy:remove:dev` はスクリプト内で `.envs/.env.dev` を読み込むため、`use-env` の切り替えは不要。
 
-## 3. 初回セットアップ（DEV）
+## 3. 初回セットアップ （ DEV ）
 
 ### 3.1 マイグレーション適用
 
@@ -299,7 +300,7 @@ CloudFormation を経由せず Lambda 関数本体のコードのみ差し替え
 スキーマ変更を加えた際は、ローカルでマイグレーションを生成 → DEV の Neon に適用 → デプロイ、の順で行う。
 
 ```bash
-pnpm use-env local
+pnpm use-env dev
 pnpm migration:generate database/migrations/<名前>   # ローカルのエンティティ差分から生成
 # 動作確認後コミット
 
