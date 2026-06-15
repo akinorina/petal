@@ -297,6 +297,102 @@ DB への新規副作用なし。LLM 呼び出し（外部副作用）のみで�
 
 ---
 
-## 13. 実装計画（Phase 4 で確定）
+## 13. 実装計画（Phase 4 確定）
 
-> Phase 4（実装議論）で影響ファイルを精読し、ドライランの上で本節を確定する。
+ドライラン結果: 影響範囲は chat フィーチャ内に完全に閉じている（`LlmConfig`/`OpenAiCompatibleClient` の利用箇所は `chat.module.ts` とクライアント自身のみ。外部消費者なし）。未解決の判断ポイントはなし。
+
+### 13.1 変更・追加ファイル
+
+#### 追加（backend/src/chat/）
+
+- `infra/claude.client.ts` … `ClaudeClient implements LlmProvider`（`@anthropic-ai/sdk`）
+- `infra/gemini.client.ts` … `GeminiClient implements LlmProvider`（`@google/genai`）
+- `application/llm-provider.registry.ts` … `LlmProviderRegistry`（@Injectable）
+- `application/llm-provider.registry.spec.ts` … レジストリのユニットテスト
+
+#### 変更（backend/src/chat/）
+
+- `domain/llm-provider.ts` … `ProviderIdSchema`/`ProviderId` と `LLM_PROVIDER_REGISTRY` を追加（`LlmProvider` IF は無改修）
+- `infra/llm.config.ts` … `LlmEnvSchema` を provider 別に全面拡張。`LlmConfig` は `activeProviderId` / `isConfigured(id)` / 各 provider config を公開
+- `infra/openai-compatible.client.ts` … constructor を `OpenAiCompatConfig`（`{ baseUrl?, apiKey, defaultModel?, label }`）受けに改修。`@Injectable` 除去（レジストリが `new`）。遅延エラーはレジストリ側に移譲
+- `chat.module.ts` … `LLM_PROVIDER` を `useFactory: reg.getActive()` へ。`LlmProviderRegistry` と `LLM_PROVIDER_REGISTRY` を providers に追加
+
+#### 変更（その他）
+
+- `backend/package.json` … `@anthropic-ai/sdk` / `@google/genai` 依存追加
+- `backend/.envs/.env.local.example` / `.env.dev.example` / `.env.prod.example` … `LLM_*` を provider 別キー + `LLM_PROVIDER` へ更新
+- `docs/10_architecture/02_backend-architecture.md` … chat 行更新（コミット済み）
+- `docs/tsk-116_multi-llm-provider.md` … 本実装計画（§13）
+
+### 13.2 migration・環境変数・依存
+
+- **migration**: なし（永続化に変更なし）。
+- **依存追加**: `pnpm --filter backend add @anthropic-ai/sdk @google/genai`（最新安定版・caret 範囲）。
+- **環境変数**: §7 のとおり。`LLM_*`（旧 local 用）は廃止し `LOCALLLM_*` へリネーム（破壊的・運用者が手更新）。
+
+### 13.3 作業順序（コミット単位・各完了確認）
+
+各コミットでビルド緑を維持する。config 形・クライアント・module は相互依存するため、配線切替は 1 コミットにまとめる。
+
+1. **依存追加**: `@anthropic-ai/sdk` / `@google/genai`。確認: `pnpm --filter backend build`。
+2. **domain 追加**: `domain/llm-provider.ts` に `ProviderIdSchema`/`ProviderId`/`LLM_PROVIDER_REGISTRY`（additive）。確認: build。
+3. **provider 基盤の配線一式**（1 コミット）:
+   - `infra/llm.config.ts` 全面拡張
+   - `infra/openai-compatible.client.ts` を `OpenAiCompatConfig` 受けへ改修
+   - `infra/claude.client.ts` / `infra/gemini.client.ts` 新規
+   - `application/llm-provider.registry.ts` 新規
+   - `chat.module.ts` をレジストリ + factory 配線へ置換
+   - 確認: `pnpm --filter backend build`（DI 解決）+ `pnpm --filter backend test`（既存 `chat.service.spec.ts` が緑のまま＝上流無改修の証跡）。
+4. **レジストリのテスト**: `application/llm-provider.registry.spec.ts`。確認: `pnpm --filter backend test`。
+5. **env example + 設計書整合**: 3 つの `.env.*.example` を provider 別キーへ更新。確認: build / test / `npx markdownlint-cli 'docs/**/*.md'`。
+
+### 13.4 テスト方針
+
+- `llm-provider.registry.spec.ts`: ダミー `ConfigService`（`get` をモック）から `LlmConfig` を構築し、レジストリの解決を検証。**実 API には接続しない**。
+  - 複数 provider 設定時、`availableIds()` が設定済み id を返す。
+  - `get('claude')` 等が対応する `LlmProvider` 実体を返す（`instanceof` で確認）。
+  - `getActive()` が `LLM_PROVIDER` 指定の provider を返す。
+  - active provider が未設定（必須 env 欠落）時、`getActive()` は遅延スタブを返し、メソッド呼び出しで provider 固有の明確なエラーを投げる。
+  - 未登録 id への `get()` は明確なエラー。
+- infra クライアント（SDK ラッパー）はユニットテスト対象外（[testing-strategy](40_processes/02_testing-strategy.md)）。実接続は手動シナリオ §11（Phase 6・実 API キー必要）で担保。
+- **スモークスクリプトは Phase 5 では作らない**（subagent は API キーを持たないため）。Phase 5 完了条件は build + unit test + lint の通過。
+
+### 13.5 想定外時の判断ルール
+
+#### 標準セット
+
+- **AI 単独判断 OK**: 軽微な既存コードリファクタ、設計書スコープ内の追加実装。
+- **中断して要相談**: データモデル変更、API 仕様変更、トランザクション境界変更、外部 API 想定差異、設計判断ログを覆す変更。
+
+#### TSK-116 固有（中断条件）
+
+- `@google/genai` の `generateContentStream` / `models.list` のシグネチャ・チャンク形（`chat.text` / `contents:[{role,parts:[{text}]}]` / `config.systemInstruction`）が本設計の想定と乖離 → **中断**（外部 API 想定差異）。型レベルで追従可能な軽微差なら SDK 型に従い AI 判断で続行。
+- `@anthropic-ai/sdk` の `messages.stream` / `models.list` が想定（§6）と乖離 → 同上。
+- Gemini SDK エラーが `status` を露出せず既存 `classifyLlmError` で `LLM_GENERATION_FAILED` に落ちる場合 → `GeminiClient` 内で SDK エラーを `{status}` 形へ正規化して throw（軽微追従・AI 判断可）。露出形が不明で設計判断が必要なら中断。
+- `LlmProvider` IF・`ChatChunk`・`ChatGenerationInput`・`ChatService` 上流を変更する必要が生じたら → **中断**（スコープ・設計判断を覆す）。
+- 実 LLM への接続確認は subagent では不可（API キー無し）。**build + unit test + lint の通過を完了条件**とし、実接続は Phase 6 の手動シナリオに委ねる。
+
+### 13.6 事前解決済みの判断ポイント
+
+| # | 判断ポイント | 解決 |
+| --- | --- | --- |
+| 1 | provider 別 config の公開形 | `LlmConfig` が `activeProviderId` / `isConfigured(id)` / `claudeConfig`・`geminiConfig`・`openaiConfig`・`localConfig` を公開 |
+| 2 | `LLM_PROVIDER` 既定 | `local`（後方互換） |
+| 3 | env 検証方針 | 全 provider キーを optional で `parse`、空文字→undefined 正規化。「必須」は active 利用時の遅延エラーで担保（boot は妨げない） |
+| 4 | 「configured」判定 | claude=`CLAUDE_API_KEY` / gemini=`GEMINI_API_KEY` / openai=`OPENAI_API_KEY` / local=`LOCALLLM_BASE_URL` の有無。レジストリは configured な provider のみ実体生成 |
+| 5 | active が未 configured | レジストリが provider 固有メッセージを投げる遅延スタブを返す（boot 維持・利用時エラー） |
+| 6 | infra クライアントの DI | `@Injectable` 除去しレジストリが `new`。Nest provider はレジストリのみ |
+| 7 | OpenAI/Local の共用 | `OpenAiCompatibleClient` を 2 インスタンス。`openai`= baseURL 既定 `https://api.openai.com/v1`、`local`= `LOCALLLM_BASE_URL` 必須。`label` を config に持たせエラーメッセージを正確化 |
+| 8 | Claude `max_tokens` | 必須のため `input.maxTokens ?? 8192`（定数既定。専用 env は設けない） |
+| 9 | Claude `temperature` | 転送しない（Opus 4.8/4.7 は 400） |
+| 10 | Claude system ロール | `role:'system'` のメッセージを `system` フィールドへ分離、残りを user/assistant にマップ |
+| 11 | Claude `thinking` | 渡さない（effort スコープ外・既定 OFF） |
+| 12 | Claude 終端チャンク | `stream.finalMessage()` から `model`/`stop_reason` を取り `{delta:'', done:true, finishReason, model}` |
+| 13 | Claude `listModels` | `client.models.list()` → `LlmModelSchema.parse({id, ownedBy:null})` |
+| 14 | Gemini role 変換 | `assistant→model`、`system`→`config.systemInstruction`（複数は `\n\n` 連結） |
+| 15 | Gemini stream | `const stream = await ai.models.generateContentStream(...)` を `for await`、`chunk.text` を delta。終端は `candidates[0].finishReason` |
+| 16 | Gemini `listModels` | `ai.models.list()` を走査。`name`（`models/` 接頭辞を除去）を `id`、`ownedBy:null` |
+| 17 | 既定モデル文字列（example 記載） | Claude=`claude-opus-4-8` / Gemini=`gemini-2.5-flash` / OpenAI=`gpt-4o`（example の参考値。運用者が変更可） |
+| 18 | env 移行 | 旧 `LLM_*` は読まない。`.env.*.example` を全更新し移行を明記。デプロイ済み env は運用者更新 |
+| 19 | スモーク確認 | Phase 5 では作らない。完了条件は build/test/lint。実接続は Phase 6 手動 |
+| 20 | コミット分割 | config↔client↔module の相互依存のため配線は 1 コミットに集約（§13.3-3） |
