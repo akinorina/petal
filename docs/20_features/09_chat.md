@@ -1,6 +1,6 @@
 # LLM チャット
 
-ローカル/リモートの **OpenAI 互換エンドポイント**を介して LLM と対話するチャット機能。
+**Claude / Gemini / OpenAI / LocalLLM** の各 LLM と対話するチャット機能（provider は env で切替）。
 ユーザーごとに会話スレッドを永続化し、応答をストリーミング（SSE）で逐次表示する。
 実装: [backend/src/chat/](../../backend/src/chat/) / フロント
 [frontend/src/app/(authenticated)/chat/](../../frontend/src/app/%28authenticated%29/chat/)。
@@ -10,7 +10,8 @@
 [tsk-109](../tsk-109_chat-send-receive-api.md)（送受信 API） /
 [tsk-110](../tsk-110_chat-frontend.md)（フロント） /
 [tsk-113](../tsk-113_chat-ui-componentization.md)（会話 UI の部品化 `<ChatPanel>`） /
-[tsk-114](../tsk-114_chat-markdown-rendering.md)（アシスタントメッセージの Markdown 表示）。
+[tsk-114](../tsk-114_chat-markdown-rendering.md)（アシスタントメッセージの Markdown 表示） /
+[tsk-116](../tsk-116_multi-llm-provider.md)（複数 LLM provider 対応: Claude/Gemini/OpenAI/Local）。
 
 ## アーキテクチャ
 
@@ -25,9 +26,11 @@
   `ChatThreadRepositoryImpl`（TypeORM）・`LlmConfig`（env 検証）。
 - **controller**: `ChatController`。SSE 応答を直接 `Response` に書き出す。
 
-LLM プロバイダは `LLM_PROVIDER` シンボルに `OpenAiCompatibleClient` を束ねる
-（[chat.module.ts](../../backend/src/chat/chat.module.ts)）。接続先を OpenAI 互換 API に
-切り替えるだけでローカル LLM（LM Studio 等）・リモート双方に対応する。
+LLM プロバイダは `LlmProviderRegistry`（application）が設定済みの 4 provider
+（`ClaudeClient` / `GeminiClient` / `OpenAiCompatibleClient`×2）を保持し、`LLM_PROVIDER`
+シンボルには env `LLM_PROVIDER` で指定された有効 provider（`registry.getActive()`）を
+factory で束ねる（[chat.module.ts](../../backend/src/chat/chat.module.ts)）。レジストリは
+`get(id)` で任意の provider を引け、複数同時アクセス（fan-out）の基盤にもなる。
 
 ## データモデル
 
@@ -128,13 +131,20 @@ chat フィーチャ専用。Zod スキーマは
 example は [backend/.envs/.env.local.example](../../backend/.envs/.env.local.example) /
 [.env.dev.example](../../backend/.envs/.env.dev.example) に記載。
 
+Claude / Gemini / OpenAI（本家）/ LocalLLM の 4 provider を provider 別キーで定義し、
+`LlmProviderRegistry` が設定済みのものを保持する。Chat は `LLM_PROVIDER` で 1 つを使う
+（[tsk-116](../tsk-116_multi-llm-provider.md)）。
+
 | 変数 | 必須 | 説明 |
 | ---- | ---- | ---- |
-| `LLM_BASE_URL` | ○ | 接続先 OpenAI 互換エンドポイント（URL）。例: `http://localhost:1234/v1` |
-| `LLM_API_KEY` | — | API キー。未設定時は SDK 用に `not-needed` を既定（LM Studio 等は無視） |
-| `LLM_MODEL` | — | 既定モデル。入力 model も `LLM_MODEL` も無いと生成時にエラー |
+| `LLM_PROVIDER` | — | Chat が使う provider: `claude`/`gemini`/`openai`/`local`（既定 `local`） |
+| `CLAUDE_API_KEY` / `CLAUDE_MODEL` | claude 時 ○ / — | Claude（Anthropic Messages API）のキーと既定モデル |
+| `GEMINI_API_KEY` / `GEMINI_MODEL` | gemini 時 ○ / — | Gemini（@google/genai）のキーと既定モデル |
+| `OPENAI_API_KEY` / `OPENAI_MODEL` / `OPENAI_BASE_URL` | openai 時 ○ / — / — | OpenAI（本家）のキー・既定モデル・接続先（既定 `https://api.openai.com/v1`） |
+| `LOCALLLM_BASE_URL` / `LOCALLLM_API_KEY` / `LOCALLLM_MODEL` | local 時 ○ / — / — | LocalLLM（OpenAI 互換）の接続先・キー（既定 `not-needed`）・既定モデル |
 
-- `LLM_API_KEY` は秘密情報のため `NEXT_PUBLIC_*` に置かない（backend のみ保持）。
+- 各 `*_API_KEY` は秘密情報のため `NEXT_PUBLIC_*` に置かない（backend のみ保持）。
+- 未設定でもアプリ起動は妨げず、active provider の env 不足時は利用時に明確なエラーを返す。
 
 ## フロントエンド
 
