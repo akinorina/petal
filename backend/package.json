@@ -44,9 +44,11 @@
     "deploy:remove:prod": "set -a && . ./.envs/.env.prod && set +a && AWS_PROFILE=petal-deploy serverless remove --region ap-northeast-1"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.104.1",
     "@aws-sdk/client-cognito-identity-provider": "^3.1041.0",
     "@aws-sdk/client-s3": "^3.1041.0",
     "@aws-sdk/s3-request-presigner": "^3.1041.0",
+    "@google/genai": "^2.8.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.1",
