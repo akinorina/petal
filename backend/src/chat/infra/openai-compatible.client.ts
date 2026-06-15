@@ -1,4 +1,3 @@
-import { Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import {
@@ -8,25 +7,25 @@ import {
 } from '../domain/llm-generation';
 import { LlmModelSchema, type LlmModel } from '../domain/llm-model';
 import type { LlmProvider } from '../domain/llm-provider';
-import { LlmConfig } from './llm.config';
+import type { OpenAiCompatConfig } from './llm.config';
 
-// OpenAI 互換 API（LM Studio 等のローカル LLM）への接続クライアント。
-// 公式 openai SDK を baseURL 上書きで利用する。外部 SDK 呼び出しはこの infra に隔離する。
-@Injectable()
+// OpenAI 互換 API への接続クライアント。OpenAI（本家）と LocalLLM（LM Studio 等）の
+// 両方を、設定違いの 2 インスタンスで共用する。公式 openai SDK を baseURL 上書きで利用。
+// 外部 SDK 呼び出しはこの infra に隔離する。レジストリが config を渡して new する。
 export class OpenAiCompatibleClient implements LlmProvider {
   private cachedClient: OpenAI | undefined;
   private readonly defaultModel: string | undefined;
 
-  constructor(private readonly config: LlmConfig) {
+  constructor(private readonly config: OpenAiCompatConfig) {
     this.defaultModel = config.defaultModel;
   }
 
   // OpenAI クライアントは初回利用時に生成する（遅延初期化）。
-  // LLM_BASE_URL 未設定時はアプリ起動を妨げず、チャット利用時のみ明確なエラーを返す。
+  // 接続先 URL / API キー未設定時はチャット利用時のみ明確なエラーを返す。
   private get client(): OpenAI {
-    if (!this.config.baseUrl) {
+    if (!this.config.baseUrl || !this.config.apiKey) {
       throw new Error(
-        'LLM が未設定です。環境変数 LLM_BASE_URL を設定してください。',
+        `LLM(${this.config.label}) の設定が不完全です。接続先 URL と API キーを確認してください。`,
       );
     }
     this.cachedClient ??= new OpenAI({
@@ -97,12 +96,12 @@ export class OpenAiCompatibleClient implements LlmProvider {
     return { model, content, finishReason };
   }
 
-  // 入力 model → LLM_MODEL の順で解決。どちらも無ければエラー。
+  // 入力 model → 既定モデルの順で解決。どちらも無ければエラー。
   private resolveModel(inputModel: string | undefined): string {
     const model = inputModel ?? this.defaultModel;
     if (!model) {
       throw new Error(
-        'モデルが指定されていません。入力の model か環境変数 LLM_MODEL を設定してください。',
+        `モデルが指定されていません。入力の model か ${this.config.label} の既定モデル環境変数を設定してください。`,
       );
     }
     return model;
