@@ -1,9 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type {
-  ChatChunk,
-  ChatGenerationInput,
-  ChatResult,
-} from '../domain/llm-generation';
+import type { ChatChunk, ChatResult } from '../domain/llm-generation';
 import type { LlmModel } from '../domain/llm-model';
 import { type LlmProvider, type ProviderId } from '../domain/llm-provider';
 import { ClaudeClient } from '../infra/claude.client';
@@ -23,23 +19,24 @@ const ALL_PROVIDER_IDS: readonly ProviderId[] = [
 class UnconfiguredProvider implements LlmProvider {
   constructor(private readonly id: ProviderId) {}
 
-  private fail(): never {
-    throw new Error(
+  private error(): Error {
+    return new Error(
       `LLM(${this.id}) が未設定です。${this.id} に必要な環境変数を設定するか、LLM_PROVIDER を設定済みの provider に変更してください。`,
     );
   }
 
   listModels(): Promise<LlmModel[]> {
-    return this.fail();
+    return Promise.reject(this.error());
   }
 
   generate(): Promise<ChatResult> {
-    return this.fail();
+    return Promise.reject(this.error());
   }
 
-  // eslint-disable-next-line @typescript-eslint/require-await
+  // 最初の next() で必ず throw する遅延スタブ（yield しない）。
+  // eslint-disable-next-line @typescript-eslint/require-await, require-yield
   async *generateStream(): AsyncGenerator<ChatChunk> {
-    this.fail();
+    throw this.error();
   }
 }
 
@@ -76,7 +73,10 @@ export class LlmProviderRegistry {
 
   // Chat が使う有効 provider。未設定なら遅延スタブ（利用時に明確エラー）。
   getActive(): LlmProvider {
-    return this.providers.get(this.activeId) ?? new UnconfiguredProvider(this.activeId);
+    return (
+      this.providers.get(this.activeId) ??
+      new UnconfiguredProvider(this.activeId)
+    );
   }
 
   // 任意の provider を取り出す。未設定の id は明確なエラー。
