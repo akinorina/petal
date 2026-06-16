@@ -5,13 +5,15 @@
 実装: [backend/src/chat/](../../backend/src/chat/) / フロント
 [frontend/src/app/(authenticated)/chat/](../../frontend/src/app/%28authenticated%29/chat/)。
 
-原典: [tsk-107](../tsk-107_llm-provider-and-local-client.md)（プロバイダ抽象・ローカルクライアント） /
-[tsk-108](../tsk-108_chat-persistence.md)（永続化） /
-[tsk-109](../tsk-109_chat-send-receive-api.md)（送受信 API） /
-[tsk-110](../tsk-110_chat-frontend.md)（フロント） /
-[tsk-113](../tsk-113_chat-ui-componentization.md)（会話 UI の部品化 `<ChatPanel>`） /
-[tsk-114](../tsk-114_chat-markdown-rendering.md)（アシスタントメッセージの Markdown 表示） /
-[tsk-116](../tsk-116_multi-llm-provider.md)（複数 LLM provider 対応: Claude/Gemini/OpenAI/Local）。
+原典: [tsk-107](../specs/tsk-107_llm-provider-and-local-client.md)（プロバイダ抽象・ローカルクライアント） /
+[tsk-108](../specs/tsk-108_chat-persistence.md)（永続化） /
+[tsk-109](../specs/tsk-109_chat-send-receive-api.md)（送受信 API） /
+[tsk-110](../specs/tsk-110_chat-frontend.md)（フロント） /
+[tsk-111](../specs/tsk-111_chat-finishing.md)（仕上げ: テスト補完・本ドキュメント整備） /
+[tsk-113](../specs/tsk-113_chat-ui-componentization.md)（会話 UI の部品化 `<ChatPanel>`） /
+[tsk-114](../specs/tsk-114_chat-markdown-rendering.md)（アシスタントメッセージの Markdown 表示） /
+[tsk-115](../specs/tsk-115_chat-ui-layout.md)（会話枠内スクロールのレイアウト） /
+[tsk-116](../specs/tsk-116_multi-llm-provider.md)（複数 LLM provider 対応: Claude/Gemini/OpenAI/Local）。
 
 ## アーキテクチャ
 
@@ -133,7 +135,7 @@ example は [backend/.envs/.env.local.example](../../backend/.envs/.env.local.ex
 
 Claude / Gemini / OpenAI（本家）/ LocalLLM の 4 provider を provider 別キーで定義し、
 `LlmProviderRegistry` が設定済みのものを保持する。Chat は `LLM_PROVIDER` で 1 つを使う
-（[tsk-116](../tsk-116_multi-llm-provider.md)）。
+（[tsk-116](../specs/tsk-116_multi-llm-provider.md)）。
 
 | 変数 | 必須 | 説明 |
 | ---- | ---- | ---- |

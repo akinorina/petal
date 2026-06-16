@@ -15,7 +15,7 @@
 | 開発プロセス | タスク遂行 7 フェーズ・テスト方針・Git/リリース運用 | [docs/40_processes/](docs/40_processes/) |
 | アーカイブ | 旧タスク別設計メモ（TSK-N/PRJ-N）。各ドキュメントの「原典」 | [docs/specs/](docs/specs/) |
 
-ドキュメント全体の目次は [docs/README.md](docs/README.md)。再編の方針は [docs/documentation-plan.md](docs/documentation-plan.md)。
+ドキュメント全体の目次は [docs/README.md](docs/README.md)。再編の方針・新旧対応表は [docs/specs/documentation-plan.md](docs/specs/documentation-plan.md)（アーカイブ）。
 
 特に逸脱しやすいルールは [docs/10_architecture/07_coding-rules.md](docs/10_architecture/07_coding-rules.md)、ワークフローは [docs/40_processes/01_workflow.md](docs/40_processes/01_workflow.md) を必ず参照すること。
 
