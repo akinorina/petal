@@ -12,6 +12,8 @@ Petal のドキュメント・コードで使われる用語と略語。
 | 所有者（Owner） | 画像を登録したユーザー。画像は所有者のみ閲覧可。 |
 | 監査ログ（Audit Log） | ユーザー管理操作の記録。追記専用で論理削除しない。 |
 | 論理削除（ソフトデリート） | `deleted_at` に削除日時を入れ、物理削除しない方式。 |
+| チャットスレッド（ChatThread） | LLM との会話の単位。所有者本人のみ閲覧可。`petal.chat_threads`。 |
+| LLM プロバイダー | Chat が接続する LLM。Claude / Gemini / OpenAI / LocalLLM を設定でき、使用 provider は env で切替。 |
 
 ## 認証関連
 
@@ -47,4 +49,6 @@ Petal のドキュメント・コードで使われる用語と略語。
 | SW | Service Worker |
 | PWA | Progressive Web App |
 | D&D | ドラッグ＆ドロップ |
+| LLM | 大規模言語モデル（Large Language Model） |
+| SSE | Server-Sent Events。チャット応答の逐次ストリーミングに使用。 |
 | TSK-N / PRJ-N | Notion 上のタスク / プロジェクト番号（旧 specs の接頭辞） |

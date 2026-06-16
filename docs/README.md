@@ -3,8 +3,8 @@
 Petal は、ユーザーごとに画像コンテンツをアップロード・管理する Web アプリケーション（モノリポ）です。
 このディレクトリは、要求・設計・構築・運用・開発プロセスを **機能・レイヤー軸** で体系化したドキュメント一式です。
 
-> 再構築の方針・進め方は [documentation-plan.md](documentation-plan.md) を参照。
 > 旧来のタスク単位（TSK-N / PRJ-N）の設計メモは [specs/](specs/) にアーカイブされており、各ドキュメントから背景情報として参照しています。
+> この体系へ再編した際の方針・新旧対応表は [specs/documentation-plan.md](specs/documentation-plan.md)（アーカイブ）に残しています。
 
 ## 読む順序
 
@@ -50,6 +50,7 @@ Petal は、ユーザーごとに画像コンテンツをアップロード・�
 | [06_audit-logs.md](20_features/06_audit-logs.md) | 監査ログ |
 | [07_pwa.md](20_features/07_pwa.md) | PWA 基盤・SW 更新・インストール導線 |
 | [08_cognito-sync.md](20_features/08_cognito-sync.md) | Cognito ⇔ DB 同期・監査・インポート |
+| [09_chat.md](20_features/09_chat.md) | LLM チャット（Claude/Gemini/OpenAI/Local・SSE ストリーミング・スレッド永続化） |
 
 ### 30_operations — 構築・運用
 

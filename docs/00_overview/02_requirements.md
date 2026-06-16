@@ -49,8 +49,9 @@ Petal の機能要件・非機能要件をまとめる。実装済みの機能�
 
 | # | 機能 | 概要 | 実装ドキュメント |
 | - | ---- | ---- | ---- |
-| 21 | チャット送受信 | OpenAI 互換 LLM へ送信し、応答を SSE でストリーミング表示 | [chat](../20_features/09_chat.md) |
+| 21 | チャット送受信 | LLM へ送信し、応答を SSE でストリーミング表示 | [chat](../20_features/09_chat.md) |
 | 22 | 会話スレッド管理 | スレッドの作成・一覧・履歴閲覧・論理削除（所有者本人のみ） | [chat](../20_features/09_chat.md) |
+| 23 | 複数 LLM プロバイダー対応 | Claude / Gemini / OpenAI / LocalLLM を設定でき、Chat が使う provider を env で切替 | [chat](../20_features/09_chat.md) |
 
 ## 2. 非機能要件
 
@@ -68,7 +69,7 @@ Petal の機能要件・非機能要件をまとめる。実装済みの機能�
 - OAuth 認証（Google / GitHub）
 - コンテンツの一般公開設定
 - 通知機能
-- LLM API を活用した AI 機能の拡充（OpenAI 互換エンドポイント経由の[チャット](../20_features/09_chat.md)は実装済み。Claude / ChatGPT / Gemini 等のリモート API・モデル選択・画像連携などへの発展）
+- LLM API を活用した AI 機能の拡充（[チャット](../20_features/09_chat.md)は Claude / Gemini / OpenAI / LocalLLM の複数プロバイダー対応済み。ランタイムからの provider/モデル選択・思考の深さ制御・画像連携などへの発展）
 - 音声など他コンテンツへの対応
 
 ## 関連ドキュメント

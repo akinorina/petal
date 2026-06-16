@@ -8,7 +8,7 @@
 
 > 現状の実装仕様は再編後のドキュメントを正とします。本ディレクトリの記述は作成時点のもので、現状と差異がある場合があります。
 
-再編の方針・対応関係は [documentation-plan.md](../documentation-plan.md) を参照。
+再編の方針・新旧対応表は [documentation-plan.md](documentation-plan.md)（本ディレクトリ内・アーカイブ）を参照。
 
 ## diagrams
 
