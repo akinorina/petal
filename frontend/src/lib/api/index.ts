@@ -2,6 +2,7 @@
 // 呼び出し側は従来どおり `@/lib/api` から import する。
 export { ApiError } from './shared';
 export { imageApi, uploadToPresignedUrl } from './image';
+export { audioApi } from './audio';
 export {
   chatApi,
   streamChatMessage,
