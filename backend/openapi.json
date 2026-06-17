@@ -976,6 +976,165 @@
         ]
       }
     },
+    "/audios": {
+      "post": {
+        "operationId": "AudioController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAudioRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateAudioResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "audios"
+        ]
+      },
+      "get": {
+        "operationId": "AudioController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AudioResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "audios"
+        ]
+      }
+    },
+    "/audios/{id}": {
+      "get": {
+        "operationId": "AudioController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudioResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "audios"
+        ]
+      },
+      "delete": {
+        "operationId": "AudioController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "audios"
+        ]
+      }
+    },
+    "/audios/{id}/download-url": {
+      "get": {
+        "operationId": "AudioController_getDownloadUrl",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DownloadUrlResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "audios"
+        ]
+      }
+    },
     "/chat/threads": {
       "post": {
         "operationId": "ChatController_createThread",
@@ -1868,6 +2027,115 @@
         "required": [
           "url",
           "expiresInSeconds"
+        ]
+      },
+      "AudioResponseDto": {
+        "type": "object",
+        "properties": {
+          "mimeType": {
+            "enum": [
+              "audio/mpeg",
+              "audio/wav",
+              "audio/webm",
+              "audio/mp4",
+              "audio/ogg"
+            ],
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string"
+          },
+          "ownerUserId": {
+            "type": "string"
+          },
+          "originalFilename": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "type": "number"
+          },
+          "durationSeconds": {
+            "type": "number",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "mimeType",
+          "createdAt",
+          "updatedAt",
+          "id",
+          "ownerUserId",
+          "originalFilename",
+          "sizeBytes",
+          "durationSeconds",
+          "title",
+          "description"
+        ]
+      },
+      "CreateAudioResponseDto": {
+        "type": "object",
+        "properties": {
+          "audio": {
+            "$ref": "#/components/schemas/AudioResponseDto"
+          },
+          "upload": {
+            "$ref": "#/components/schemas/UploadInstructionDto"
+          }
+        },
+        "required": [
+          "audio",
+          "upload"
+        ]
+      },
+      "CreateAudioRequestDto": {
+        "type": "object",
+        "properties": {
+          "mimeType": {
+            "enum": [
+              "audio/mpeg",
+              "audio/wav",
+              "audio/webm",
+              "audio/mp4",
+              "audio/ogg"
+            ],
+            "type": "string"
+          },
+          "originalFilename": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "type": "number"
+          },
+          "durationSeconds": {
+            "type": "number"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "mimeType",
+          "originalFilename",
+          "sizeBytes"
         ]
       },
       "CreateThreadRequestDto": {
