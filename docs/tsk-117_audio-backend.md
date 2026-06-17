@@ -1,6 +1,6 @@
 # TSK-117 音声管理のバックエンド API と DB を実装する（設計書）
 
-- Notion: https://app.notion.com/p/3819ca7d99dc813eac71fc8e34e6dd30
+- Notion: <https://app.notion.com/p/3819ca7d99dc813eac71fc8e34e6dd30>
 - プロジェクト: PRJ-15 Petal 音声コンテンツ対応
 - 規模: L / 重要度: HIGH
 
