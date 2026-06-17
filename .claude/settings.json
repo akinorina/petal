@@ -1,3 +1,32 @@
 {
-  "$schema": "https://json.schemastore.org/claude-code-settings.json"
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(cd backend && pnpm build)",
+      "Bash(cd frontend && pnpm build)",
+      "Bash(cd backend && pnpm lint)",
+      "Bash(cd frontend && pnpm lint)",
+      "Bash(npx markdownlint-cli:*)",
+      "Bash(bash .claude/skills/skill-workflow/scripts/verify.sh:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git switch:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/markdownlint-changed.sh"
+          }
+        ]
+      }
+    ]
+  }
 }
