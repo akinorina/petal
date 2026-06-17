@@ -59,6 +59,16 @@ REST API。バックエンド（NestJS）が OpenAPI 仕様を生成し、フロ
 | GET | /images/:id/download-url | 🔑 | 署名付きダウンロード URL |
 | DELETE | /images/:id | 🔑 | 画像削除（論理） |
 
+### audios（[backend/src/audio/controller/audio.controller.ts](../../backend/src/audio/controller/audio.controller.ts)）
+
+| メソッド | パス | Auth | 概要 |
+| -------- | ---- | ---- | ---- |
+| POST | /audios | 🔑 | 音声アップロード（メタ作成 + 署名付き PUT URL 発行） |
+| GET | /audios | 🔑 | 自分の音声一覧（新着順） |
+| GET | /audios/:id | 🔑 | 音声詳細 |
+| GET | /audios/:id/download-url | 🔑 | 署名付きダウンロード URL |
+| DELETE | /audios/:id | 🔑 | 音声削除（論理） |
+
 ### chat（[backend/src/chat/controller/chat.controller.ts](../../backend/src/chat/controller/chat.controller.ts)）
 
 送信エンドポイントのレスポンスは SSE（`text/event-stream`）。フロントは fetch の ReadableStream で消費する（`event: delta`/`done`/`error`）。

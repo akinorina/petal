@@ -1,6 +1,8 @@
 # ストレージ構築（S3 / LocalStack）
 
-画像ファイルは S3 に保存する。アップロード・ダウンロードとも**署名付き URL** でブラウザと S3 が直接やり取りし、バックエンドはバイトを中継しない（[20_features/04_image-management.md](../20_features/04_image-management.md)）。
+画像・音声ファイルは S3 に保存する。アップロード・ダウンロードとも**署名付き URL** でブラウザと S3 が直接やり取りし、バックエンドはバイトを中継しない（[20_features/04_image-management.md](../20_features/04_image-management.md), [20_features/10_audio-management.md](../20_features/10_audio-management.md)）。
+
+画像と音声は**同一バケットを共用**し、オブジェクトキーのプレフィックス（`images/` / `audios/`）で分離する。専用バケットは設けない。
 
 ## ローカル（LocalStack）
 
@@ -33,5 +35,6 @@ pnpm s3:logs             # ログ確認
 ## 関連ドキュメント
 
 - 画像管理 → [20_features/04_image-management.md](../20_features/04_image-management.md)
+- 音声管理 → [20_features/10_audio-management.md](../20_features/10_audio-management.md)
 - デプロイ（Lambda の IAM）→ [05_deployment.md](05_deployment.md)
 - 原典 → [specs/39_s3-dev-setup.md](../specs/39_s3-dev-setup.md)

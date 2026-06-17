@@ -10,7 +10,7 @@
 | -------- | ---- | ---- |
 | 概要・要求 | プロジェクト概要・要求仕様・用語 | [docs/00_overview/](docs/00_overview/) |
 | 設計 | システム構成・DDD/オニオン・DB/API 設計・コーディング規約 | [docs/10_architecture/](docs/10_architecture/) |
-| 機能仕様 | 認証・ユーザー管理・画像・認可・監査ログ・PWA 等の現状仕様 | [docs/20_features/](docs/20_features/) |
+| 機能仕様 | 認証・ユーザー管理・画像・音声・認可・監査ログ・PWA 等の現状仕様 | [docs/20_features/](docs/20_features/) |
 | 構築・運用 | ローカル構築・Cognito/DB/S3・デプロイ・CI/CD・運用ジョブ | [docs/30_operations/](docs/30_operations/) |
 | 開発プロセス | タスク遂行 7 フェーズ・テスト方針・Git/リリース運用 | [docs/40_processes/](docs/40_processes/) |
 | アーカイブ | 旧タスク別設計メモ（TSK-N/PRJ-N）。各ドキュメントの「原典」 | [docs/specs/](docs/specs/) |
