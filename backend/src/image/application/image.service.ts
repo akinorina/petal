@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { User } from '../../user/domain/user';
 import { Image } from '../domain/image';
 import { IImageRepository, IMAGE_REPOSITORY } from '../domain/image.repository';
-import { S3StorageClient } from '../infra/s3.client';
+import { S3StorageClient } from '../../common/storage/s3.client';
 import { CreateImageInput } from './image.schemas';
 
 export type UploadInstruction = {
