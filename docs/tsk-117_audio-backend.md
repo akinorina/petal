@@ -118,4 +118,55 @@ migration:
 
 ## 5. 実装計画
 
-（Phase 4 で追記）
+### 事前解決済みの判断ポイント（ドライラン結果）
+
+| # | 判断ポイント | 決定 |
+| --- | --- | --- |
+| DP1 | common storage モジュールの形 | `src/common/storage/s3.client.ts`（移設・内容不変）＋ `storage.module.ts`（`S3StorageClient` を provide+export、`@Global` にはしない）。`ImageModule`/`AudioModule` が個別に import。 |
+| DP2 | `durationSeconds` の型 | ドメイン/レスポンス: `number` または `null`。Create スキーマ/リクエスト DTO: 任意（`z.number().int().positive().nullable()` / `?: number`）。DB: `INTEGER` nullable + `CHECK (duration_seconds > 0)`。 |
+| DP3 | migration タイムスタンプ | `1746144007000`（chat の `1746144006000` の次）。クラス名 `CreateAudiosTable1746144007000`。 |
+| DP4 | `S3StorageClient` の他参照 | image モジュールのみ（`image.module.ts` / `image.service.ts`）。移設に伴い両ファイルの import を修正。他フィーチャへの波及なし。 |
+| DP5 | 404 メッセージ | image を踏襲し「音声が見つかりません: ${id}」。 |
+| DP6 | ルート/タグ | `@Controller('audios')` / `@ApiTags('audios')` / `@ApiBearerAuth('bearer')`。 |
+| DP7 | openapi 再生成の DB 依存 | `pnpm openapi:export` は AppModule を起動するため Postgres 接続が必要。**実行前に `cd backend && docker compose up -d postgres` でローカル DB を起動**。`pnpm build`（=`nest build`）自体は DB 非依存。 |
+| DP8 | frontend `schema.d.ts` 再生成 | **本 TSK スコープ外**（フロント TSK）。backend `openapi.json` のみ更新。 |
+| DP9 | テスト | image モジュールに既存ユニットテストは無い。新規テストは追加しない（スコープ外）。完了ゲートは lint + build + openapi 再生成。 |
+
+### 想定外時のルール
+
+設計書/実装計画と矛盾する事象（既存 image の挙動差異、想定外の依存、build/openapi 失敗の原因が本 TSK 外）に遭遇したら、**勝手に新パターンを導入せず**、その時点までをコミットして「未解決事項」を自主レビューに明記して停止・報告する。
+
+### コミット分割
+
+1. **refactor(common): S3StorageClient を common/storage へ移設し共有化**
+   - `src/common/storage/s3.client.ts`（`image/infra/s3.client.ts` から移動、内容不変）
+   - `src/common/storage/storage.module.ts` 新規（provide+export）
+   - `image/infra/s3.client.ts` 削除
+   - `image.module.ts`: providers から `S3StorageClient` 除去、imports に `StorageModule` 追加
+   - `image.service.ts`: import パスを `../../common/storage/s3.client` に変更
+   - ゲート: `pnpm build` 通過（image 挙動不変）
+2. **feat(audio): audio モジュール（domain/application/infra/controller/module）を実装**
+   - `domain/audio.ts` / `domain/audio.repository.ts` / `application/audio.schemas.ts` / `application/audio.service.ts` / `infra/audio.entity.ts` / `infra/audio.repository.impl.ts` / `controller/audio.controller.ts` / `controller/audio.dto.ts` / `audio.module.ts`
+   - 差分: 許可 MIME 5 種 / 20 MiB / S3 キー `audios/<userId>/<id>` / `durationSeconds`
+   - ゲート: `pnpm build` 通過
+3. **feat(audio): audios テーブルの migration を追加**
+   - `database/migrations/1746144007000-CreateAudiosTable.ts`
+   - ゲート: `docker compose up -d postgres` 済みで `pnpm migration:run`（コマンド名は package.json を確認）→ up/down が成功
+4. **feat(audio): AppModule に AudioModule を登録し openapi.json を再生成**
+   - `src/app.module.ts` imports に `AudioModule`
+   - `pnpm openapi:export`（DB 起動済み）で `backend/openapi.json` 更新
+   - ゲート: `openapi.json` に `audios` 系パス/DTO が出力
+5. **docs(tsk-117): database-schema に audios テーブルを追記**
+   - `docs/10_architecture/05_database-schema.md` に `### audios` 節（images と同形式 + `duration_seconds`）
+
+### 完了ゲート（Phase 5 検証）
+
+```bash
+cd backend && pnpm install
+docker compose up -d postgres
+pnpm lint && pnpm build
+pnpm openapi:export   # openapi.json 更新
+# migration up/down 確認（コマンドは package.json 参照）
+```
+
+`pnpm lint`（`any` なし）・`pnpm build` 成功、`openapi.json` に audios 反映、migration 成功を満たすこと。
