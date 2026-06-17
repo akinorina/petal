@@ -70,6 +70,8 @@ export function useChatActionsApi() {
   return useMemo(
     () => ({
       createThread: () => chatApi.createThread({}),
+      updateThreadTitle: (threadId: string, title: string | null) =>
+        chatApi.updateThread(threadId, { title }),
       streamMessage: (
         threadId: string,
         content: string,
