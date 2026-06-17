@@ -10,4 +10,5 @@
 | [authz-flow.drawio.svg](authz-flow.drawio.svg) | ロール / 認可フロー | [../05_authorization.md](../05_authorization.md) |
 | [email-change-sequence.drawio.svg](email-change-sequence.drawio.svg) | メールアドレス変更 シーケンス | [../03_self-service-account.md](../03_self-service-account.md) |
 | [image-upload-sequence.drawio.svg](image-upload-sequence.drawio.svg) | 画像アップロード シーケンス | [../04_image-management.md](../04_image-management.md) |
+| [audio-upload-sequence.drawio.svg](audio-upload-sequence.drawio.svg) | 音声アップロード シーケンス（録音 / ファイル → 署名付き PUT） | [../10_audio-management.md](../10_audio-management.md) |
 | [pwa-architecture.drawio.svg](pwa-architecture.drawio.svg) | PWA 構成 | [../07_pwa.md](../07_pwa.md) |

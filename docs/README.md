@@ -51,6 +51,7 @@ Petal は、ユーザーごとに画像コンテンツをアップロード・�
 | [07_pwa.md](20_features/07_pwa.md) | PWA 基盤・SW 更新・インストール導線 |
 | [08_cognito-sync.md](20_features/08_cognito-sync.md) | Cognito ⇔ DB 同期・監査・インポート |
 | [09_chat.md](20_features/09_chat.md) | LLM チャット（Claude/Gemini/OpenAI/Local・SSE ストリーミング・スレッド永続化） |
+| [10_audio-management.md](20_features/10_audio-management.md) | アップロード（ファイル / マイク録音）・一覧（インライン再生）・詳細・S3 連携 |
 
 ### 30_operations — 構築・運用
 
