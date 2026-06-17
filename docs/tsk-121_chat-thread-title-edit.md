@@ -71,11 +71,11 @@ LLM とチャットする機能において、スレッドのタイトルを編�
 - 却下: サービス層で正規化（検証と正規化が分散する）。
 - 補足: max 255 は **trim 後**の長さに適用する。
 
-### 判断 3: repository は既存 `saveThread` を再利用（採用）
+### 判断 3: repository に `updateThreadTitle(id, title)` を新設（採用・当初案を是正）
 
-- **採用**: サービスで `findThreadForOwner` → ドメインの `thread.title` を更新 → 既存 `saveThread(thread)` で UPSERT。`updated_at` は `@UpdateDateColumn` が自動更新。`IChatThreadRepository` に新メソッドは追加しない。
-- 却下: `updateThreadTitle(id, title)` を repository に新設（既存 `saveThread` で足りるため過剰）。
-- 根拠: `ChatThread.title` は可変（`chat-thread.ts`）。`toThreadEntity` は id/owner/title のみ設定し、既存 `createThread` も同経路で UPSERT 実績がある。
+- **採用**: `IChatThreadRepository.updateThreadTitle(id, title)` を新設し、**既存行を `findOne` で読み込み → `title` を変更 → `save`** する。`updated_at` は `@UpdateDateColumn` が自動更新。サービスは `findThreadForOwner`（認可）→ `updateThreadTitle` を呼ぶ。
+- 却下: 既存 `saveThread(thread)` の再利用（当初案）。**実装中に不具合が判明したため是正**: `saveThread` は `toThreadEntity` で id/owner/title のみを持つ**部分エンティティ**を `save` するため、INSERT（作成）では TypeORM が日付列を補完して返すが、**UPDATE（更新）では `created_at`/`deleted_at` が undefined のまま返り**、`toThreadDomain` の `ChatThread` 構築で Zod 検証（`createdAt`/`deletedAt`）が失敗する。更新は全列を保持した実体を読み込んで保存する必要がある。
+- 根拠: `ChatThread.title` は可変（`chat-thread.ts`）。`createThread` の INSERT 経路は従来どおり `saveThread` を使う（こちらは正常）。
 
 ### 判断 4: フロント部品配置 → 再利用部品として切り出し（採用）
 
@@ -116,7 +116,7 @@ LLM とチャットする機能において、スレッドのタイトルを編�
   - `chat-thread.schemas.ts` に `UpdateThreadInputSchema` / `UpdateThreadInput` を追加。
   - `chat.dto.ts` に `UpdateThreadRequestDto` を追加。
   - `ChatThreadService` に `updateThreadTitle(currentUser, id, title)` を追加。
-  - repository インターフェース・実装は変更なし（`saveThread` 再利用）。
+  - `IChatThreadRepository` ＋ 実装に `updateThreadTitle(id, title)` を追加（実体読込→更新→保存。判断 3 参照）。
 - フロント
   - `lib/api/chat.ts` の `chatApi` に `updateThread(threadId, body)` を追加。
   - `lib/api-hooks/use-chat-api.ts` の `useChatActionsApi` に `updateThreadTitle(threadId, title)` を追加。

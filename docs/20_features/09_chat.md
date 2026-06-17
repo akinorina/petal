@@ -87,7 +87,8 @@ factory で束ねる（[chat.module.ts](../../backend/src/chat/chat.module.ts)�
 - 入力は Zod 検証（`CreateThreadInputSchema` / `UpdateThreadInputSchema` / `SendMessageSchema`）。本文は 1〜32768 文字。
 - `PATCH /chat/threads/:id`（[tsk-121](../tsk-121_chat-thread-title-edit.md)）: body `{ title: string | null }`。
   `UpdateThreadInputSchema` が `title` を trim し、空（空白のみ含む）は `null` 化、max 255 は trim 後に適用する。
-  `ChatThreadService.updateThreadTitle` が所有者を確認のうえ既存 `saveThread` で UPSERT する（非所有は 404）。
+  `ChatThreadService.updateThreadTitle` が所有者を確認のうえ `IChatThreadRepository.updateThreadTitle`
+  （既存行を読み込み title を更新して保存）で永続化する（非所有は 404）。
 
 ## 送信フローとストリーミング
 

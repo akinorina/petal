@@ -20,6 +20,7 @@ function buildMockRepository(): MockRepository {
     findById: jest.fn(),
     findAllByOwner: jest.fn(),
     saveThread: jest.fn(),
+    updateThreadTitle: jest.fn(),
     findMessages: jest.fn(),
     findMaxSeq: jest.fn(),
     addMessage: jest.fn(),
@@ -250,10 +251,16 @@ describe('ChatThreadService.updateThreadTitle', () => {
   beforeEach(async () => {
     repo = buildMockRepository();
     service = await buildService(repo);
-    repo.saveThread.mockImplementation((t: ChatThread) => Promise.resolve(t));
+    repo.updateThreadTitle.mockImplementation(
+      (id: string, title: string | null) => {
+        const thread = buildThread(id, OWNER_ID);
+        thread.title = title;
+        return Promise.resolve(thread);
+      },
+    );
   });
 
-  it('所有者のタイトルを更新し saveThread を 1 回呼ぶ', async () => {
+  it('所有者のタイトルを更新し repo.updateThreadTitle を 1 回呼ぶ', async () => {
     repo.findById.mockResolvedValue(buildThread(THREAD_ID, OWNER_ID));
 
     const result = await service.updateThreadTitle(
@@ -263,10 +270,11 @@ describe('ChatThreadService.updateThreadTitle', () => {
     );
 
     expect(result.title).toBe('新しいタイトル');
-    expect(repo.saveThread).toHaveBeenCalledTimes(1);
-    const saved = (repo.saveThread.mock.calls as Array<[ChatThread]>)[0][0];
-    expect(saved.title).toBe('新しいタイトル');
-    expect(saved.id).toBe(THREAD_ID);
+    expect(repo.updateThreadTitle).toHaveBeenCalledTimes(1);
+    expect(repo.updateThreadTitle).toHaveBeenCalledWith(
+      THREAD_ID,
+      '新しいタイトル',
+    );
   });
 
   it('title=null も反映する', async () => {
@@ -279,16 +287,16 @@ describe('ChatThreadService.updateThreadTitle', () => {
     );
 
     expect(result.title).toBeNull();
-    expect(repo.saveThread).toHaveBeenCalledTimes(1);
+    expect(repo.updateThreadTitle).toHaveBeenCalledWith(THREAD_ID, null);
   });
 
-  it('非所有者は NotFoundException で saveThread 未呼出', async () => {
+  it('非所有者は NotFoundException で updateThreadTitle 未呼出', async () => {
     repo.findById.mockResolvedValue(buildThread(THREAD_ID, OWNER_ID));
 
     await expect(
       service.updateThreadTitle(buildUser(OTHER_ID), THREAD_ID, 'x'),
     ).rejects.toBeInstanceOf(NotFoundException);
-    expect(repo.saveThread).not.toHaveBeenCalled();
+    expect(repo.updateThreadTitle).not.toHaveBeenCalled();
   });
 });
 

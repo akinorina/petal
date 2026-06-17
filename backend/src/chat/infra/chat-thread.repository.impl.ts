@@ -37,6 +37,19 @@ export class ChatThreadRepositoryImpl implements IChatThreadRepository {
     return this.toThreadDomain(saved);
   }
 
+  async updateThreadTitle(
+    id: string,
+    title: string | null,
+  ): Promise<ChatThread | null> {
+    // 既存行を読み込んでから更新する。部分エンティティの save では UPDATE 時に
+    // 日付列（created_at 等）が補完されず toThreadDomain の検証に失敗するため。
+    const entity = await this.threadRepo.findOne({ where: { id } });
+    if (!entity) return null;
+    entity.title = title;
+    const saved = await this.threadRepo.save(entity);
+    return this.toThreadDomain(saved);
+  }
+
   async findMessages(threadId: string): Promise<ChatMessage[]> {
     const entities = await this.messageRepo.find({
       where: { threadId },

@@ -80,8 +80,14 @@ export class ChatThreadService {
     title: string | null,
   ): Promise<ChatThread> {
     const thread = await this.findThreadForOwner(currentUser, id);
-    thread.title = title;
-    return this.chatThreadRepository.saveThread(thread);
+    const updated = await this.chatThreadRepository.updateThreadTitle(
+      thread.id,
+      title,
+    );
+    if (!updated) {
+      throw new NotFoundException(`会話スレッドが見つかりません: ${id}`);
+    }
+    return updated;
   }
 
   async removeThread(currentUser: User, id: string): Promise<void> {
