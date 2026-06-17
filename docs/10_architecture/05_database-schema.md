@@ -39,6 +39,25 @@ PostgreSQL（Neon / ローカルは Docker）。スキーマ名は `petal`。ORM
 インデックス: `IDX_images_owner_created (owner_user_id, created_at)` — 所有者別の新着順一覧用。
 定義: [backend/src/image/infra/image.entity.ts](../../backend/src/image/infra/image.entity.ts)
 
+### audios
+
+| カラム | 型 | 制約 |
+| ------ | -- | ---- |
+| id | uuid | PK |
+| owner_user_id | uuid | FK → users（`onDelete: RESTRICT`） |
+| s3_key | varchar(512) | UNIQUE |
+| original_filename | varchar(255) | |
+| mime_type | varchar(100) | |
+| size_bytes | bigint | CHECK `size_bytes > 0` |
+| duration_seconds | integer | nullable, CHECK `duration_seconds > 0` |
+| title | varchar(255) | nullable |
+| description | varchar(1000) | nullable |
+| created_at / updated_at | timestamptz | |
+| deleted_at | timestamptz | nullable（論理削除） |
+
+インデックス: `IDX_audios_owner_created (owner_user_id, created_at)` — 所有者別の新着順一覧用。
+定義: [backend/src/audio/infra/audio.entity.ts](../../backend/src/audio/infra/audio.entity.ts)
+
 ### audit_logs（追記専用）
 
 | カラム | 型 | 制約 |
@@ -96,6 +115,7 @@ PostgreSQL（Neon / ローカルは Docker）。スキーマ名は `petal`。ORM
 
 ```text
 users 1 ──< images        （owner_user_id, onDelete: RESTRICT）
+users 1 ──< audios        （owner_user_id, onDelete: RESTRICT）
 users 1 ──< audit_logs     （actor_user_id / target_user_id, FK 制約なしの参照）
 users 1 ──< chat_threads   （owner_user_id, onDelete: RESTRICT）
 chat_threads 1 ──< chat_messages （thread_id, onDelete: RESTRICT）
