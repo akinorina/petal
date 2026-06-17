@@ -513,7 +513,7 @@ export interface paths {
         delete: operations["ChatController_removeThread"];
         options?: never;
         head?: never;
-        patch?: never;
+        patch: operations["ChatController_updateThread"];
         trace?: never;
     };
 }
@@ -780,6 +780,9 @@ export interface components {
         };
         SendMessageRequestDto: {
             content: string;
+        };
+        UpdateThreadRequestDto: {
+            title?: string | null;
         };
     };
     responses: never;
@@ -1667,6 +1670,31 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    ChatController_updateThread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateThreadRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatThreadResponseDto"];
+                };
             };
         };
     };

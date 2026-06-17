@@ -28,6 +28,10 @@ export class CreateThreadRequestDto {
   title?: string | null;
 }
 
+export class UpdateThreadRequestDto {
+  title?: string | null;
+}
+
 export class SendMessageRequestDto {
   content!: string;
 }

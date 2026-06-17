@@ -20,6 +20,7 @@ function buildMockRepository(): MockRepository {
     findById: jest.fn(),
     findAllByOwner: jest.fn(),
     saveThread: jest.fn(),
+    updateThreadTitle: jest.fn(),
     findMessages: jest.fn(),
     findMaxSeq: jest.fn(),
     addMessage: jest.fn(),
@@ -240,6 +241,62 @@ describe('ChatThreadService.findMessages', () => {
       service.findMessages(buildUser(OTHER_ID), THREAD_ID),
     ).rejects.toBeInstanceOf(NotFoundException);
     expect(repo.findMessages).not.toHaveBeenCalled();
+  });
+});
+
+describe('ChatThreadService.updateThreadTitle', () => {
+  let service: ChatThreadService;
+  let repo: MockRepository;
+
+  beforeEach(async () => {
+    repo = buildMockRepository();
+    service = await buildService(repo);
+    repo.updateThreadTitle.mockImplementation(
+      (id: string, title: string | null) => {
+        const thread = buildThread(id, OWNER_ID);
+        thread.title = title;
+        return Promise.resolve(thread);
+      },
+    );
+  });
+
+  it('所有者のタイトルを更新し repo.updateThreadTitle を 1 回呼ぶ', async () => {
+    repo.findById.mockResolvedValue(buildThread(THREAD_ID, OWNER_ID));
+
+    const result = await service.updateThreadTitle(
+      buildUser(OWNER_ID),
+      THREAD_ID,
+      '新しいタイトル',
+    );
+
+    expect(result.title).toBe('新しいタイトル');
+    expect(repo.updateThreadTitle).toHaveBeenCalledTimes(1);
+    expect(repo.updateThreadTitle).toHaveBeenCalledWith(
+      THREAD_ID,
+      '新しいタイトル',
+    );
+  });
+
+  it('title=null も反映する', async () => {
+    repo.findById.mockResolvedValue(buildThread(THREAD_ID, OWNER_ID));
+
+    const result = await service.updateThreadTitle(
+      buildUser(OWNER_ID),
+      THREAD_ID,
+      null,
+    );
+
+    expect(result.title).toBeNull();
+    expect(repo.updateThreadTitle).toHaveBeenCalledWith(THREAD_ID, null);
+  });
+
+  it('非所有者は NotFoundException で updateThreadTitle 未呼出', async () => {
+    repo.findById.mockResolvedValue(buildThread(THREAD_ID, OWNER_ID));
+
+    await expect(
+      service.updateThreadTitle(buildUser(OTHER_ID), THREAD_ID, 'x'),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(repo.updateThreadTitle).not.toHaveBeenCalled();
   });
 });
 

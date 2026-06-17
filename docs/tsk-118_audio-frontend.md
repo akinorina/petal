@@ -1,6 +1,6 @@
 # TSK-118 音声のアップロード・一覧・再生・詳細・削除のフロントを実装する（設計書）
 
-- Notion: https://app.notion.com/p/3819ca7d99dc8122bfb4d707b9ca20d0
+- Notion: <https://app.notion.com/p/3819ca7d99dc8122bfb4d707b9ca20d0>
 - プロジェクト: PRJ-15 Petal 音声コンテンツ対応
 - 規模: L / 重要度: HIGH
 - 依存: TSK-117「音声管理のバックエンド API と DB を実装する」（`/audios` API ＋ OpenAPI 型）

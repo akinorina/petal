@@ -7,6 +7,20 @@ export const CreateThreadInputSchema = z.object({
 
 export type CreateThreadInput = z.infer<typeof CreateThreadInputSchema>;
 
+export const UpdateThreadInputSchema = z.object({
+  title: z
+    .string()
+    .nullable()
+    .transform((v) => {
+      if (v === null) return null;
+      const trimmed = v.trim();
+      return trimmed === '' ? null : trimmed;
+    })
+    .pipe(z.string().max(255).nullable()),
+});
+
+export type UpdateThreadInput = z.infer<typeof UpdateThreadInputSchema>;
+
 export const AddMessageInputSchema = z.object({
   role: ChatRoleSchema,
   content: z.string().min(1),

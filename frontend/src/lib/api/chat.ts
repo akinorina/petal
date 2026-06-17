@@ -11,6 +11,13 @@ type ChatMessage = Schemas['ChatMessageResponseDto'];
 export const chatApi = {
   createThread: (body: Schemas['CreateThreadRequestDto'] = {}) =>
     unwrap(apiClient.POST('/chat/threads', { body })),
+  updateThread: (threadId: string, body: Schemas['UpdateThreadRequestDto']) =>
+    unwrap(
+      apiClient.PATCH('/chat/threads/{id}', {
+        params: { path: { id: threadId } },
+        body,
+      }),
+    ),
   listThreads: () => unwrap(apiClient.GET('/chat/threads')),
   listMessages: (threadId: string) =>
     unwrap(
