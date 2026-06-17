@@ -162,4 +162,114 @@ LLM とチャットする機能において、スレッドのタイトルを編�
 
 ---
 
-（実装計画は Phase 4 で本セクション以降に追記する）
+## 12. 実装計画（Phase 4）
+
+### 12.1 変更・追加ファイル
+
+#### バックエンド（ファイル一覧）
+
+- `backend/src/chat/application/chat-thread.schemas.ts`（変更）: `UpdateThreadInputSchema` / `UpdateThreadInput` を追加。
+- `backend/src/chat/application/chat-thread.schemas.spec.ts`（新規）: `UpdateThreadInputSchema` の正規化・検証テスト。
+- `backend/src/chat/controller/chat.dto.ts`（変更）: `UpdateThreadRequestDto` を追加。
+- `backend/src/chat/application/chat-thread.service.ts`（変更）: `updateThreadTitle` を追加。
+- `backend/src/chat/application/chat-thread.service.spec.ts`（変更）: `updateThreadTitle` の describe を追加。
+- `backend/src/chat/controller/chat.controller.ts`（変更）: `PATCH threads/:id`（`updateThread`）を追加（`Patch` を import）。
+- `backend/openapi.json`（再生成）: `pnpm openapi:export` で更新。
+
+#### フロント（ファイル一覧）
+
+- `frontend/src/lib/openapi/schema.d.ts`（再生成）: `pnpm openapi:gen` で更新。
+- `frontend/src/lib/api/chat.ts`（変更）: `chatApi.updateThread(threadId, body)` を追加。
+- `frontend/src/lib/api-hooks/use-chat-api.ts`（変更）: `useChatActionsApi` に `updateThreadTitle(threadId, title)` を追加。
+- `frontend/src/components/chat/use-editable-thread-title.ts`（新規）: 編集状態・楽観更新フック。
+- `frontend/src/components/chat/EditableThreadTitle.tsx`（新規）: インライン編集プレゼンテーション。
+- `frontend/src/components/chat/index.ts`（変更）: `EditableThreadTitle` を公開。
+- `frontend/src/app/(authenticated)/chat/[threadId]/page.tsx`（変更）: ヘッダを `<EditableThreadTitle>` に置換。
+- `frontend/src/app/(authenticated)/chat/[threadId]/use-chat-thread-page.ts`（変更）: `title`（`string | null`）・`isLoading`・`reload` を返す。
+
+#### ドキュメント（ファイル一覧）
+
+- `docs/20_features/09_chat.md`（変更）: API 表に `PATCH /chat/threads/:id`、フロント節にタイトル編集部品を追記し「タイトル編集は別タスク」を更新。
+
+### 12.2 migration・環境変数・依存追加
+
+- migration: **不要**（既存 `title` カラムを使用）。
+- 環境変数: **不要**。
+- 依存追加: **不要**（`Patch`/`zod`/`openapi-fetch` の `PATCH` は既存導入済み）。
+
+### 12.3 実装方針メモ（確定仕様）
+
+- `UpdateThreadInputSchema`:
+
+  ```ts
+  export const UpdateThreadInputSchema = z.object({
+    title: z
+      .string()
+      .nullable()
+      .transform((v) => {
+        if (v === null) return null;
+        const trimmed = v.trim();
+        return trimmed === '' ? null : trimmed;
+      })
+      .pipe(z.string().max(255).nullable()),
+  });
+  ```
+
+  - `title` は **必須**（省略時は検証エラー）。trim 後の空文字は `null`。max 255 は trim 後に適用。
+- `ChatThreadService.updateThreadTitle(currentUser, id, title)`:
+  `findThreadForOwner` で取得・認可 → `thread.title = title`（正規化済み）→ `saveThread(thread)` を返す。
+- コントローラは既存 `createThread` と同じく `safeParse` → 失敗で `BadRequestException(flatten())`、成功で `result.data.title` をサービスへ渡し `toThreadResponse` を返す。
+- フロント編集フック `useEditableThreadTitle({ threadId, title, onSaved })`:
+  - `displayTitle = (pending !== undefined ? pending : title) ?? '無題の会話'`（`pending: string | null | undefined`）。
+  - `startEdit`: `draft = title ?? ''`、編集状態 ON。
+  - `submit`: `normalized = draft.trim() === '' ? null : draft.trim()` → 編集状態 OFF・`pending=normalized`（楽観）→ `updateThreadTitle` → `onSaved()`（threads reload）→ `pending=undefined`。例外時は `pending=undefined`（props へ復帰）＋ `error` を設定。
+  - `Error.message` をエラー表示に使う（`ApiError` も `Error` を継承）。
+- `EditableThreadTitle`:
+  - `isLoading` 時は空ヘッダ（プレースホルダ）。
+  - 表示状態: `Text as="h1" variant="heading-md"` をタップで編集開始（`button` 化）＋ 補助の「編集」テキストボタン（`aria-label="タイトルを編集"`）。`error` は `Alert variant="danger"` で下に表示。
+  - 編集状態: `Input`（`value=draft`・`maxLength=255`・`autoFocus`・`aria-label="スレッドのタイトル"`）＋「完了」`Button`・「キャンセル」`Button variant="secondary"`。Enter=確定（`preventDefault`）/ Esc=キャンセル。保存中は両ボタン `disabled`。
+- 編集アイコンは name レジストリ式でないため Icon は使わず「編集」テキストボタンにする（依存を増やさない）。
+
+### 12.4 作業順序（コミット単位・各完了確認）
+
+1. **`feat(tsk-121): チャットスレッドのタイトル更新 API を追加`**
+   - schemas / dto / service / controller / 両 spec を追加。`pnpm openapi:export` で `openapi.json` 再生成・コミット。
+   - 完了確認: `cd backend && pnpm lint && pnpm test && pnpm build` がパス。`openapi.json` に `patch` の `/chat/threads/{id}` が出力されている。
+2. **`feat(tsk-121): フロントにタイトル更新 API 配線を追加`**
+   - `pnpm openapi:gen` で `schema.d.ts` 再生成。`lib/api/chat.ts` ＋ `use-chat-api.ts` を変更。
+   - 完了確認: `cd frontend && pnpm lint && pnpm build` がパス（型解決）。
+3. **`feat(tsk-121): チャット詳細ページにタイトルのインライン編集を追加`**
+   - `EditableThreadTitle` ＋ フック新設、barrel 公開、詳細ページ・同居フックを変更。
+   - 完了確認: `cd frontend && pnpm lint && pnpm build` がパス。手動シナリオ（§10）を確認。
+4. **`docs(tsk-121): LLM チャットのタイトル編集を機能ドキュメントへ反映`**
+   - `docs/20_features/09_chat.md` を更新。
+   - 完了確認: markdownlint がパス。
+
+### 12.5 テスト方針
+
+- バックエンド application 層をユニットテストで担保（既存方針）。
+  - `chat-thread.schemas.spec.ts`: `UpdateThreadInputSchema` が「通常文字列はそのまま」「前後空白を trim」「空文字・空白のみは null」「null は null」「trim 後 255 は OK / 256 は失敗」「title 欠落は失敗」を網羅。
+  - `chat-thread.service.spec.ts`: `updateThreadTitle` が「所有者のタイトルを更新し saveThread を 1 回呼ぶ」「title=null も反映」「非所有は NotFoundException で saveThread 未呼出」を網羅。
+- フロントはユニットテスト基盤を持たない（既存どおり）。手動動作確認シナリオ（§10）で担保。
+
+### 12.6 想定外時の判断ルール
+
+- **AI 単独判断 OK**: 軽微な既存コードリファクタ、本設計書スコープ内の追加実装、命名・クラス付与の微調整。
+- **中断して要相談**:
+  - データモデル変更（`title` 以外のカラム追加・migration 発生）。
+  - API 仕様変更（PATCH 以外の方式採用、パス・ステータス・レスポンス形変更）。
+  - トランザクション境界変更。
+  - 設計判断ログ（§3）を覆す変更。
+  - `saveThread` 再利用が UPDATE 時に既存値（owner/createdAt 等）を破壊する等、想定差異が判明した場合。
+
+### 12.7 事前解決済みの判断ポイント
+
+- 編集 UI 方式 → インライン編集（タイトルタップ＋「編集」テキストボタン）。
+- 空タイトル → `null` 保存・「無題の会話」表示。
+- 正規化の置き場所 → Zod transform（trim・空→null・max 255 は trim 後）。
+- repository → 既存 `saveThread` 再利用（新メソッド無し）。
+- 部品配置 → `components/chat/` に再利用部品＋非公開フック。
+- 表示更新 → 楽観更新＋ threads reload（失敗時 props へロールバック＋Alert）。
+- 編集アイコン → Icon 非使用、「編集」テキストボタン。
+- 「チャット実行ページ」 → 新規ページは送信後 `/chat/[id]` 遷移で詳細ページ編集を満たす（専用 UI 不要）。
+- フロントテスト → 基盤なし、手動確認で担保。
