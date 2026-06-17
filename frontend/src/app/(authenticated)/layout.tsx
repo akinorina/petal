@@ -43,6 +43,9 @@ export default function AuthenticatedLayout({
               <NavLink href="/images" active={pathname.startsWith('/images')}>
                 画像
               </NavLink>
+              <NavLink href="/audios" active={pathname.startsWith('/audios')}>
+                音声
+              </NavLink>
               <NavLink href="/chat" active={pathname.startsWith('/chat')}>
                 チャット
               </NavLink>
