@@ -420,6 +420,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/audios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AudioController_findAll"];
+        put?: never;
+        post: operations["AudioController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/audios/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AudioController_findOne"];
+        put?: never;
+        post?: never;
+        delete: operations["AudioController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/audios/{id}/download-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AudioController_getDownloadUrl"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/chat/threads": {
         parameters: {
             query?: never;
@@ -677,6 +725,34 @@ export interface components {
         DownloadUrlResponseDto: {
             url: string;
             expiresInSeconds: number;
+        };
+        CreateAudioRequestDto: {
+            /** @enum {string} */
+            mimeType: "audio/mpeg" | "audio/wav" | "audio/webm" | "audio/mp4" | "audio/ogg";
+            originalFilename: string;
+            sizeBytes: number;
+            durationSeconds?: number;
+            title?: string;
+            description?: string;
+        };
+        AudioResponseDto: {
+            /** @enum {string} */
+            mimeType: "audio/mpeg" | "audio/wav" | "audio/webm" | "audio/mp4" | "audio/ogg";
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            id: string;
+            ownerUserId: string;
+            originalFilename: string;
+            sizeBytes: number;
+            durationSeconds: number | null;
+            title: string | null;
+            description: string | null;
+        };
+        CreateAudioResponseDto: {
+            audio: components["schemas"]["AudioResponseDto"];
+            upload: components["schemas"]["UploadInstructionDto"];
         };
         CreateThreadRequestDto: {
             title?: string | null;
@@ -1366,6 +1442,109 @@ export interface operations {
         };
     };
     ImageController_getDownloadUrl: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DownloadUrlResponseDto"];
+                };
+            };
+        };
+    };
+    AudioController_findAll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AudioResponseDto"][];
+                };
+            };
+        };
+    };
+    AudioController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAudioRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateAudioResponseDto"];
+                };
+            };
+        };
+    };
+    AudioController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AudioResponseDto"];
+                };
+            };
+        };
+    };
+    AudioController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AudioController_getDownloadUrl: {
         parameters: {
             query?: never;
             header?: never;
