@@ -14,7 +14,7 @@ export type EditableThreadTitleProps = {
   /** スレッド一覧の取得中はプレースホルダ表示にする。 */
   isLoading?: boolean;
   /** 保存成功後に呼ばれる（一覧再取得など）。 */
-  onSaved?: () => void;
+  onSaved?: () => void | Promise<void>;
 };
 
 /**

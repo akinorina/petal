@@ -9,8 +9,8 @@ type UseEditableThreadTitleOptions = {
   threadId: string;
   /** 正本のタイトル（`null` は未設定）。 */
   title: string | null;
-  /** 保存成功後に呼ばれる（スレッド一覧の再取得など）。 */
-  onSaved?: () => void;
+  /** 保存成功後に呼ばれる（スレッド一覧の再取得など）。Promise を返す場合は待ってから楽観表示を解除する。 */
+  onSaved?: () => void | Promise<void>;
 };
 
 /**
@@ -56,7 +56,8 @@ export function useEditableThreadTitle({
     setIsSaving(true);
     try {
       await updateThreadTitle(threadId, normalized);
-      onSaved?.();
+      // 正本（props.title）が更新されてから楽観表示を解除し、新→旧→新のちらつきを防ぐ。
+      await onSaved?.();
       setPending(undefined);
     } catch (err) {
       setPending(undefined);
