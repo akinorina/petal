@@ -74,6 +74,16 @@ export class ChatThreadService {
     return this.chatThreadRepository.findMessages(thread.id);
   }
 
+  async updateThreadTitle(
+    currentUser: User,
+    id: string,
+    title: string | null,
+  ): Promise<ChatThread> {
+    const thread = await this.findThreadForOwner(currentUser, id);
+    thread.title = title;
+    return this.chatThreadRepository.saveThread(thread);
+  }
+
   async removeThread(currentUser: User, id: string): Promise<void> {
     const thread = await this.findThreadForOwner(currentUser, id);
     await this.chatThreadRepository.softDeleteThread(thread.id);

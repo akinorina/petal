@@ -243,6 +243,55 @@ describe('ChatThreadService.findMessages', () => {
   });
 });
 
+describe('ChatThreadService.updateThreadTitle', () => {
+  let service: ChatThreadService;
+  let repo: MockRepository;
+
+  beforeEach(async () => {
+    repo = buildMockRepository();
+    service = await buildService(repo);
+    repo.saveThread.mockImplementation((t: ChatThread) => Promise.resolve(t));
+  });
+
+  it('所有者のタイトルを更新し saveThread を 1 回呼ぶ', async () => {
+    repo.findById.mockResolvedValue(buildThread(THREAD_ID, OWNER_ID));
+
+    const result = await service.updateThreadTitle(
+      buildUser(OWNER_ID),
+      THREAD_ID,
+      '新しいタイトル',
+    );
+
+    expect(result.title).toBe('新しいタイトル');
+    expect(repo.saveThread).toHaveBeenCalledTimes(1);
+    const saved = (repo.saveThread.mock.calls as Array<[ChatThread]>)[0][0];
+    expect(saved.title).toBe('新しいタイトル');
+    expect(saved.id).toBe(THREAD_ID);
+  });
+
+  it('title=null も反映する', async () => {
+    repo.findById.mockResolvedValue(buildThread(THREAD_ID, OWNER_ID));
+
+    const result = await service.updateThreadTitle(
+      buildUser(OWNER_ID),
+      THREAD_ID,
+      null,
+    );
+
+    expect(result.title).toBeNull();
+    expect(repo.saveThread).toHaveBeenCalledTimes(1);
+  });
+
+  it('非所有者は NotFoundException で saveThread 未呼出', async () => {
+    repo.findById.mockResolvedValue(buildThread(THREAD_ID, OWNER_ID));
+
+    await expect(
+      service.updateThreadTitle(buildUser(OTHER_ID), THREAD_ID, 'x'),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(repo.saveThread).not.toHaveBeenCalled();
+  });
+});
+
 describe('ChatThreadService.removeThread', () => {
   let service: ChatThreadService;
   let repo: MockRepository;

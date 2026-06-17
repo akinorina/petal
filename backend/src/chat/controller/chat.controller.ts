@@ -6,6 +6,7 @@ import {
   Get,
   HttpCode,
   Param,
+  Patch,
   Post,
   Req,
   Res,
@@ -18,7 +19,10 @@ import { UserService } from '../../user/application/user.service';
 import { ChatCompletionService } from '../application/chat-completion.service';
 import { SendMessageSchema } from '../application/chat.schemas';
 import { ChatThreadService } from '../application/chat-thread.service';
-import { CreateThreadInputSchema } from '../application/chat-thread.schemas';
+import {
+  CreateThreadInputSchema,
+  UpdateThreadInputSchema,
+} from '../application/chat-thread.schemas';
 import type { ChatStreamEvent } from '../application/chat-stream';
 import { ChatMessage } from '../domain/chat-message';
 import { ChatThread } from '../domain/chat-thread';
@@ -27,6 +31,7 @@ import {
   ChatThreadResponseDto,
   CreateThreadRequestDto,
   SendMessageRequestDto,
+  UpdateThreadRequestDto,
 } from './chat.dto';
 
 @ApiTags('chat')
@@ -50,6 +55,23 @@ export class ChatController {
     const thread = await this.threadService.createThread(
       currentUser,
       result.data,
+    );
+    return toThreadResponse(thread);
+  }
+
+  @Patch('threads/:id')
+  async updateThread(
+    @Req() req: Request,
+    @Param('id') id: string,
+    @Body() body: UpdateThreadRequestDto,
+  ): Promise<ChatThreadResponseDto> {
+    const result = UpdateThreadInputSchema.safeParse(body);
+    if (!result.success) throw new BadRequestException(result.error.flatten());
+    const currentUser = await this.resolveCurrentUser(req);
+    const thread = await this.threadService.updateThreadTitle(
+      currentUser,
+      id,
+      result.data.title,
     );
     return toThreadResponse(thread);
   }
