@@ -1,10 +1,10 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import { User } from '../../user/domain/user';
-import { Image } from '../domain/image';
-import { IImageRepository, IMAGE_REPOSITORY } from '../domain/image.repository';
 import { S3StorageClient } from '../../common/storage/s3.client';
-import { CreateImageInput } from './image.schemas';
+import { User } from '../../user/domain/user';
+import { Audio } from '../domain/audio';
+import { IAudioRepository, AUDIO_REPOSITORY } from '../domain/audio.repository';
+import { CreateAudioInput } from './audio.schemas';
 
 export type UploadInstruction = {
   url: string;
@@ -13,8 +13,8 @@ export type UploadInstruction = {
   headers: { 'Content-Type': string };
 };
 
-export type CreateImageResult = {
-  image: Image;
+export type CreateAudioResult = {
+  audio: Audio;
   upload: UploadInstruction;
 };
 
@@ -24,27 +24,28 @@ export type DownloadInstruction = {
 };
 
 @Injectable()
-export class ImageService {
+export class AudioService {
   constructor(
-    @Inject(IMAGE_REPOSITORY)
-    private readonly imageRepository: IImageRepository,
+    @Inject(AUDIO_REPOSITORY)
+    private readonly audioRepository: IAudioRepository,
     private readonly s3: S3StorageClient,
   ) {}
 
   async createWithUploadUrl(
     currentUser: User,
-    input: CreateImageInput,
-  ): Promise<CreateImageResult> {
+    input: CreateAudioInput,
+  ): Promise<CreateAudioResult> {
     const id = randomUUID();
-    const s3Key = `images/${currentUser.id}/${id}`;
+    const s3Key = `audios/${currentUser.id}/${id}`;
     const now = new Date();
-    const image = new Image({
+    const audio = new Audio({
       id,
       ownerUserId: currentUser.id,
       s3Key,
       originalFilename: input.originalFilename,
       mimeType: input.mimeType,
       sizeBytes: input.sizeBytes,
+      durationSeconds: input.durationSeconds ?? null,
       title: input.title ?? null,
       description: input.description ?? null,
       createdAt: now,
@@ -52,11 +53,11 @@ export class ImageService {
       deletedAt: null,
     });
 
-    const saved = await this.imageRepository.save(image);
+    const saved = await this.audioRepository.save(audio);
     const url = await this.s3.createUploadUrl(s3Key, input.mimeType);
 
     return {
-      image: saved,
+      audio: saved,
       upload: {
         url,
         method: 'PUT',
@@ -66,29 +67,29 @@ export class ImageService {
     };
   }
 
-  findAllForOwner(currentUser: User): Promise<Image[]> {
-    return this.imageRepository.findAllByOwner(currentUser.id);
+  findAllForOwner(currentUser: User): Promise<Audio[]> {
+    return this.audioRepository.findAllByOwner(currentUser.id);
   }
 
-  async findOneForOwner(currentUser: User, id: string): Promise<Image> {
-    const image = await this.imageRepository.findById(id);
-    if (!image || !image.isOwnedBy(currentUser.id)) {
-      throw new NotFoundException(`画像が見つかりません: ${id}`);
+  async findOneForOwner(currentUser: User, id: string): Promise<Audio> {
+    const audio = await this.audioRepository.findById(id);
+    if (!audio || !audio.isOwnedBy(currentUser.id)) {
+      throw new NotFoundException(`音声が見つかりません: ${id}`);
     }
-    return image;
+    return audio;
   }
 
   async createDownloadUrl(
     currentUser: User,
     id: string,
   ): Promise<DownloadInstruction> {
-    const image = await this.findOneForOwner(currentUser, id);
-    const url = await this.s3.createDownloadUrl(image.s3Key);
+    const audio = await this.findOneForOwner(currentUser, id);
+    const url = await this.s3.createDownloadUrl(audio.s3Key);
     return { url, expiresInSeconds: this.s3.presignTtlSeconds };
   }
 
   async remove(currentUser: User, id: string): Promise<void> {
-    const image = await this.findOneForOwner(currentUser, id);
-    await this.imageRepository.softDelete(image.id);
+    const audio = await this.findOneForOwner(currentUser, id);
+    await this.audioRepository.softDelete(audio.id);
   }
 }
