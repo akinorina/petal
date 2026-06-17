@@ -10,6 +10,9 @@ export const ALLOWED_AUDIO_MIME_TYPES = [
 
 export const MAX_AUDIO_SIZE_BYTES = 20 * 1024 * 1024;
 
+/** マイク録音の最大録音時間（秒）。上限到達で自動停止する。 */
+export const MAX_RECORDING_SECONDS = 30;
+
 export type AudioMimeType = Schemas['CreateAudioRequestDto']['mimeType'];
 
 export function formatAudioSize(bytes: number): string {
@@ -45,6 +48,41 @@ export function validateAudioFile(file: File): AudioFileValidation {
     };
   }
   return { ok: true, file, mimeType: file.type as AudioMimeType };
+}
+
+/**
+ * MediaRecorder が報告する MIME（例: `audio/webm;codecs=opus`）から
+ * codecs サフィックスを除いた base MIME（例: `audio/webm`）を返す。
+ */
+export function stripCodecs(mime: string): string {
+  return mime.split(';')[0].trim();
+}
+
+/**
+ * マイク録音に使う MIME を決める。`audio/webm` を優先し、未対応なら `audio/mp4`
+ * （Safari 等）へフォールバックする。どちらも未対応・MediaRecorder 非対応環境では null。
+ */
+export function pickRecordingMimeType(): AudioMimeType | null {
+  if (typeof MediaRecorder === 'undefined') return null;
+  const candidates: AudioMimeType[] = ['audio/webm', 'audio/mp4'];
+  for (const mime of candidates) {
+    if (MediaRecorder.isTypeSupported(mime)) return mime;
+  }
+  return null;
+}
+
+/**
+ * 録音 Blob を、既存アップロード経路に流せる File に変換する。
+ * ファイル名は `recording-<yyyyMMdd-HHmmss>.<ext>`、type は base MIME（codecs 除去済み）。
+ */
+export function recordingBlobToFile(blob: Blob, mimeType: AudioMimeType): File {
+  const ext = mimeType === 'audio/mp4' ? 'mp4' : 'webm';
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const stamp =
+    `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}` +
+    `-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  return new File([blob], `recording-${stamp}.${ext}`, { type: mimeType });
 }
 
 /**
