@@ -41,7 +41,7 @@ PRJ-15 の要求「マイクからの録音（Frontend）とそのデータの�
 ### 対象
 
 - 既存アップロードモーダル（`frontend/src/app/(authenticated)/audios/page.tsx` 内 `UploadModal`）への録音 UI 追加。
-- 録音ロジックの専用フック `frontend/src/lib/hooks/use-audio-recorder.ts` 新設。
+- 録音ロジックの専用フック `frontend/src/lib/use-audio-recorder.ts` 新設（汎用フックは `lib/` 直下が慣例: `use-display-mode.ts` 等）。
 - 録音形式ネゴシエーション・MIME 正規化ユーティリティ（`audio-constants.ts` への追加）。
 
 ### 対象外
@@ -105,7 +105,7 @@ PRJ-15 の要求「マイクからの録音（Frontend）とそのデータの�
 ## 7. 既存設計との差分
 
 - `frontend/src/app/(authenticated)/audios/page.tsx`: `UploadModal` に録音セクションを追加。録音完了時に `file` 状態へ録音 File をセット。録音中はフッターのアップロードボタンを無効化（録音確定前の送信を防ぐ）。
-- `frontend/src/lib/hooks/use-audio-recorder.ts`: 新規（録音状態・経過秒・blob・エラー・start/stop/reset・後始末を提供）。
+- `frontend/src/lib/use-audio-recorder.ts`: 新規（録音状態・経過秒・blob・エラー・start/stop/reset・後始末を提供）。
 - `frontend/src/lib/audio-constants.ts`: 録音形式ネゴシエーション（`pickRecordingMimeType`）と base MIME 正規化（`stripCodecs`）、録音 blob → File 変換ヘルパ（`recordingBlobToFile`）、録音上限秒 `MAX_RECORDING_SECONDS = 30` を追加。
 - ナビゲーション・一覧・詳細・バックエンドは変更なし。
 
@@ -139,6 +139,63 @@ PRJ-15 の要求「マイクからの録音（Frontend）とそのデータの�
 
 ---
 
-## 11. 実装計画（Phase 4 で追記）
+## 11. 実装計画
 
-（Phase 4 で記入）
+### 変更・追加ファイル
+
+| 種別 | パス | 内容 |
+| --- | --- | --- |
+| 変更 | `frontend/src/lib/audio-constants.ts` | `MAX_RECORDING_SECONDS = 30` / `stripCodecs(mime)` / `pickRecordingMimeType()` / `recordingBlobToFile(blob, mime)` を追加 |
+| 追加 | `frontend/src/lib/use-audio-recorder.ts` | 録音フック（状態・経過秒・File・start/stop/reset・後始末） |
+| 変更 | `frontend/src/app/(authenticated)/audios/page.tsx` | `UploadModal` に録音セクション追加・録音 File を `file` 状態へ連携 |
+
+### migration・環境変数・依存追加
+
+- migration: なし（バックエンド変更なし）。
+- 環境変数: なし。
+- 依存追加: なし（MediaRecorder / getUserMedia はブラウザ標準 API）。
+
+### 作業順序（コミット単位）
+
+1. **`feat(tsk-119): audio-constants に録音形式ネゴシエーションと File 変換を追加`**
+   - `MAX_RECORDING_SECONDS = 30`。
+   - `stripCodecs(mime: string): string` … `audio/webm;codecs=opus` → `audio/webm`（`;` 以降除去・trim）。
+   - `pickRecordingMimeType(): AudioMimeType | null` … `typeof MediaRecorder !== 'undefined'` を確認の上、`MediaRecorder.isTypeSupported('audio/webm')` なら `'audio/webm'`、次に `'audio/mp4'`、どちらも不可なら `null`。
+   - `recordingBlobToFile(blob: Blob, mimeType: AudioMimeType): File` … `recording-<yyyyMMdd-HHmmss>.<ext>`（webm/mp4）の `File` を base MIME 付きで生成。
+   - 完了確認: `cd frontend && pnpm lint && pnpm build`。
+2. **`feat(tsk-119): マイク録音フック use-audio-recorder を追加`**
+   - 戻り値: `{ status: 'idle'|'recording'|'recorded', isSupported: boolean, elapsedSeconds: number, recordedFile: File | null, previewUrl: string | null, error: string | null, start(), stop(), reset() }`。
+   - `isSupported` = `pickRecordingMimeType() !== null && navigator.mediaDevices?.getUserMedia` の有無。
+   - `start()`: `getUserMedia({ audio: true })` → `MediaRecorder` 生成（`pickRecordingMimeType()` の mime）→ `ondataavailable` で chunk 収集 → `start()` → `status='recording'`、`Date.now()` 起点で `setInterval` により `elapsedSeconds` 更新、`MAX_RECORDING_SECONDS` 到達で `stop()`。
+   - `stop()`: `MediaRecorder.stop()` → `onstop` で `Blob` 結合 → `recordingBlobToFile` → `recordedFile`/`previewUrl(objectURL)` 設定 → `status='recorded'`、stream トラック停止・interval クリア。
+   - `reset()`: `previewUrl` revoke・`recordedFile=null`・`status='idle'`・`error=null`。
+   - エラー: `NotAllowedError`/`SecurityError`→「マイクの使用が許可されませんでした」、`NotFoundError`→「マイクが見つかりません」、他→「録音を開始できませんでした」。`error` 設定し `status='idle'`。
+   - アンマウント時クリーンアップ: interval クリア・stream 停止・objectURL revoke。
+   - 完了確認: `pnpm lint && pnpm build`。
+3. **`feat(tsk-119): アップロードモーダルに録音 UI を追加`**
+   - `UploadModal` 内で `useAudioRecorder()` を使用。ドロップゾーン直下に §6 の録音セクションを描画。
+   - `recorded` 到達時（`recordedFile` 変化）に `setFile(recordedFile)`・`setError(null)`。
+   - ファイルピッカー/ドロップでの選択時（`handleFiles`）は `recorder.reset()` を呼び録音プレビューと state の矛盾を防ぐ。
+   - 録音中（`status==='recording'`）はフッターの「アップロード」ボタンを `disabled`。
+   - 完了確認: `pnpm lint && pnpm build` ＋ §9 手動シナリオ。
+
+### テスト方針
+
+- フロントエンドに自動テスト基盤は無い（test script / 設定ファイルなし）。
+- 完了確認は `cd frontend && pnpm lint` ＋ `cd frontend && pnpm build` の成功、および §9 の手動動作確認シナリオ。
+
+### 想定外時の判断ルール
+
+- **AI 単独判断 OK**: 軽微な既存コードリファクタ、設計書スコープ内の追加実装（UI 文言・クラス調整、録音状態遷移の細部、エラーメッセージ文言）。
+- **中断して要相談**: バックエンド `/audios` API・DTO 変更が必要になった場合、許可 MIME（`ALLOWED_AUDIO_MIME_TYPES`）の変更が必要になった場合、アップロード経路（`useAudiosApi.upload`）の変更が必要になった場合、設計判断ログ（判断 1〜6）を覆す変更。
+
+### 事前解決済みの判断ポイント
+
+- フック配置先: `frontend/src/lib/use-audio-recorder.ts`（`lib/` 直下の汎用フック慣例）。
+- 録音 blob → File の MIME は base MIME（codecs 除去）で生成し、既存 `validateAudioFile` を通す。
+- ファイル選択と録音の競合: どちらも `file` 状態へ書き込み。選択時は `recorder.reset()` で録音プレビューを破棄し UI 矛盾を防ぐ。
+- 既存のファイル選択表示には `<audio>` プレビューを追加しない（録音セクションのみプレビュー）。完了条件が要求するのは録音のプレビューのため。
+- `durationSeconds`: 既存 `measureAudioDuration` に委譲。webm で `null` になっても任意項目のため許容。
+- 録音上限: `MAX_RECORDING_SECONDS = 30`、`elapsedSeconds >= 30` で自動停止。
+- ファイル名: `recording-<yyyyMMdd-HHmmss>.<webm|mp4>`。
+- テスト: 自動テスト基盤なし → `pnpm lint` + `pnpm build` + 手動シナリオで担保。
