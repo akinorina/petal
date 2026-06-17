@@ -13,7 +13,8 @@
 [tsk-113](../specs/tsk-113_chat-ui-componentization.md)（会話 UI の部品化 `<ChatPanel>`） /
 [tsk-114](../specs/tsk-114_chat-markdown-rendering.md)（アシスタントメッセージの Markdown 表示） /
 [tsk-115](../specs/tsk-115_chat-ui-layout.md)（会話枠内スクロールのレイアウト） /
-[tsk-116](../specs/tsk-116_multi-llm-provider.md)（複数 LLM provider 対応: Claude/Gemini/OpenAI/Local）。
+[tsk-116](../specs/tsk-116_multi-llm-provider.md)（複数 LLM provider 対応: Claude/Gemini/OpenAI/Local） /
+[tsk-121](../tsk-121_chat-thread-title-edit.md)（スレッドタイトルのインライン編集）。
 
 ## アーキテクチャ
 
@@ -77,12 +78,16 @@ factory で束ねる（[chat.module.ts](../../backend/src/chat/chat.module.ts)�
 | メソッド | パス | 概要 |
 | -------- | ---- | ---- |
 | POST | `/chat/threads` | スレッド作成（`title` 任意） |
+| PATCH | `/chat/threads/:id` | スレッドのタイトル更新（更新後 DTO を返す） |
 | GET | `/chat/threads` | 自分のスレッド一覧 |
 | GET | `/chat/threads/:id/messages` | スレッドのメッセージ一覧 |
 | POST | `/chat/threads/:id/messages` | メッセージ送信＋応答ストリーム（SSE） |
 | DELETE | `/chat/threads/:id` | スレッド論理削除（204） |
 
-- 入力は Zod 検証（`CreateThreadInputSchema` / `SendMessageSchema`）。本文は 1〜32768 文字。
+- 入力は Zod 検証（`CreateThreadInputSchema` / `UpdateThreadInputSchema` / `SendMessageSchema`）。本文は 1〜32768 文字。
+- `PATCH /chat/threads/:id`（[tsk-121](../tsk-121_chat-thread-title-edit.md)）: body `{ title: string | null }`。
+  `UpdateThreadInputSchema` が `title` を trim し、空（空白のみ含む）は `null` 化、max 255 は trim 後に適用する。
+  `ChatThreadService.updateThreadTitle` が所有者を確認のうえ既存 `saveThread` で UPSERT する（非所有は 404）。
 
 ## 送信フローとストリーミング
 
@@ -156,12 +161,22 @@ Claude / Gemini / OpenAI（本家）/ LocalLLM の 4 provider を provider 別�
 - 一覧 `chat/page.tsx` ＋ `use-chat-page.ts`
 - 新規 `chat/new/page.tsx` ＋ `use-chat-new-page.ts`（`onThreadCreated` 供給）
 - 既存スレッド `chat/[threadId]/page.tsx` ＋ `use-chat-thread-page.ts`（`threadId` 供給に加え、
-  `useChatThreadsApi` から一致スレッドの `title`（null は「無題の会話」）を引いて返す）
+  `useChatThreadsApi` から一致スレッドの `title`（`string | null`・正本）と `isLoading` / `reload` を返す。
+  タイトルは `<EditableThreadTitle>` がインライン編集する）
 
 各チャットページは `flex h-full flex-col gap-4` で「タイトル → 戻りリンク → `<ChatPanel>`」を
 **縦積み**する（タイトル・戻りリンクは `flex-none`、`<ChatPanel>` は `flex-1 min-h-0`）。
 新規ページのタイトルは固定文言「新規チャット」、既存スレッドページはスレッドタイトルを上部に表示する
-（タイトルは chat UI 内部には持たせずページ側のヘッダに置く。タイトル編集は別タスク）。
+（タイトルは chat UI 内部には持たせずページ側のヘッダに置く）。
+
+既存スレッドページのタイトルは再利用部品 `<EditableThreadTitle>`（[tsk-121](../tsk-121_chat-thread-title-edit.md)）で
+インライン編集できる。`components/chat/` に `EditableThreadTitle.tsx`（プレゼン）＋ `use-editable-thread-title.ts`
+（編集状態・楽観更新）として置き、barrel から公開する（`<ChatPanel>` と同じ「公開部品＋非公開フック」パターン）。
+
+- 表示状態: タイトル（`Text as="h1"`）自体がボタンで、タップ（または併置の「編集」ボタン）で `Input` 化する。
+- 確定（完了ボタン or Enter）で入力値を即時反映（楽観更新）し、裏で `chatApi.updateThread`（`useChatActionsApi.updateThreadTitle`）→
+  `useChatThreadsApi.reload()` で正本へ収束。空（空白のみ）は `null` 保存で「無題の会話」表示。失敗時は正本へ戻し `Alert` で通知する。
+- キャンセル（キャンセルボタン or Esc）で編集前へ戻す。一覧取得中（`isLoading`）は編集不可（プレースホルダ表示）。
 
 `<ChatPanel>`（`components/chat/`）は `threadId` を渡すだけで API 配線・送信・SSE
 ストリーミング描画・ローディング/notFound 表示まで内部で完結する自己完結部品。
