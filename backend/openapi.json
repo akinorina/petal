@@ -2029,6 +2029,41 @@
           "expiresInSeconds"
         ]
       },
+      "CreateAudioRequestDto": {
+        "type": "object",
+        "properties": {
+          "mimeType": {
+            "enum": [
+              "audio/mpeg",
+              "audio/wav",
+              "audio/webm",
+              "audio/mp4",
+              "audio/ogg"
+            ],
+            "type": "string"
+          },
+          "originalFilename": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "type": "number"
+          },
+          "durationSeconds": {
+            "type": "number"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "mimeType",
+          "originalFilename",
+          "sizeBytes"
+        ]
+      },
       "AudioResponseDto": {
         "type": "object",
         "properties": {
@@ -2101,41 +2136,6 @@
         "required": [
           "audio",
           "upload"
-        ]
-      },
-      "CreateAudioRequestDto": {
-        "type": "object",
-        "properties": {
-          "mimeType": {
-            "enum": [
-              "audio/mpeg",
-              "audio/wav",
-              "audio/webm",
-              "audio/mp4",
-              "audio/ogg"
-            ],
-            "type": "string"
-          },
-          "originalFilename": {
-            "type": "string"
-          },
-          "sizeBytes": {
-            "type": "number"
-          },
-          "durationSeconds": {
-            "type": "number"
-          },
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "mimeType",
-          "originalFilename",
-          "sizeBytes"
         ]
       },
       "CreateThreadRequestDto": {
