@@ -15,12 +15,14 @@ import {
   ALLOWED_AUDIO_MIME_TYPES,
   formatAudioSize,
   formatDuration,
+  MAX_RECORDING_SECONDS,
   validateAudioFile,
 } from '@/lib/audio-constants';
 import {
   useAudioDownloadApi,
   type UploadInput,
 } from '@/lib/api-hooks/use-audios-api';
+import { useAudioRecorder } from '@/lib/use-audio-recorder';
 import type { Schemas } from '@/lib/openapi/client';
 import { useAudiosPage } from './use-audios-page';
 
@@ -257,6 +259,16 @@ function UploadModal({
   const [isSaving, setIsSaving] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const recorder = useAudioRecorder();
+
+  // 録音が確定したら、既存アップロード経路に流すため file 状態へ反映する。
+  useEffect(() => {
+    if (recorder.recordedFile) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFile(recorder.recordedFile);
+      setError(null);
+    }
+  }, [recorder.recordedFile]);
 
   function handleFiles(list: FileList | null) {
     setError(null);
@@ -266,6 +278,8 @@ function UploadModal({
       setError(result.message);
       return;
     }
+    // ファイル選択時は録音プレビューを破棄し、表示と file の矛盾を防ぐ。
+    recorder.reset();
     setFile(result.file);
   }
 
@@ -400,6 +414,9 @@ function UploadModal({
                   )}
                 </div>
               </div>
+
+              <RecordSection recorder={recorder} />
+
               <FormField label="タイトル（任意）">
                 <Input
                   type="text"
@@ -422,13 +439,75 @@ function UploadModal({
             <Button type="button" variant="secondary" onClick={onClose}>
               キャンセル
             </Button>
-            <Button type="submit" isLoading={isSaving}>
+            <Button
+              type="submit"
+              isLoading={isSaving}
+              disabled={recorder.status === 'recording'}
+            >
               {isSaving ? 'アップロード中...' : 'アップロード'}
             </Button>
           </Dialog.Footer>
         </form>
       </Dialog.Content>
     </Dialog>
+  );
+}
+
+// ---- RecordSection ----
+
+function RecordSection({
+  recorder,
+}: {
+  recorder: ReturnType<typeof useAudioRecorder>;
+}) {
+  const { status, isSupported, elapsedSeconds, previewUrl, error, start, stop, reset } =
+    recorder;
+
+  return (
+    <div className="ds-formfield">
+      <span className="ds-formfield__label">マイクで録音</span>
+      <div className="rounded-md border border-zinc-200 bg-zinc-50 px-4 py-3">
+        {!isSupported ? (
+          <Text variant="body-sm" className="text-zinc-500">
+            お使いのブラウザは録音に対応していません。
+          </Text>
+        ) : status === 'recording' ? (
+          <div className="flex flex-col items-center gap-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-red-600">
+              <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-600" />
+              録音中 {formatDuration(elapsedSeconds)} / {formatDuration(MAX_RECORDING_SECONDS)}
+            </div>
+            <Button type="button" variant="danger" size="sm" onClick={stop}>
+              停止
+            </Button>
+          </div>
+        ) : status === 'recorded' && previewUrl ? (
+          <div className="flex flex-col items-center gap-3">
+            <Text variant="body-sm" className="text-zinc-600">
+              録音結果
+            </Text>
+            <audio src={previewUrl} controls className="w-full" />
+            <Button type="button" variant="secondary" size="sm" onClick={reset}>
+              録り直す
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-2">
+            <Button type="button" variant="secondary" size="sm" onClick={start}>
+              マイクで録音
+            </Button>
+            <Text variant="body-sm" className="text-zinc-500">
+              最大 {MAX_RECORDING_SECONDS} 秒まで録音できます
+            </Text>
+          </div>
+        )}
+        {error && (
+          <Alert variant="danger" className="mt-3">
+            {error}
+          </Alert>
+        )}
+      </div>
+    </div>
   );
 }
 
