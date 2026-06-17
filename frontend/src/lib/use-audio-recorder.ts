@@ -5,6 +5,7 @@ import {
   MAX_RECORDING_SECONDS,
   pickRecordingMimeType,
   recordingBlobToFile,
+  stripCodecs,
   type AudioMimeType,
 } from './audio-constants';
 
@@ -131,7 +132,10 @@ export function useAudioRecorder(): AudioRecorder {
     recorder.addEventListener('stop', () => {
       clearTimer();
       stopStream();
-      const baseMime: AudioMimeType = mimeType;
+      // 実際に使われた MIME（codecs 付きのことがある）から base MIME を取り、
+      // 許可リスト（ALLOWED_AUDIO_MIME_TYPES）と一致させる。
+      const baseMime = (stripCodecs(recorder.mimeType || mimeType) ||
+        mimeType) as AudioMimeType;
       const blob = new Blob(chunksRef.current, { type: baseMime });
       const file = recordingBlobToFile(blob, baseMime);
       const url = URL.createObjectURL(file);
