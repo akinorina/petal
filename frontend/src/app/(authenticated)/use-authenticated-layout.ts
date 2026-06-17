@@ -24,6 +24,10 @@ export function useAuthenticatedLayout() {
     router.push('/me');
   }
 
+  function navigate(href: string) {
+    router.push(href);
+  }
+
   return {
     pathname,
     email,
@@ -32,5 +36,6 @@ export function useAuthenticatedLayout() {
     isLoading,
     handleLogout,
     goToProfile,
+    navigate,
   };
 }

@@ -20,6 +20,7 @@ export default function AuthenticatedLayout({
     isLoading,
     handleLogout,
     goToProfile,
+    navigate,
   } = useAuthenticatedLayout();
 
   if (isLoading) {
@@ -32,36 +33,64 @@ export default function AuthenticatedLayout({
 
   if (!isAuthenticated) return null;
 
+  const navItems = [
+    { href: '/images', label: '画像' },
+    { href: '/audios', label: '音声' },
+    { href: '/chat', label: 'チャット' },
+    ...(role === 'admin'
+      ? [
+          { href: '/users', label: 'ユーザー' },
+          { href: '/audit-logs', label: '監査ログ' },
+        ]
+      : []),
+  ];
+  const isActive = (href: string) => pathname.startsWith(href);
+
   return (
     <div className="flex h-dvh flex-col">
       <TopBar
         className="admin-topbar shrink-0"
         start={
-          <div className="flex items-center gap-6">
-            <span className="text-sm font-semibold">Petal</span>
-            <nav className="flex items-center gap-4 text-sm">
-              <NavLink href="/images" active={pathname.startsWith('/images')}>
-                画像
-              </NavLink>
-              <NavLink href="/audios" active={pathname.startsWith('/audios')}>
-                音声
-              </NavLink>
-              <NavLink href="/chat" active={pathname.startsWith('/chat')}>
-                チャット
-              </NavLink>
-              {role === 'admin' && (
-                <>
-                  <NavLink href="/users" active={pathname.startsWith('/users')}>
-                    ユーザー
-                  </NavLink>
-                  <NavLink
-                    href="/audit-logs"
-                    active={pathname.startsWith('/audit-logs')}
+          <div className="flex items-center gap-3 sm:gap-6">
+            {/* モバイル: ナビをハンバーガーメニュー（Popover）に集約 */}
+            <div className="sm:hidden">
+              <Popover placement="bottom-start">
+                <Popover.Trigger>
+                  <button
+                    type="button"
+                    aria-label="メニュー"
+                    className="flex h-8 w-8 items-center justify-center rounded-md text-zinc-700 hover:bg-zinc-100"
                   >
-                    監査ログ
-                  </NavLink>
-                </>
-              )}
+                    <MenuIcon />
+                  </button>
+                </Popover.Trigger>
+                <Popover.Content className="p-0" aria-label="ナビゲーション">
+                  {navItems.map((item) => (
+                    <Popover.Close key={item.href}>
+                      <ListItem
+                        as="button"
+                        size="sm"
+                        title={item.label}
+                        isSelected={isActive(item.href)}
+                        onClick={() => navigate(item.href)}
+                      />
+                    </Popover.Close>
+                  ))}
+                </Popover.Content>
+              </Popover>
+            </div>
+            <span className="text-sm font-semibold">Petal</span>
+            {/* デスクトップ: インラインナビ（狭幅では隠す） */}
+            <nav className="hidden items-center gap-4 text-sm sm:flex">
+              {navItems.map((item) => (
+                <NavLink
+                  key={item.href}
+                  href={item.href}
+                  active={isActive(item.href)}
+                >
+                  {item.label}
+                </NavLink>
+              ))}
             </nav>
           </div>
         }
@@ -106,6 +135,25 @@ export default function AuthenticatedLayout({
         {children}
       </main>
     </div>
+  );
+}
+
+function MenuIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <line x1="4" y1="7" x2="20" y2="7" />
+      <line x1="4" y1="12" x2="20" y2="12" />
+      <line x1="4" y1="17" x2="20" y2="17" />
+    </svg>
   );
 }
 
