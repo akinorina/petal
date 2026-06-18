@@ -4,6 +4,7 @@ import {
   type ChatGenerationInput,
   type ChatResult,
 } from '../domain/llm-generation';
+import { contentToText } from '../domain/llm-message';
 import { LlmModelSchema, type LlmModel } from '../domain/llm-model';
 import type { LlmProvider } from '../domain/llm-provider';
 import type { ClaudeConfig } from './llm.config';
@@ -102,10 +103,11 @@ export class ClaudeClient implements LlmProvider {
     const systemParts: string[] = [];
     const mapped: Anthropic.MessageParam[] = [];
     for (const message of messages) {
+      const text = contentToText(message.content);
       if (message.role === 'system') {
-        systemParts.push(message.content);
+        systemParts.push(text);
       } else {
-        mapped.push({ role: message.role, content: message.content });
+        mapped.push({ role: message.role, content: text });
       }
     }
     return {

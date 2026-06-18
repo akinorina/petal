@@ -5,6 +5,7 @@ import {
   type ChatGenerationInput,
   type ChatResult,
 } from '../domain/llm-generation';
+import { contentToText } from '../domain/llm-message';
 import { LlmModelSchema, type LlmModel } from '../domain/llm-model';
 import type { LlmProvider } from '../domain/llm-provider';
 import type { OpenAiCompatConfig } from './llm.config';
@@ -46,7 +47,10 @@ export class OpenAiCompatibleClient implements LlmProvider {
   async *generateStream(input: ChatGenerationInput): AsyncGenerator<ChatChunk> {
     const model = this.resolveModel(input.model);
     const messages: ChatCompletionMessageParam[] = input.messages.map(
-      (message) => ({ role: message.role, content: message.content }),
+      (message) => ({
+        role: message.role,
+        content: contentToText(message.content),
+      }),
     );
 
     const stream = await this.client.chat.completions.create({
