@@ -166,4 +166,86 @@ PRJ-17 のアプリ／API 層タスク。TSK-①②の上に、エンドポイ�
 
 ## 12. 実装計画（Phase 4）
 
-（Phase 4 で追記）
+### 12.1 変更・追加ファイル
+
+#### コミット 1: 画像 base64 取得・添付解決サービス（土台）
+
+- `backend/src/common/storage/s3.client.ts`（変更）: `getObjectBytes(key): Promise<Uint8Array>` を追加（`GetObjectCommand`→`Body.transformToByteArray()`。`Body` 不在は明確な Error）。
+- `backend/src/image/application/image.service.ts`（変更）: `getOwnedImageBase64(currentUser, id): Promise<{ mediaType: ImageMimeType; data: string }>`（findOneForOwner→getObjectBytes→base64）、`getOwnedImageView(currentUser, id): Promise<{ imageId; mimeType; originalFilename; downloadUrl; expiresInSeconds }>`（findOneForOwner→createDownloadUrl）を追加。
+- `backend/src/image/image.module.ts`（変更）: `exports: [ImageService]` を追加。
+- `backend/src/chat/application/chat.service.ts`（変更）: `supportsVision(): boolean { return this.provider.supportsVision(); }`。
+- `backend/src/chat/application/chat-attachment.service.ts`（新規）: `ChatAttachmentService`（`@Injectable`、`ImageService` 注入）:
+  - `assertAttachmentsSendable(currentUser, imageIds: string[], supportsVision: boolean): Promise<void>` — `imageIds` 空なら no-op。非対応なら `HttpException({code:'LLM_VISION_UNSUPPORTED', message, retryable:false}, HttpStatus.UNPROCESSABLE_ENTITY)`。各 id を `imageService.findOneForOwner`（非所有/不在は NotFound=404）。
+  - `toLlmContent(currentUser, content: string, attachments: ChatMessageImageRef[]): Promise<string | ChatContentPart[]>` — 添付無→content、添付有→`[{type:'text',text:content}]`＋position 順に `{type:'image', ...getOwnedImageBase64}`。
+  - `toAttachmentViews(currentUser, attachments): Promise<ChatMessageAttachmentView[]>` — position 順に `getOwnedImageView` ＋ position。
+- `backend/src/chat/chat.module.ts`（変更）: `imports` に `ImageModule`、`providers` に `ChatAttachmentService`。
+- テスト:
+  - `backend/src/chat/application/chat-attachment.service.spec.ts`（新規）: assert（空→no-op / 非対応→422 / 非所有→404）、toLlmContent（添付無→string / 添付有→text＋image parts・base64・position 順）、toAttachmentViews（downloadUrl/メタ）。ImageService はモック。
+  - `backend/src/chat/application/chat.service.spec.ts`（変更）: `supportsVision` 委譲を追加（モック provider に `supportsVision`）。
+- 完了確認: `cd backend && pnpm lint && pnpm test && pnpm build`。
+
+#### コミット 2: 送受信 API の画像添付対応
+
+- `backend/src/chat/application/chat.schemas.ts`（変更）: `MAX_ATTACHMENTS = 5`、`SendMessageSchema` に `attachmentImageIds: z.array(z.uuid()).max(MAX_ATTACHMENTS).optional()`。
+- `backend/src/chat/application/chat-completion.service.ts`（変更）: `ChatAttachmentService` を注入。`streamCompletion` 冒頭で `assertAttachmentsSendable(currentUser, input.attachmentImageIds ?? [], this.chatService.supportsVision())`（pre-stream）。`addMessage` に `attachmentImageIds` を渡す。履歴 `messages` を `await attachmentService.toLlmContent(...)` で構築（`Promise.all`）。
+- `backend/src/chat/controller/chat.dto.ts`（変更）: `SendMessageRequestDto.attachmentImageIds?: string[]`、`ChatMessageAttachmentDto`、`ChatMessageResponseDto.attachments: ChatMessageAttachmentDto[]`。
+- `backend/src/chat/controller/chat.controller.ts`（変更）: `ChatAttachmentService` 注入。`findMessages` で各メッセージの `attachments` を `toAttachmentViews` で解決し DTO へ（`Promise.all`）。
+- `backend/openapi.json`（再生成）: `pnpm openapi:export`。
+- テスト:
+  - `backend/src/chat/application/chat-completion.service.spec.ts`（変更）: `ChatAttachmentService` モックを追加。送信前 assert が addMessage より前に呼ばれる / assert が 422・404 を投げると pre-stream で伝播 / addMessage に attachmentImageIds が渡る / 履歴 content が toLlmContent 経由で構築される、を網羅。
+- 完了確認: `cd backend && pnpm lint && pnpm test && pnpm build`。
+
+### 12.2 migration・環境変数・依存追加
+
+- migration: **不要**（TSK-① の `chat_message_images` を利用）。
+- 環境変数: **不要**。
+- 依存追加: **不要**（`@aws-sdk/client-s3` の `GetObjectCommand` は既存）。
+- openapi: `openapi.json` を再生成・コミット（frontend の `schema.d.ts` 再生成は TSK-④）。
+
+### 12.3 実装方針メモ（確定仕様）
+
+- `assertAttachmentsSendable`: vision チェック（I/O なし）を先に行い fail fast、その後に各 id の所有者認可。
+- `toLlmContent`: `content` は SendMessageSchema で min(1) 保証のため text part は常に先頭に入れる。image part は `position` 昇順。
+- base64 は `Buffer.from(bytes).toString('base64')`。`ChatImagePart.mediaType` は `Image.mimeType`（enum: image/jpeg|png|gif|webp）をそのまま使用（型整合）。
+- 検証エラー（404/400/422）は **pre-stream**（addMessage 前・try 前）で Nest 例外として投げる。controller の最初の `gen.next()` で例外フィルタが正しいステータスを返す。`classifyLlmError` は変更しない。
+- 履歴の base64 化は全添付ありメッセージに対して毎回実行（PRJ 文脈維持・判断 6）。
+
+### 12.4 作業順序（コミット単位・各完了確認）
+
+1. **`feat(tsk-124): 画像 base64 取得と添付解決サービスを追加`** — §12.1 コミット 1。完了確認: backend lint/test/build。
+2. **`feat(tsk-124): 送受信 API の画像添付対応を実装`** — §12.1 コミット 2（openapi.json 再生成含む）。完了確認: backend lint/test/build、`openapi.json` に `attachmentImageIds`/`attachments` が出力。
+
+### 12.5 テスト方針
+
+- application 層をユニットテストで担保（既存方針）。`ChatAttachmentService`（ImageService モック）と `ChatCompletionService`（ChatAttachmentService/ChatService/ChatThreadService モック）を分離してテスト。
+- S3・ImageService の実 I/O は infra であり、既存どおり単体テスト対象外（モックで担保、実通信は手動）。
+
+### 12.6 想定外時の判断ルール
+
+- **AI 単独判断 OK**: SDK の Body→bytes 変換の細部、命名・型 cast の微調整、設計書スコープ内の追加実装。
+- **中断して要相談**:
+  - 表示用 URL 方式・上限枚数・vision エラー方針（判断 1〜3）を覆す必要。
+  - `classifyLlmError`／provider／永続スキーマ／ドメイン content 型の変更が必要と判明（TSK-①②越境）。
+  - フロント変更が必要と判明（TSK-④越境）。
+  - `ImageService` への依存方向がオニオン違反になる場合。
+
+### 12.7 事前解決済みの判断ポイント
+
+- 表示用 URL → 履歴応答に署名付き downloadUrl＋メタを埋め込む（判断 1）。
+- 上限枚数 → 5（判断 2）。
+- vision 非対応 → 422＋`LLM_VISION_UNSUPPORTED`、送信前チェック（判断 3）。
+- base64 取得 → `S3StorageClient.getObjectBytes`＋`ImageService.getOwnedImageBase64`（判断 4）。
+- 画像解決の責務 → 新 `ChatAttachmentService`、`ImageModule` を import・`ImageService` を export（判断 5）。
+- 履歴再送 → 全添付を毎回 base64 化（判断 6）。
+- 検証順 → vision（fail fast）→ 所有者認可。
+- openapi.json → 本タスクで再生成（frontend 再生成は TSK-④）。
+- `classifyLlmError`/provider/スキーマ/content 型/フロント → 非変更。
+
+## 13. 手動動作確認シナリオ
+
+1. 自分の画像 id を `attachmentImageIds` に入れて送信 → 画像が base64 化され LLM へ送られ、ユーザーメッセージが添付付きで保存される。
+2. 他人の画像 id を送る → 404。6 枚送る → 400。
+3. `LLM_PROVIDER=local`（vision 非対応）で画像付き送信 → 422（`LLM_VISION_UNSUPPORTED`）、メッセージ未保存。
+4. `GET /chat/threads/:id/messages` で各メッセージに `attachments`（downloadUrl・mimeType・originalFilename・position）が返る。
+5. 同一スレッドで続けて送信 → 過去の添付画像も base64 で再送され文脈が維持される。
+6. テキストのみ送信（attachmentImageIds 無し）→ 従来どおり動作（後方互換）。
