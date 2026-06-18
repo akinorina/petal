@@ -174,4 +174,93 @@ PRJ-17（Petal LLM画像対応）の基盤タスク。現状 `ChatMessage.conten
 
 ## 12. 実装計画（Phase 4）
 
-（Phase 4 で追記）
+### 12.1 変更・追加ファイル
+
+#### コミット 1: ドメイン拡張
+
+- `backend/src/chat/domain/llm-message.ts`（変更）: `ChatTextPartSchema` / `ChatImagePartSchema` / `ChatContentPartSchema`（discriminatedUnion）/ `ChatContentPart` 型を追加。`ChatMessageSchema.content` を `z.union([z.string(), z.array(ChatContentPartSchema).min(1)])` に変更。`contentToText(content)` ヘルパーを追加（string→そのまま、配列→text part を結合・image part は無視）。
+- `backend/src/chat/domain/chat-message.ts`（変更）: `ChatMessageImageRefSchema = z.object({ imageId: z.uuid(), position: z.number().int().nonnegative() })` ＋ `ChatMessageImageRef` 型を追加。`ChatMessageSchema` に `attachments: z.array(ChatMessageImageRefSchema).default([])` を追加。クラスに `readonly attachments: ChatMessageImageRef[]` を追加。
+- `backend/src/chat/infra/claude.client.ts`（変更）: `splitMessages` で `message.content` を `contentToText(message.content)` に置換（system/mapped 両方）。
+- `backend/src/chat/infra/gemini.client.ts`（変更）: `mapMessages` で `contentToText(message.content)` に置換。
+- `backend/src/chat/infra/openai-compatible.client.ts`（変更）: `messages.map` の `content` を `contentToText(message.content)` に置換。
+- `backend/src/chat/domain/llm-message.spec.ts`（新規）: `contentToText`（string / text parts 結合 / image part 無視 / 混在）と `ChatContentPartSchema` の判別を網羅。
+- `backend/src/chat/domain/chat-message.spec.ts`（新規）: `ChatMessage` が attachments を保持・既定 `[]`・不正 imageId/position で `parse` 失敗を網羅。
+
+#### コミット 2: 永続化
+
+- `backend/src/chat/infra/chat-message-image.entity.ts`（新規）: §4 の列。`@ManyToOne(ChatMessageEntity,{onDelete:'RESTRICT'})` / `@ManyToOne(ImageEntity,{onDelete:'RESTRICT'})`、`@JoinColumn`、`position`（`int`）、日時、`@DeleteDateColumn`。
+- `backend/database/migrations/1746144008000-CreateChatMessageImages.ts`（新規）: `petal.chat_message_images` の up/down。UQ(message_id, position)・IDX(message_id)・両 FK RESTRICT。
+- `backend/src/chat/chat.module.ts`（変更）: `TypeOrmModule.forFeature` に `ChatMessageImageEntity` を追加。
+- `backend/src/chat/infra/chat-thread.repository.impl.ts`（変更）: `@InjectRepository(ChatMessageImageEntity)` を追加。`addMessage` をトランザクション化（メッセージ保存→ attachments を position 順で一括保存）。`findMessages` で対象メッセージの添付行を `message_id IN (...)`・`position ASC` でまとめ取得し各メッセージへ map。`softDeleteThread` のトランザクションに添付行の `softDelete` を追加。`toMessageDomain`/`toMessageEntity` に attachments の往復を追加。
+- `backend/src/chat/application/chat-thread.schemas.ts`（変更）: `AddMessageInputSchema` に `attachmentImageIds: z.array(z.uuid()).optional()` を追加。
+- `backend/src/chat/application/chat-thread.service.ts`（変更）: `addMessage` で `input.attachmentImageIds` を `attachments: ids.map((imageId, position) => ({ imageId, position }))` に変換し `ChatMessage` に渡す（未指定は `[]`）。
+- `backend/src/chat/application/chat-thread.service.spec.ts`（変更）: `addMessage` が attachmentImageIds を position 付きで `repo.addMessage` に渡すケース／未指定で `[]` のケースを追加。
+
+### 12.2 migration・環境変数・依存追加
+
+- migration: **新規 1 本**（`1746144008000-CreateChatMessageImages.ts`）。`down` で `DROP TABLE`。
+- 環境変数: **不要**。
+- 依存追加: **不要**。
+- エンティティ登録: `data-source.ts` は `src/**/*.entity.ts` glob で自動取り込み（新規 entity も対象）。repository DI のため `chat.module.ts` の `forFeature` のみ追記が必要。
+
+### 12.3 実装方針メモ（確定仕様）
+
+- `contentToText`:
+
+  ```ts
+  export function contentToText(content: string | ChatContentPart[]): string {
+    if (typeof content === 'string') return content;
+    return content
+      .filter((p): p is z.infer<typeof ChatTextPartSchema> => p.type === 'text')
+      .map((p) => p.text)
+      .join('');
+  }
+  ```
+
+- 永続 `chat_messages.content` は従来どおりテキスト本文。base64 は保存しない（ワイヤ生成は TSK-③）。
+- `AddMessageInput.attachmentImageIds` は配列の並び順を意味とし、`position` は service が index で採番（呼び出し側は順序付き id を渡すだけ）。
+- `addMessage` のトランザクション: メッセージ INSERT → 添付行 INSERT を 1 Tx。返すドメインは保存済み attachments（position 順）を含める。
+- `content min(1)` は維持。画像のみ（本文空）メッセージの許容は TSK-③（API 検証）の判断。
+- 枚数上限・サイズ上限の enforcement は 122 では行わない（TSK-③）。
+
+### 12.4 作業順序（コミット単位・各完了確認）
+
+1. **`feat(tsk-122): チャットドメインをマルチモーダル content と添付画像参照に拡張`**
+   - 完了確認: `cd backend && pnpm lint && pnpm test && pnpm build` がパス（provider が `contentToText` 経由でビルド通過、text 挙動不変）。
+2. **`feat(tsk-122): 添付画像の永続化（chat_message_images）を追加`**
+   - 完了確認: `cd backend && pnpm lint && pnpm test && pnpm build` がパス。migration `up`/`down` が成功（ローカル DB で確認可能なら確認）。
+
+### 12.5 テスト方針
+
+- 既存慣例どおり **repository impl の単体テストは設けない**（本リポは infra repo spec を持たない）。
+- domain spec（`llm-message.spec.ts` / `chat-message.spec.ts`）＋ service spec（`chat-thread.service.spec.ts` に attachments 受け渡しケース）＋ build で担保。
+- position 順の DB 復元・Tx・soft-delete は build＋手動シナリオ（§13）で確認。
+
+### 12.6 想定外時の判断ルール
+
+- **AI 単独判断 OK**: 設計書スコープ内の追加実装、命名・型の微調整、既存コードの軽微リファクタ。
+- **中断して要相談**:
+  - データモデル変更（§4 以外のカラム・テーブル追加、FK 方針変更）。
+  - ワイヤ／永続の表現方針（判断 1〜5）を覆す変更。
+  - provider に画像マッピングや vision 判定を入れる必要が生じた場合（TSK-② 領域への越境）。
+  - API／controller／SendMessage への波及が必要と判明した場合（TSK-③ 領域）。
+  - `content min(1)` 緩和や画像のみメッセージ対応が 122 に必要と判明した場合。
+
+### 12.7 事前解決済みの判断ポイント
+
+- 永続化方式 → 別テーブル `chat_message_images`（判断 1）。
+- join 行 → `image_id` 参照のみ（判断 2）。
+- ワイヤ image part → base64 保持型（判断 3）。
+- 永続ドメイン → content 据え置き＋ attachments 配列（判断 4）。
+- provider → `contentToText` 経由の最小修正のみ（画像対応は TSK-②、判断 5）。
+- 論理削除 → softDeleteThread で添付行も同一 Tx で soft-delete（判断 6）。
+- service seam → 122 で `AddMessageInput.attachmentImageIds` ＋ service の position 採番まで配線（TSK-③ は順序付き id を渡すだけ）。
+- 永続層テスト → 既存慣例どおり infra spec なし、domain＋service＋build＋手動で担保。
+- `content min(1)` → 維持（画像のみメッセージは TSK-③ の判断）。
+
+## 13. 手動動作確認シナリオ
+
+1. `pnpm migration:run`（or 既存手順）で `1746144008000` が適用され、`petal.chat_message_images` が作成される。`down` で削除できる。
+2. 既存のテキストのみチャット送受信が従来どおり動作（後方互換・provider の text 挙動不変）。
+3. （TSK-③ 連携前の暫定確認）service.addMessage に attachmentImageIds を渡すと chat_message_images に position 順で行が保存され、findMessages で同順に復元される（ユニットテスト＋必要なら DB 直接確認）。
+4. スレッドを論理削除すると、メッセージと添付行（chat_message_images）の deleted_at が同一 Tx で設定される。
