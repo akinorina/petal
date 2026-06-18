@@ -1,14 +1,39 @@
 import OpenAI from 'openai';
-import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+import type {
+  ChatCompletionContentPart,
+  ChatCompletionMessageParam,
+} from 'openai/resources/chat/completions';
 import {
   type ChatChunk,
   type ChatGenerationInput,
   type ChatResult,
 } from '../domain/llm-generation';
-import { contentToText } from '../domain/llm-message';
+import {
+  contentToText,
+  hasImageContent,
+  type ChatContentPart,
+} from '../domain/llm-message';
 import { LlmModelSchema, type LlmModel } from '../domain/llm-model';
 import type { LlmProvider } from '../domain/llm-provider';
+import { VisionUnsupportedError } from '../domain/vision-unsupported.error';
 import type { OpenAiCompatConfig } from './llm.config';
+
+// content を OpenAI 互換の content 形式へ変換する純粋関数（判断 4）。
+// 文字列は後方互換でそのまま、配列は text→{type:'text'} /
+// image→{type:'image_url', image_url:{url:'data:<mediaType>;base64,<data>'}}。
+export function toOpenAiContent(
+  content: string | ChatContentPart[],
+): string | ChatCompletionContentPart[] {
+  if (typeof content === 'string') return content;
+  return content.map((part) =>
+    part.type === 'text'
+      ? { type: 'text', text: part.text }
+      : {
+          type: 'image_url',
+          image_url: { url: `data:${part.mediaType};base64,${part.data}` },
+        },
+  );
+}
 
 // OpenAI 互換 API への接続クライアント。OpenAI（本家）と LocalLLM（LM Studio 等）の
 // 両方を、設定違いの 2 インスタンスで共用する。公式 openai SDK を baseURL 上書きで利用。
@@ -44,13 +69,25 @@ export class OpenAiCompatibleClient implements LlmProvider {
     );
   }
 
+  supportsVision(): boolean {
+    return this.config.supportsVision;
+  }
+
   async *generateStream(input: ChatGenerationInput): AsyncGenerator<ChatChunk> {
+    // vision 非対応 & 画像付き content なら SDK 生成前に block（多層防御・判断 2）。
+    if (!this.supportsVision() && hasImageContent(input.messages)) {
+      throw new VisionUnsupportedError(this.config.label);
+    }
     const model = this.resolveModel(input.model);
     const messages: ChatCompletionMessageParam[] = input.messages.map(
-      (message) => ({
-        role: message.role,
-        content: contentToText(message.content),
-      }),
+      (message) => {
+        // user のみ画像 part を含み得る。system/assistant は画像を持てないため
+        // 従来どおりテキスト化する（OpenAI 型でも image_url は user のみ・判断 5）。
+        if (message.role === 'user') {
+          return { role: 'user', content: toOpenAiContent(message.content) };
+        }
+        return { role: message.role, content: contentToText(message.content) };
+      },
     );
 
     const stream = await this.client.chat.completions.create({

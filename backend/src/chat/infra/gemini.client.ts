@@ -1,13 +1,29 @@
-import { type Content, GoogleGenAI } from '@google/genai';
+import { type Content, GoogleGenAI, type Part } from '@google/genai';
 import {
   type ChatChunk,
   type ChatGenerationInput,
   type ChatResult,
 } from '../domain/llm-generation';
-import { contentToText } from '../domain/llm-message';
+import {
+  contentToText,
+  hasImageContent,
+  type ChatContentPart,
+} from '../domain/llm-message';
 import { LlmModelSchema, type LlmModel } from '../domain/llm-model';
 import type { LlmProvider } from '../domain/llm-provider';
+import { VisionUnsupportedError } from '../domain/vision-unsupported.error';
 import type { GeminiConfig } from './llm.config';
+
+// content を Gemini の Part 配列へ変換する純粋関数（判断 4）。
+// 文字列は単一 text part、配列は text→{text} / image→{inlineData:{mimeType,data}}。
+export function toGeminiParts(content: string | ChatContentPart[]): Part[] {
+  if (typeof content === 'string') return [{ text: content }];
+  return content.map((part) =>
+    part.type === 'text'
+      ? { text: part.text }
+      : { inlineData: { mimeType: part.mediaType, data: part.data } },
+  );
+}
 
 // Gemini（@google/genai）への接続クライアント。
 // 外部 SDK 呼び出しはこの infra に隔離する。レジストリが config を渡して new する。
@@ -46,7 +62,15 @@ export class GeminiClient implements LlmProvider {
     return models;
   }
 
+  supportsVision(): boolean {
+    return true;
+  }
+
   async *generateStream(input: ChatGenerationInput): AsyncGenerator<ChatChunk> {
+    // vision 非対応 & 画像付き content なら SDK 生成前に block（多層防御・判断 2）。
+    if (!this.supportsVision() && hasImageContent(input.messages)) {
+      throw new VisionUnsupportedError('Gemini');
+    }
     const model = this.resolveModel(input.model);
     const { systemInstruction, contents } = this.mapMessages(input.messages);
 
@@ -99,13 +123,13 @@ export class GeminiClient implements LlmProvider {
     const systemParts: string[] = [];
     const contents: Content[] = [];
     for (const message of messages) {
-      const text = contentToText(message.content);
+      // system は画像を持てないため従来どおりテキスト化（判断 5）。
       if (message.role === 'system') {
-        systemParts.push(text);
+        systemParts.push(contentToText(message.content));
       } else {
         contents.push({
           role: message.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text }],
+          parts: toGeminiParts(message.content),
         });
       }
     }

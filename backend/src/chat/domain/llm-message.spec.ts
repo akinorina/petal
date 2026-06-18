@@ -1,6 +1,7 @@
 import {
   ChatContentPartSchema,
   contentToText,
+  hasImageContent,
   type ChatContentPart,
 } from './llm-message';
 
@@ -64,5 +65,29 @@ describe('ChatContentPartSchema', () => {
         data: '',
       }),
     ).toThrow();
+  });
+});
+
+describe('hasImageContent', () => {
+  it('string content のみなら false', () => {
+    expect(
+      hasImageContent([{ content: 'こんにちは' }, { content: 'やあ' }]),
+    ).toBe(false);
+  });
+
+  it('image part を含む配列があれば true', () => {
+    const content: ChatContentPart[] = [
+      { type: 'text', text: '前' },
+      { type: 'image', mediaType: 'image/png', data: 'YmFzZTY0' },
+    ];
+    expect(hasImageContent([{ content: 'やあ' }, { content }])).toBe(true);
+  });
+
+  it('text part のみの配列なら false', () => {
+    const content: ChatContentPart[] = [
+      { type: 'text', text: 'あ' },
+      { type: 'text', text: 'い' },
+    ];
+    expect(hasImageContent([{ content }])).toBe(false);
   });
 });

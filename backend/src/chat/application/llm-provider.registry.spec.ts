@@ -8,6 +8,7 @@ function fakeProvider(): LlmProvider {
     listModels: jest.fn(),
     generate: jest.fn(),
     generateStream: jest.fn(),
+    supportsVision: jest.fn(),
   };
 }
 

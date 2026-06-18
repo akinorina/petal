@@ -26,6 +26,11 @@ class UnconfiguredProvider implements LlmProvider {
   async *generateStream(): AsyncGenerator<ChatChunk> {
     throw this.error();
   }
+
+  // 未設定 provider は vision 非対応扱い（interface 追従）。
+  supportsVision(): boolean {
+    return false;
+  }
 }
 
 // 設定済みの provider を id で保持する純粋なレジストリ（application 層・infra 非依存）。

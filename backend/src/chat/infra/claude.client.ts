@@ -4,10 +4,38 @@ import {
   type ChatGenerationInput,
   type ChatResult,
 } from '../domain/llm-generation';
-import { contentToText } from '../domain/llm-message';
+import {
+  contentToText,
+  hasImageContent,
+  type ChatContentPart,
+} from '../domain/llm-message';
 import { LlmModelSchema, type LlmModel } from '../domain/llm-model';
 import type { LlmProvider } from '../domain/llm-provider';
+import { VisionUnsupportedError } from '../domain/vision-unsupported.error';
 import type { ClaudeConfig } from './llm.config';
+
+// content（string | ChatContentPart[]）を Anthropic の content 形式へ変換する
+// 純粋関数（SDK・ネットワーク非依存でテスト可能。判断 4）。
+// 文字列は後方互換でそのまま返し、配列は text/image block 配列へ変換する。
+// media_type の形式検証は TSK-①/③ の責務（本タスクは通過のみ）。
+export function toClaudeContent(
+  content: string | ChatContentPart[],
+): string | Array<Anthropic.TextBlockParam | Anthropic.ImageBlockParam> {
+  if (typeof content === 'string') return content;
+  return content.map((part) => {
+    if (part.type === 'text') {
+      return { type: 'text', text: part.text };
+    }
+    return {
+      type: 'image',
+      source: {
+        type: 'base64',
+        media_type: part.mediaType as Anthropic.Base64ImageSource['media_type'],
+        data: part.data,
+      },
+    };
+  });
+}
 
 // Anthropic Messages API は max_tokens 必須のため、入力にも既定にも無い場合の既定値。
 const DEFAULT_MAX_TOKENS = 8192;
@@ -42,7 +70,15 @@ export class ClaudeClient implements LlmProvider {
     return models;
   }
 
+  supportsVision(): boolean {
+    return true;
+  }
+
   async *generateStream(input: ChatGenerationInput): AsyncGenerator<ChatChunk> {
+    // vision 非対応 & 画像付き content なら SDK 生成前に block（多層防御・判断 2）。
+    if (!this.supportsVision() && hasImageContent(input.messages)) {
+      throw new VisionUnsupportedError('Claude');
+    }
     const model = this.resolveModel(input.model);
     const { system, messages } = this.splitMessages(input.messages);
 
@@ -103,11 +139,14 @@ export class ClaudeClient implements LlmProvider {
     const systemParts: string[] = [];
     const mapped: Anthropic.MessageParam[] = [];
     for (const message of messages) {
-      const text = contentToText(message.content);
+      // system は画像を持てないため従来どおりテキスト化（判断 5）。
       if (message.role === 'system') {
-        systemParts.push(text);
+        systemParts.push(contentToText(message.content));
       } else {
-        mapped.push({ role: message.role, content: text });
+        mapped.push({
+          role: message.role,
+          content: toClaudeContent(message.content),
+        });
       }
     }
     return {
