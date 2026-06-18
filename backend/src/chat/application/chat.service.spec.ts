@@ -124,3 +124,22 @@ describe('ChatService.generateStream', () => {
     expect(provider.generateStream).not.toHaveBeenCalled();
   });
 });
+
+describe('ChatService.supportsVision', () => {
+  let service: ChatService;
+  let provider: MockLlmProvider;
+
+  beforeEach(async () => {
+    provider = buildMockProvider();
+    service = await buildService(provider);
+  });
+
+  it.each([true, false])(
+    'provider.supportsVision の結果 %p をそのまま返す',
+    (supported) => {
+      provider.supportsVision.mockReturnValue(supported);
+      expect(service.supportsVision()).toBe(supported);
+      expect(provider.supportsVision).toHaveBeenCalledTimes(1);
+    },
+  );
+});

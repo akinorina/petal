@@ -1,5 +1,20 @@
 import { ApiProperty } from '@nestjs/swagger';
+import {
+  ALLOWED_IMAGE_MIME_TYPES,
+  type ImageMimeType,
+} from '../../image/domain/image';
 import { ChatRoleSchema } from '../domain/llm-message';
+
+export class ChatMessageAttachmentDto {
+  imageId!: string;
+  position!: number;
+  @ApiProperty({ enum: ALLOWED_IMAGE_MIME_TYPES })
+  mimeType!: ImageMimeType;
+  originalFilename!: string;
+  downloadUrl!: string;
+  @ApiProperty()
+  expiresInSeconds!: number;
+}
 
 export class ChatThreadResponseDto {
   id!: string;
@@ -22,6 +37,8 @@ export class ChatMessageResponseDto {
   createdAt!: string;
   @ApiProperty({ format: 'date-time' })
   updatedAt!: string;
+  @ApiProperty({ type: [ChatMessageAttachmentDto] })
+  attachments!: ChatMessageAttachmentDto[];
 }
 
 export class CreateThreadRequestDto {
@@ -34,4 +51,6 @@ export class UpdateThreadRequestDto {
 
 export class SendMessageRequestDto {
   content!: string;
+  @ApiProperty({ type: [String], required: false })
+  attachmentImageIds?: string[];
 }

@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ImageModule } from '../image/image.module';
 import { UserModule } from '../user/user.module';
 import { ChatService } from './application/chat.service';
+import { ChatAttachmentService } from './application/chat-attachment.service';
 import { ChatCompletionService } from './application/chat-completion.service';
 import { ChatThreadService } from './application/chat-thread.service';
 import { LlmProviderRegistry } from './application/llm-provider.registry';
@@ -23,6 +25,7 @@ import { LlmConfig } from './infra/llm.config';
       ChatMessageImageEntity,
     ]),
     UserModule,
+    ImageModule,
   ],
   controllers: [ChatController],
   providers: [
@@ -51,6 +54,7 @@ import { LlmConfig } from './infra/llm.config';
       useClass: ChatThreadRepositoryImpl,
     },
     ChatThreadService,
+    ChatAttachmentService,
     ChatCompletionService,
   ],
   exports: [ChatService, ChatThreadService],

@@ -25,4 +25,9 @@ export class ChatService {
     const parsed = ChatGenerationInputSchema.parse(input);
     return this.provider.generateStream(parsed);
   }
+
+  // 有効 provider が画像入力（vision）に対応しているか（provider 委譲）。
+  supportsVision(): boolean {
+    return this.provider.supportsVision();
+  }
 }

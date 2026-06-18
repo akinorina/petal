@@ -1,6 +1,7 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import type { User } from '../../user/domain/user';
 import type { ChatMessage } from '../domain/chat-message';
+import { ChatAttachmentService } from './chat-attachment.service';
 import { classifyLlmError } from './chat-error';
 import type { SendMessageInput } from './chat.schemas';
 import type { ChatStreamEvent } from './chat-stream';
@@ -15,6 +16,7 @@ export class ChatCompletionService {
   constructor(
     private readonly threadService: ChatThreadService,
     private readonly chatService: ChatService,
+    private readonly attachmentService: ChatAttachmentService,
   ) {}
 
   async *streamCompletion(
@@ -22,19 +24,32 @@ export class ChatCompletionService {
     threadId: string,
     input: SendMessageInput,
   ): AsyncGenerator<ChatStreamEvent> {
+    // 送信前検証（pre-stream）。vision 非対応→422 / 非所有画像→404 を伝播。
+    await this.attachmentService.assertAttachmentsSendable(
+      currentUser,
+      input.attachmentImageIds ?? [],
+      this.chatService.supportsVision(),
+    );
     // try の前に呼ぶ。非所有なら NotFoundException がそのまま伝播する（認可委譲）。
     await this.threadService.addMessage(currentUser, threadId, {
       role: 'user',
       content: input.content,
+      attachmentImageIds: input.attachmentImageIds,
     });
     const history = await this.threadService.findMessages(
       currentUser,
       threadId,
     );
-    const messages = history.map((message) => ({
-      role: message.role,
-      content: message.content,
-    }));
+    const messages = await Promise.all(
+      history.map(async (message) => ({
+        role: message.role,
+        content: await this.attachmentService.toLlmContent(
+          currentUser,
+          message.content,
+          message.attachments,
+        ),
+      })),
+    );
 
     let accumulated = '';
     let started = false;

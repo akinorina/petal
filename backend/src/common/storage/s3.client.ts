@@ -79,4 +79,15 @@ export class S3StorageClient {
     });
     return this.rewriteUrl(url);
   }
+
+  // オブジェクト本体をバイト列で取得する（base64 化など in-process 用途）。
+  async getObjectBytes(key: string): Promise<Uint8Array> {
+    const res = await this.client.send(
+      new GetObjectCommand({ Bucket: this.bucket, Key: key }),
+    );
+    if (!res.Body) {
+      throw new Error(`オブジェクト本体を取得できません: ${key}`);
+    }
+    return res.Body.transformToByteArray();
+  }
 }
