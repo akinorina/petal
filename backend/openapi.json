@@ -2239,6 +2239,12 @@
             "type": "string",
             "format": "date-time"
           },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatMessageAttachmentDto"
+            }
+          },
           "id": {
             "type": "string"
           },
@@ -2256,15 +2262,59 @@
           "role",
           "createdAt",
           "updatedAt",
+          "attachments",
           "id",
           "threadId",
           "seq",
           "content"
         ]
       },
+      "ChatMessageAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "mimeType": {
+            "type": "string",
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/gif",
+              "image/webp"
+            ]
+          },
+          "expiresInSeconds": {
+            "type": "number"
+          },
+          "imageId": {
+            "type": "string"
+          },
+          "position": {
+            "type": "number"
+          },
+          "originalFilename": {
+            "type": "string"
+          },
+          "downloadUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "mimeType",
+          "expiresInSeconds",
+          "imageId",
+          "position",
+          "originalFilename",
+          "downloadUrl"
+        ]
+      },
       "SendMessageRequestDto": {
         "type": "object",
         "properties": {
+          "attachmentImageIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "content": {
             "type": "string"
           }

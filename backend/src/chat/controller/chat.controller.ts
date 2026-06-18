@@ -16,6 +16,7 @@ import { ApiBearerAuth, ApiProduces, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { User } from '../../user/domain/user';
 import { UserService } from '../../user/application/user.service';
+import { ChatAttachmentService } from '../application/chat-attachment.service';
 import { ChatCompletionService } from '../application/chat-completion.service';
 import { SendMessageSchema } from '../application/chat.schemas';
 import { ChatThreadService } from '../application/chat-thread.service';
@@ -41,6 +42,7 @@ export class ChatController {
   constructor(
     private readonly threadService: ChatThreadService,
     private readonly completionService: ChatCompletionService,
+    private readonly attachmentService: ChatAttachmentService,
     private readonly userService: UserService,
   ) {}
 
@@ -90,7 +92,15 @@ export class ChatController {
   ): Promise<ChatMessageResponseDto[]> {
     const currentUser = await this.resolveCurrentUser(req);
     const messages = await this.threadService.findMessages(currentUser, id);
-    return messages.map(toMessageResponse);
+    return Promise.all(
+      messages.map(async (message) => ({
+        ...toMessageResponse(message),
+        attachments: await this.attachmentService.toAttachmentViews(
+          currentUser,
+          message.attachments,
+        ),
+      })),
+    );
   }
 
   @Post('threads/:id/messages')
@@ -169,7 +179,10 @@ function toThreadResponse(thread: ChatThread): ChatThreadResponseDto {
   };
 }
 
-function toMessageResponse(message: ChatMessage): ChatMessageResponseDto {
+// attachments を除く基本フィールドのみを返す（attachments は呼び出し側で解決）。
+function toMessageResponse(
+  message: ChatMessage,
+): Omit<ChatMessageResponseDto, 'attachments'> {
   return {
     id: message.id,
     threadId: message.threadId,

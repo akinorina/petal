@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import type { User } from '../../user/domain/user';
 import { ChatMessage } from '../domain/chat-message';
 import type { ChatChunk } from '../domain/llm-generation';
+import { ChatAttachmentService } from './chat-attachment.service';
 import { ChatCompletionService } from './chat-completion.service';
 import type { ChatStreamEvent } from './chat-stream';
 import { ChatService } from './chat.service';
@@ -16,6 +17,13 @@ type MockChatThreadService = {
 
 type MockChatService = {
   generateStream: jest.Mock;
+  supportsVision: jest.Mock;
+};
+
+type MockChatAttachmentService = {
+  assertAttachmentsSendable: jest.Mock;
+  toLlmContent: jest.Mock;
+  toAttachmentViews: jest.Mock;
 };
 
 function buildThreadServiceMock(): MockChatThreadService {
@@ -28,6 +36,20 @@ function buildThreadServiceMock(): MockChatThreadService {
 function buildChatServiceMock(): MockChatService {
   return {
     generateStream: jest.fn(),
+    supportsVision: jest.fn().mockReturnValue(true),
+  };
+}
+
+function buildAttachmentServiceMock(): MockChatAttachmentService {
+  return {
+    assertAttachmentsSendable: jest.fn().mockResolvedValue(undefined),
+    // デフォルトでは content 文字列をそのまま返す（テキストのみ後方互換）。
+    toLlmContent: jest
+      .fn()
+      .mockImplementation((_user: User, content: string) =>
+        Promise.resolve(content),
+      ),
+    toAttachmentViews: jest.fn().mockResolvedValue([]),
   };
 }
 
@@ -90,15 +112,18 @@ describe('ChatCompletionService.streamCompletion', () => {
   let service: ChatCompletionService;
   let threadService: MockChatThreadService;
   let chatService: MockChatService;
+  let attachmentService: MockChatAttachmentService;
 
   beforeEach(async () => {
     threadService = buildThreadServiceMock();
     chatService = buildChatServiceMock();
+    attachmentService = buildAttachmentServiceMock();
     const moduleRef: TestingModule = await Test.createTestingModule({
       providers: [
         ChatCompletionService,
         { provide: ChatThreadService, useValue: threadService },
         { provide: ChatService, useValue: chatService },
+        { provide: ChatAttachmentService, useValue: attachmentService },
       ],
     }).compile();
     service = moduleRef.get(ChatCompletionService);
@@ -379,5 +404,143 @@ describe('ChatCompletionService.streamCompletion', () => {
 
     // user + assistant の 2 回。finally の二重 persist は no-op。
     expect(threadService.addMessage).toHaveBeenCalledTimes(2);
+  });
+
+  it('添付検証: assertAttachmentsSendable が addMessage より前に supportsVision 結果で呼ばれる', async () => {
+    const imageId = randomUUID();
+    chatService.supportsVision.mockReturnValue(true);
+    threadService.addMessage.mockResolvedValue(buildMessage({ role: 'user' }));
+    threadService.findMessages.mockResolvedValue([
+      buildMessage({ role: 'user' }),
+    ]);
+    chatService.generateStream.mockReturnValue(
+      toAsyncGenerator([
+        { delta: '', done: true, finishReason: 'stop', model: 'm' },
+      ]),
+    );
+    const callOrder: string[] = [];
+    attachmentService.assertAttachmentsSendable.mockImplementation(() => {
+      callOrder.push('assert');
+      return Promise.resolve();
+    });
+    threadService.addMessage.mockImplementation(() => {
+      callOrder.push('addMessage');
+      return Promise.resolve(buildMessage({ role: 'user' }));
+    });
+
+    await collect(
+      service.streamCompletion(currentUser, threadId, {
+        content: 'こんにちは',
+        attachmentImageIds: [imageId],
+      }),
+    );
+
+    expect(attachmentService.assertAttachmentsSendable).toHaveBeenCalledWith(
+      currentUser,
+      [imageId],
+      true,
+    );
+    expect(callOrder[0]).toBe('assert');
+    expect(callOrder.indexOf('assert')).toBeLessThan(
+      callOrder.indexOf('addMessage'),
+    );
+  });
+
+  it('添付検証: assert が 422 を投げると pre-stream で伝播し addMessage を呼ばない', async () => {
+    attachmentService.assertAttachmentsSendable.mockRejectedValue(
+      new HttpException({ code: 'LLM_VISION_UNSUPPORTED' }, 422),
+    );
+
+    await expect(
+      collect(
+        service.streamCompletion(currentUser, threadId, {
+          content: 'x',
+          attachmentImageIds: [randomUUID()],
+        }),
+      ),
+    ).rejects.toBeInstanceOf(HttpException);
+    expect(threadService.addMessage).not.toHaveBeenCalled();
+    expect(chatService.generateStream).not.toHaveBeenCalled();
+  });
+
+  it('添付検証: assert が 404 を投げると pre-stream で伝播し addMessage を呼ばない', async () => {
+    attachmentService.assertAttachmentsSendable.mockRejectedValue(
+      new NotFoundException('画像が見つかりません'),
+    );
+
+    await expect(
+      collect(
+        service.streamCompletion(currentUser, threadId, {
+          content: 'x',
+          attachmentImageIds: [randomUUID()],
+        }),
+      ),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(threadService.addMessage).not.toHaveBeenCalled();
+  });
+
+  it('添付永続化: addMessage に attachmentImageIds が渡る', async () => {
+    const imageId = randomUUID();
+    threadService.addMessage.mockResolvedValue(buildMessage({ role: 'user' }));
+    threadService.findMessages.mockResolvedValue([
+      buildMessage({ role: 'user' }),
+    ]);
+    chatService.generateStream.mockReturnValue(
+      toAsyncGenerator([
+        { delta: '', done: true, finishReason: 'stop', model: 'm' },
+      ]),
+    );
+
+    await collect(
+      service.streamCompletion(currentUser, threadId, {
+        content: 'こんにちは',
+        attachmentImageIds: [imageId],
+      }),
+    );
+
+    expect(threadService.addMessage).toHaveBeenNthCalledWith(
+      1,
+      currentUser,
+      threadId,
+      {
+        role: 'user',
+        content: 'こんにちは',
+        attachmentImageIds: [imageId],
+      },
+    );
+  });
+
+  it('履歴 content: 各履歴メッセージが toLlmContent 経由で構築され generateStream へ渡る', async () => {
+    const historyMessage = buildMessage({ role: 'user', content: '本文' });
+    threadService.addMessage.mockResolvedValue(buildMessage({ role: 'user' }));
+    threadService.findMessages.mockResolvedValue([historyMessage]);
+    attachmentService.toLlmContent.mockResolvedValue([
+      { type: 'text', text: '本文' },
+      { type: 'image', mediaType: 'image/png', data: 'AAA' },
+    ]);
+    chatService.generateStream.mockReturnValue(
+      toAsyncGenerator([
+        { delta: '', done: true, finishReason: 'stop', model: 'm' },
+      ]),
+    );
+
+    await collect(service.streamCompletion(currentUser, threadId, input));
+
+    expect(attachmentService.toLlmContent).toHaveBeenCalledWith(
+      currentUser,
+      '本文',
+      historyMessage.attachments,
+    );
+    expect(chatService.generateStream).toHaveBeenCalledWith({
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: '本文' },
+            { type: 'image', mediaType: 'image/png', data: 'AAA' },
+          ],
+        },
+      ],
+    });
   });
 });
