@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
-import { ChatMessage } from '../domain/chat-message';
+import { DataSource, In, Repository } from 'typeorm';
+import { ChatMessage, ChatMessageImageRef } from '../domain/chat-message';
 import { ChatThread } from '../domain/chat-thread';
 import { IChatThreadRepository } from '../domain/chat-thread.repository';
 import { ChatRoleSchema } from '../domain/llm-message';
 import { ChatMessageEntity } from './chat-message.entity';
+import { ChatMessageImageEntity } from './chat-message-image.entity';
 import { ChatThreadEntity } from './chat-thread.entity';
 
 @Injectable()
@@ -15,6 +16,8 @@ export class ChatThreadRepositoryImpl implements IChatThreadRepository {
     private readonly threadRepo: Repository<ChatThreadEntity>,
     @InjectRepository(ChatMessageEntity)
     private readonly messageRepo: Repository<ChatMessageEntity>,
+    @InjectRepository(ChatMessageImageEntity)
+    private readonly messageImageRepo: Repository<ChatMessageImageEntity>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -55,7 +58,24 @@ export class ChatThreadRepositoryImpl implements IChatThreadRepository {
       where: { threadId },
       order: { seq: 'ASC' },
     });
-    return entities.map((e) => this.toMessageDomain(e));
+    if (entities.length === 0) return [];
+
+    // 対象メッセージ群の添付行をまとめて取得し（N+1 回避）、message_id 別に分類する。
+    const messageIds = entities.map((e) => e.id);
+    const imageRows = await this.messageImageRepo.find({
+      where: { messageId: In(messageIds) },
+      order: { position: 'ASC' },
+    });
+    const attachmentsByMessage = new Map<string, ChatMessageImageRef[]>();
+    for (const row of imageRows) {
+      const list = attachmentsByMessage.get(row.messageId) ?? [];
+      list.push({ imageId: row.imageId, position: row.position });
+      attachmentsByMessage.set(row.messageId, list);
+    }
+
+    return entities.map((e) =>
+      this.toMessageDomain(e, attachmentsByMessage.get(e.id) ?? []),
+    );
   }
 
   async findMaxSeq(threadId: string): Promise<number | null> {
@@ -70,13 +90,38 @@ export class ChatThreadRepositoryImpl implements IChatThreadRepository {
   }
 
   async addMessage(message: ChatMessage): Promise<ChatMessage> {
-    const entity = this.toMessageEntity(message);
-    const saved = await this.messageRepo.save(entity);
-    return this.toMessageDomain(saved);
+    // メッセージ本体と添付行を 1 トランザクションで保存（全成功 or 全ロールバック）。
+    const attachments = [...message.attachments].sort(
+      (a, b) => a.position - b.position,
+    );
+    return this.dataSource.transaction(async (manager) => {
+      const savedMessage = await manager.save(this.toMessageEntity(message));
+      for (const attachment of attachments) {
+        const imageEntity = new ChatMessageImageEntity();
+        imageEntity.messageId = savedMessage.id;
+        imageEntity.imageId = attachment.imageId;
+        imageEntity.position = attachment.position;
+        await manager.save(imageEntity);
+      }
+      return this.toMessageDomain(savedMessage, attachments);
+    });
   }
 
   async softDeleteThread(id: string): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
+      // 対象スレッドのメッセージに紐づく添付行を先に落としてから
+      // メッセージ → スレッドの順で論理削除する。
+      const messageIds = (
+        await manager.find(ChatMessageEntity, {
+          where: { threadId: id },
+          select: { id: true },
+        })
+      ).map((m) => m.id);
+      if (messageIds.length > 0) {
+        await manager.softDelete(ChatMessageImageEntity, {
+          messageId: In(messageIds),
+        });
+      }
       await manager.softDelete(ChatMessageEntity, { threadId: id });
       await manager.softDelete(ChatThreadEntity, { id });
     });
@@ -101,13 +146,17 @@ export class ChatThreadRepositoryImpl implements IChatThreadRepository {
     return entity;
   }
 
-  private toMessageDomain(entity: ChatMessageEntity): ChatMessage {
+  private toMessageDomain(
+    entity: ChatMessageEntity,
+    attachments: ChatMessageImageRef[],
+  ): ChatMessage {
     return new ChatMessage({
       id: entity.id,
       threadId: entity.threadId,
       seq: Number(entity.seq),
       role: ChatRoleSchema.parse(entity.role),
       content: entity.content,
+      attachments,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
       deletedAt: entity.deletedAt,

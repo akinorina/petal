@@ -200,6 +200,39 @@ describe('ChatThreadService.addMessage', () => {
     ).rejects.toBeInstanceOf(NotFoundException);
     expect(repo.addMessage).not.toHaveBeenCalled();
   });
+
+  it('attachmentImageIds を配列順の position 付きで attachments に載せて渡す', async () => {
+    repo.findMaxSeq.mockResolvedValue(null);
+    const imageA = randomUUID();
+    const imageB = randomUUID();
+
+    const result = await service.addMessage(buildUser(OWNER_ID), THREAD_ID, {
+      role: 'user',
+      content: '画像を見て',
+      attachmentImageIds: [imageA, imageB],
+    });
+
+    expect(result.attachments).toEqual([
+      { imageId: imageA, position: 0 },
+      { imageId: imageB, position: 1 },
+    ]);
+    const saved = (repo.addMessage.mock.calls as Array<[ChatMessage]>)[0][0];
+    expect(saved.attachments).toEqual([
+      { imageId: imageA, position: 0 },
+      { imageId: imageB, position: 1 },
+    ]);
+  });
+
+  it('attachmentImageIds 未指定なら attachments は空配列', async () => {
+    repo.findMaxSeq.mockResolvedValue(null);
+
+    const result = await service.addMessage(buildUser(OWNER_ID), THREAD_ID, {
+      role: 'user',
+      content: 'テキストのみ',
+    });
+
+    expect(result.attachments).toEqual([]);
+  });
 });
 
 describe('ChatThreadService.findMessages', () => {

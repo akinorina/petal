@@ -53,12 +53,17 @@ export class ChatThreadService {
     const maxSeq = await this.chatThreadRepository.findMaxSeq(thread.id);
     const seq = maxSeq === null ? 0 : maxSeq + 1;
     const now = new Date();
+    // 添付画像 id は配列の並び順を position として採番する。
+    const attachments = (input.attachmentImageIds ?? []).map(
+      (imageId, position) => ({ imageId, position }),
+    );
     const message = new ChatMessage({
       id: randomUUID(),
       threadId: thread.id,
       seq,
       role: input.role,
       content: input.content,
+      attachments,
       createdAt: now,
       updatedAt: now,
       deletedAt: null,

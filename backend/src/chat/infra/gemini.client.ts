@@ -4,6 +4,7 @@ import {
   type ChatGenerationInput,
   type ChatResult,
 } from '../domain/llm-generation';
+import { contentToText } from '../domain/llm-message';
 import { LlmModelSchema, type LlmModel } from '../domain/llm-model';
 import type { LlmProvider } from '../domain/llm-provider';
 import type { GeminiConfig } from './llm.config';
@@ -98,12 +99,13 @@ export class GeminiClient implements LlmProvider {
     const systemParts: string[] = [];
     const contents: Content[] = [];
     for (const message of messages) {
+      const text = contentToText(message.content);
       if (message.role === 'system') {
-        systemParts.push(message.content);
+        systemParts.push(text);
       } else {
         contents.push({
           role: message.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: message.content }],
+          parts: [{ text }],
         });
       }
     }
