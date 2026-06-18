@@ -9,6 +9,7 @@ import { ChatController } from './controller/chat.controller';
 import { CHAT_THREAD_REPOSITORY } from './domain/chat-thread.repository';
 import { LLM_PROVIDER, LLM_PROVIDER_REGISTRY } from './domain/llm-provider';
 import { ChatMessageEntity } from './infra/chat-message.entity';
+import { ChatMessageImageEntity } from './infra/chat-message-image.entity';
 import { ChatThreadEntity } from './infra/chat-thread.entity';
 import { ChatThreadRepositoryImpl } from './infra/chat-thread.repository.impl';
 import { buildLlmProviders } from './infra/llm-provider.factory';
@@ -16,7 +17,11 @@ import { LlmConfig } from './infra/llm.config';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ChatThreadEntity, ChatMessageEntity]),
+    TypeOrmModule.forFeature([
+      ChatThreadEntity,
+      ChatMessageEntity,
+      ChatMessageImageEntity,
+    ]),
     UserModule,
   ],
   controllers: [ChatController],
