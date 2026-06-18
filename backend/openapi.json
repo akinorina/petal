@@ -1198,6 +1198,77 @@
         ]
       }
     },
+    "/chat/threads/{id}": {
+      "patch": {
+        "operationId": "ChatController_updateThread",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateThreadRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatThreadResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "chat"
+        ]
+      },
+      "delete": {
+        "operationId": "ChatController_removeThread",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "chat"
+        ]
+      }
+    },
     "/chat/threads/{id}/messages": {
       "get": {
         "operationId": "ChatController_findMessages",
@@ -1259,77 +1330,6 @@
         },
         "responses": {
           "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "chat"
-        ]
-      }
-    },
-    "/chat/threads/{id}": {
-      "patch": {
-        "operationId": "ChatController_updateThread",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateThreadRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ChatThreadResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "chat"
-        ]
-      },
-      "delete": {
-        "operationId": "ChatController_removeThread",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
             "description": ""
           }
         },
@@ -2220,6 +2220,52 @@
           "title"
         ]
       },
+      "UpdateThreadRequestDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ChatMessageAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "mimeType": {
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/gif",
+              "image/webp"
+            ],
+            "type": "string"
+          },
+          "expiresInSeconds": {
+            "type": "number"
+          },
+          "imageId": {
+            "type": "string"
+          },
+          "position": {
+            "type": "number"
+          },
+          "originalFilename": {
+            "type": "string"
+          },
+          "downloadUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "mimeType",
+          "expiresInSeconds",
+          "imageId",
+          "position",
+          "originalFilename",
+          "downloadUrl"
+        ]
+      },
       "ChatMessageResponseDto": {
         "type": "object",
         "properties": {
@@ -2269,43 +2315,6 @@
           "content"
         ]
       },
-      "ChatMessageAttachmentDto": {
-        "type": "object",
-        "properties": {
-          "mimeType": {
-            "type": "string",
-            "enum": [
-              "image/jpeg",
-              "image/png",
-              "image/gif",
-              "image/webp"
-            ]
-          },
-          "expiresInSeconds": {
-            "type": "number"
-          },
-          "imageId": {
-            "type": "string"
-          },
-          "position": {
-            "type": "number"
-          },
-          "originalFilename": {
-            "type": "string"
-          },
-          "downloadUrl": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "mimeType",
-          "expiresInSeconds",
-          "imageId",
-          "position",
-          "originalFilename",
-          "downloadUrl"
-        ]
-      },
       "SendMessageRequestDto": {
         "type": "object",
         "properties": {
@@ -2322,15 +2331,6 @@
         "required": [
           "content"
         ]
-      },
-      "UpdateThreadRequestDto": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "nullable": true
-          }
-        }
       }
     }
   }
