@@ -149,4 +149,78 @@ PRJ-17 の provider 層タスク。全 4 provider 対応とし、base64 埋め�
 
 ## 12. 実装計画（Phase 4）
 
-（Phase 4 で追記）
+### 12.1 変更・追加ファイル
+
+#### コミット 1: vision 対応可否判定と非対応 block
+
+- `backend/src/chat/domain/llm-provider.ts`（変更）: `LlmProvider` interface に `supportsVision(): boolean` を追加。
+- `backend/src/chat/domain/vision-unsupported.error.ts`（新規）: `VisionUnsupportedError extends Error`（`name` 設定、コンストラクタに provider 表示名）。
+- `backend/src/chat/domain/llm-message.ts`（変更）: `hasImageContent(messages: { content: string | ChatContentPart[] }[]): boolean` を追加。
+- `backend/src/chat/infra/llm.config.ts`（変更）: `LlmEnvSchema` に `OPENAI_VISION` / `LOCALLLM_VISION`（boolean-ish・optional）。`OpenAiCompatConfig` に `supportsVision: boolean`。`openaiConfig`=`?? true`、`localConfig`=`?? false`。
+- `backend/src/chat/infra/claude.client.ts` / `gemini.client.ts` / `openai-compatible.client.ts`（変更）: `supportsVision()` 実装（claude/gemini=true、openai-compat=`config.supportsVision`）＋ `generateStream` 冒頭に guard（`!supportsVision() && hasImageContent(input.messages)` → `throw new VisionUnsupportedError(label)`、SDK 生成前）。
+- `backend/src/chat/application/llm-provider.registry.ts`（変更）: `UnconfiguredProvider.supportsVision(): boolean => false`。
+- `backend/.envs/.env.local.example` / `.env.dev.example`（変更）: `OPENAI_VISION` / `LOCALLLM_VISION` を追記。
+- テスト（新規/変更）:
+  - `backend/src/chat/domain/llm-message.spec.ts`（変更・追記）: `hasImageContent`（string のみ false / image part あり true / text part のみ false）。
+  - `backend/src/chat/domain/vision-unsupported.error.spec.ts`（新規）: name・message に表示名を含み秘密情報を含まない。
+  - `backend/src/chat/infra/openai-compatible.client.spec.ts`（新規）: `supportsVision()` が config を反映 / 非対応時 `generateStream` の最初の `next()` が `VisionUnsupportedError` を投げる（ネットワーク非発生）。
+- 完了確認: `cd backend && pnpm lint && pnpm test && pnpm build`。
+
+#### コミット 2: 画像 part の base64 変換
+
+- `backend/src/chat/infra/claude.client.ts`（変更）: 純粋関数 `toClaudeContent(content): string | Array<Anthropic.TextBlockParam | Anthropic.ImageBlockParam>` を export。`splitMessages` がこれを使う。image→`{type:'image',source:{type:'base64',media_type: mediaType as Anthropic.Base64ImageSource['media_type'], data}}`。文字列はそのまま。system は `contentToText`。
+- `backend/src/chat/infra/gemini.client.ts`（変更）: 純粋関数 `toGeminiParts(content): Part[]` を export。text→`{text}`、image→`{inlineData:{mimeType:mediaType,data}}`。文字列は `[{text}]`。
+- `backend/src/chat/infra/openai-compatible.client.ts`（変更）: 純粋関数 `toOpenAiContent(content): string | ChatCompletionContentPart[]` を export。image→`{type:'image_url',image_url:{url:`data:${mediaType};base64,${data}`}}`、text→`{type:'text',text}`。文字列はそのまま。
+- テスト（新規）:
+  - `backend/src/chat/infra/claude.client.spec.ts` / `gemini.client.spec.ts`（新規）＋ openai のマッパーケース追記: text＋image 混在 content が各 SDK 形式へ正しく変換される。文字列 content は従来形のまま。
+- 完了確認: `cd backend && pnpm lint && pnpm test && pnpm build`。
+
+### 12.2 migration・環境変数・依存追加
+
+- migration: **不要**。
+- 環境変数: `OPENAI_VISION`（既定 true）/ `LOCALLLM_VISION`（既定 false）を追加。`.env.example` 2 ファイル更新。
+- 依存追加: **不要**（既存 SDK の型を使用）。
+
+### 12.3 実装方針メモ（確定仕様）
+
+- boolean-ish env パース: `z.enum(['true','false','1','0']).transform((v) => v === 'true' || v === '1')`。想定外値は startup で fail fast（既存の env 検証方針）。空文字は既存どおり undefined 正規化（getter 側で `?? 既定`）。
+- guard は各 `generateStream` の**最初**（`resolveModel`/`this.client` アクセス前）に置き、ネットワーク前に throw する。`generate()` は `generateStream` 経由のため自動的に同 guard を通る。
+- Claude `media_type` は SDK リテラル型へ `as` cast（`any` 不使用）。mediaType の形式検証は TSK-①/③ の責務（本タスクは通過のみ）。
+- 文字列 content は全 provider で従来挙動（後方互換）。system ロールは画像非対応のため `contentToText`。
+
+### 12.4 作業順序（コミット単位・各完了確認）
+
+1. **`feat(tsk-123): provider の vision 対応可否判定と非対応 block を追加`** — §12.1 コミット 1。完了確認: backend lint/test/build パス。
+2. **`feat(tsk-123): provider の画像 part を base64 で各 API 形式へ変換`** — §12.1 コミット 2。完了確認: backend lint/test/build パス。
+
+### 12.5 テスト方針
+
+- domain（`hasImageContent` / `VisionUnsupportedError`）と各 provider の**純粋マッパー**＋`supportsVision`＋非対応 guard をユニットテストで担保。
+- マッパーを export 純粋関数化することで SDK・ネットワーク非依存で変換を検証（判断 4）。
+
+### 12.6 想定外時の判断ルール
+
+- **AI 単独判断 OK**: SDK の正確なフィールド名差異の調整（例: Gemini `inlineData` の Blob フィールド名）、命名・cast の微調整、設計書スコープ内の追加実装。
+- **中断して要相談**:
+  - vision 判定方式（判断 1）・公開/エラー方針（判断 2,3）を覆す必要。
+  - `ChatCompletionService`／`classifyLlmError`／API への波及が必要と判明（TSK-③ 越境）。
+  - 永続化・ドメイン content 型の変更が必要と判明（TSK-① 越境）。
+  - SDK が base64 image をサポートせず方式変更が要る場合。
+
+### 12.7 事前解決済みの判断ポイント
+
+- vision 判定 → provider 別静的既定＋env 上書き（判断 1）。
+- 公開/ block → interface `supportsVision()` ＋ 各 provider 内部 guard（判断 2）。
+- エラー型 → 専用 `VisionUnsupportedError`、表示名のみ・秘密情報なし（判断 3）。
+- マッピング実装 → 各クライアントに純粋関数を export してテスト（判断 4）。
+- 文字列 content → 後方互換で従来送信（判断 5）。
+- env boolean パース → 厳格 enum＋transform、fail fast。
+- media_type → SDK リテラル型へ cast、形式検証は本タスク対象外。
+- `ChatCompletionService`/`classifyLlmError`/API → **非変更**（HTTP 分類は TSK-③）。
+
+## 13. 手動動作確認シナリオ
+
+1. `LLM_PROVIDER=local`（vision 非対応既定）で画像付き content を送ると、SDK 呼び出し前に `VisionUnsupportedError` になる（ユニットテストで担保、必要なら手動確認）。
+2. `LOCALLLM_VISION=true` を設定すると local でも guard を通過する（supportsVision が反映）。
+3. 既存のテキストのみチャット（claude/gemini/openai/local）が従来どおり動作（後方互換）。
+4. （TSK-③ 連携後に実機確認）claude/gemini/openai に画像 part 付き content を渡すと各 API 形式へ base64 変換されて送信される。
