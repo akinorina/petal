@@ -6,6 +6,13 @@ import { ProviderIdSchema, type ProviderId } from '../domain/llm-provider';
 // chat フィーチャの env スキーマ。provider 別キーをすべて optional で受ける
 // （未設定でもアプリ起動は妨げない。「必須」性は active provider 利用時の
 // 遅延エラーで担保する。§13 D6）。空文字は呼び出し側で undefined へ正規化する。
+// env の boolean-ish 値（'true'|'1' を true、'false'|'0' を false）を
+// パースする。想定外値は startup で fail fast（既存の env 検証方針）。
+const BooleanishSchema = z
+  .enum(['true', 'false', '1', '0'])
+  .transform((v) => v === 'true' || v === '1')
+  .optional();
+
 export const LlmEnvSchema = z.object({
   // Chat が使う provider。未設定時は後方互換で 'local'。
   LLM_PROVIDER: ProviderIdSchema.default('local'),
@@ -19,10 +26,14 @@ export const LlmEnvSchema = z.object({
   OPENAI_API_KEY: z.string().min(1).optional(),
   OPENAI_MODEL: z.string().min(1).optional(),
   OPENAI_BASE_URL: z.string().url().default('https://api.openai.com/v1'),
+  // OpenAI（本家）の画像入力対応可否（既定 true）。
+  OPENAI_VISION: BooleanishSchema,
   // LocalLLM（LM Studio 等・OpenAI 互換）
   LOCALLLM_BASE_URL: z.string().url().optional(),
   LOCALLLM_API_KEY: z.string().min(1).default('not-needed'),
   LOCALLLM_MODEL: z.string().min(1).optional(),
+  // LocalLLM の画像入力対応可否（既定 false・モデルに合わせ運用者が設定）。
+  LOCALLLM_VISION: BooleanishSchema,
 });
 
 export type LlmEnv = z.infer<typeof LlmEnvSchema>;
@@ -34,6 +45,8 @@ export interface OpenAiCompatConfig {
   defaultModel: string | undefined;
   // エラーメッセージ用の表示名（'OpenAI' / 'LocalLLM'）。
   label: string;
+  // この provider が画像入力（vision）に対応しているか。
+  supportsVision: boolean;
 }
 
 export interface ClaudeConfig {
@@ -64,9 +77,11 @@ export class LlmConfig {
       OPENAI_API_KEY: config.get<string>('OPENAI_API_KEY') || undefined,
       OPENAI_MODEL: config.get<string>('OPENAI_MODEL') || undefined,
       OPENAI_BASE_URL: config.get<string>('OPENAI_BASE_URL') || undefined,
+      OPENAI_VISION: config.get<string>('OPENAI_VISION') || undefined,
       LOCALLLM_BASE_URL: config.get<string>('LOCALLLM_BASE_URL') || undefined,
       LOCALLLM_API_KEY: config.get<string>('LOCALLLM_API_KEY') || undefined,
       LOCALLLM_MODEL: config.get<string>('LOCALLLM_MODEL') || undefined,
+      LOCALLLM_VISION: config.get<string>('LOCALLLM_VISION') || undefined,
     });
     this.activeProviderId = this.env.LLM_PROVIDER;
   }
@@ -91,6 +106,7 @@ export class LlmConfig {
       apiKey: this.env.OPENAI_API_KEY,
       defaultModel: this.env.OPENAI_MODEL,
       label: 'OpenAI',
+      supportsVision: this.env.OPENAI_VISION ?? true,
     };
   }
 
@@ -100,6 +116,7 @@ export class LlmConfig {
       apiKey: this.env.LOCALLLM_API_KEY,
       defaultModel: this.env.LOCALLLM_MODEL,
       label: 'LocalLLM',
+      supportsVision: this.env.LOCALLLM_VISION ?? false,
     };
   }
 

@@ -18,6 +18,7 @@ function buildMockProvider(): MockLlmProvider {
     listModels: jest.fn(),
     generate: jest.fn(),
     generateStream: jest.fn(),
+    supportsVision: jest.fn(),
   };
 }
 

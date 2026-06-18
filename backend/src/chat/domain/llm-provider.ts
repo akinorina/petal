@@ -27,4 +27,7 @@ export interface LlmProvider {
   generateStream(input: ChatGenerationInput): AsyncGenerator<ChatChunk>;
   // テキスト生成（集約版・非ストリーミング）。
   generate(input: ChatGenerationInput): Promise<ChatResult>;
+  // この provider が画像入力（vision）に対応しているか。
+  // application/TSK-③ が送信前に判定し、非対応なら画像付き送信を block する。
+  supportsVision(): boolean;
 }

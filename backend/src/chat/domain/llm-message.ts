@@ -42,3 +42,14 @@ export function contentToText(content: string | ChatContentPart[]): string {
     .map((p) => p.text)
     .join('');
 }
+
+// メッセージ群のいずれかが image part を含むか判定する（純粋・テスト可）。
+// vision 非対応 provider への画像付き送信 block 判定に使う（判断 2）。
+export function hasImageContent(
+  messages: { content: string | ChatContentPart[] }[],
+): boolean {
+  return messages.some(
+    (m) =>
+      Array.isArray(m.content) && m.content.some((p) => p.type === 'image'),
+  );
+}
