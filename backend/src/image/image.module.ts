@@ -18,5 +18,6 @@ import { ImageRepositoryImpl } from './infra/image.repository.impl';
     },
     ImageService,
   ],
+  exports: [ImageService],
 })
 export class ImageModule {}

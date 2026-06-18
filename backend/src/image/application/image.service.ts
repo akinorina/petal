@@ -1,7 +1,7 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { User } from '../../user/domain/user';
-import { Image } from '../domain/image';
+import { Image, ImageMimeType } from '../domain/image';
 import { IImageRepository, IMAGE_REPOSITORY } from '../domain/image.repository';
 import { S3StorageClient } from '../../common/storage/s3.client';
 import { CreateImageInput } from './image.schemas';
@@ -85,6 +85,41 @@ export class ImageService {
     const image = await this.findOneForOwner(currentUser, id);
     const url = await this.s3.createDownloadUrl(image.s3Key);
     return { url, expiresInSeconds: this.s3.presignTtlSeconds };
+  }
+
+  // 所有者本人の画像本体を S3 から取得し base64 として返す（LLM への画像送信用）。
+  async getOwnedImageBase64(
+    currentUser: User,
+    id: string,
+  ): Promise<{ mediaType: ImageMimeType; data: string }> {
+    const image = await this.findOneForOwner(currentUser, id);
+    const bytes = await this.s3.getObjectBytes(image.s3Key);
+    return {
+      mediaType: image.mimeType,
+      data: Buffer.from(bytes).toString('base64'),
+    };
+  }
+
+  // 所有者本人の画像の表示用 view（署名付き URL＋メタ）を返す（履歴応答用）。
+  async getOwnedImageView(
+    currentUser: User,
+    id: string,
+  ): Promise<{
+    imageId: string;
+    mimeType: ImageMimeType;
+    originalFilename: string;
+    downloadUrl: string;
+    expiresInSeconds: number;
+  }> {
+    const image = await this.findOneForOwner(currentUser, id);
+    const downloadUrl = await this.s3.createDownloadUrl(image.s3Key);
+    return {
+      imageId: image.id,
+      mimeType: image.mimeType,
+      originalFilename: image.originalFilename,
+      downloadUrl,
+      expiresInSeconds: this.s3.presignTtlSeconds,
+    };
   }
 
   async remove(currentUser: User, id: string): Promise<void> {
