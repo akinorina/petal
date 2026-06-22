@@ -11,23 +11,20 @@ import { MessageAttachments } from './MessageAttachments';
 import { useImageAttachment } from './use-image-attachment';
 import type { OptimisticMessage } from './use-chat-conversation';
 
-/** vision 非対応 provider のエラーコード（バック TSK-123/124）。 */
-const VISION_UNSUPPORTED_CODE = 'LLM_VISION_UNSUPPORTED';
-/** 上記コードを受けたときに表示する専用文言。 */
-const VISION_UNSUPPORTED_MESSAGE =
-  '現在のモデルは画像に対応していません。画像を外すか、対応モデルに切り替えて再送してください。';
-
 type ChatConversationProps = {
   messages: OptimisticMessage[];
   streamingText: string;
   isStreaming: boolean;
   error: string | null;
-  /** content と選択画像 id（選択順）、楽観表示用の添付メタを渡す。 */
+  /**
+   * content と選択画像 id（選択順）、楽観表示用の添付メタを渡す。
+   * 送信が成功したか（エラーなく完了したか）を解決する。
+   */
   onSend: (
     content: string,
     attachmentImageIds: string[],
     optimisticAttachments: { imageId: string; label?: string }[],
-  ) => void;
+  ) => Promise<boolean>;
   className?: string;
 };
 
@@ -61,10 +58,11 @@ export function ChatConversation({
       imageId: img.id,
       label: img.title || img.originalFilename,
     }));
-    onSend(content, attachment.selectedIds, optimistic);
     setInput('');
-    // 送信後は選択をクリアする（付け直しはエラー時のみ別途行う）。
-    attachment.clear();
+    // 送信成功時のみ選択をクリアする。失敗（vision 非対応等）時は保持して付け直せるようにする。
+    void onSend(content, attachment.selectedIds, optimistic).then((ok) => {
+      if (ok) attachment.clear();
+    });
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -76,10 +74,6 @@ export function ChatConversation({
   }
 
   const showEmpty = messages.length === 0 && !isStreaming;
-
-  // vision 非対応のエラーは専用文言に差し替える（添付は保持して付け直し可能）。
-  const displayError =
-    error === VISION_UNSUPPORTED_CODE ? VISION_UNSUPPORTED_MESSAGE : error;
 
   return (
     <div className={['flex h-full flex-col', className].filter(Boolean).join(' ')}>
@@ -104,9 +98,9 @@ export function ChatConversation({
         <div ref={listEndRef} />
       </div>
 
-      {displayError && (
+      {error && (
         <Alert variant="danger" className="mb-3">
-          {displayError}
+          {error}
         </Alert>
       )}
 

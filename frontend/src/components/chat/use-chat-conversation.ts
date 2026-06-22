@@ -7,6 +7,12 @@ import type { DisplayAttachment } from './MessageAttachments';
 
 type ChatMessage = Schemas['ChatMessageResponseDto'];
 
+/** vision 非対応 provider のエラーコード（バック TSK-123/124）。 */
+const VISION_UNSUPPORTED_CODE = 'LLM_VISION_UNSUPPORTED';
+/** 上記コードを受けたときに表示する専用文言（添付は保持して付け直し可能）。 */
+const VISION_UNSUPPORTED_MESSAGE =
+  '現在のモデルは画像に対応していません。画像を外すか、対応モデルに切り替えて再送してください。';
+
 /** 楽観表示用のメッセージ（サーバ確定前のローカルバブル）。 */
 export type OptimisticMessage = {
   role: 'user' | 'assistant';
@@ -59,9 +65,9 @@ export function useChatConversation({
       rawContent: string,
       attachmentImageIds?: string[],
       optimisticAttachments?: DisplayAttachment[],
-    ) => {
+    ): Promise<boolean> => {
       const content = rawContent.trim();
-      if (!content || isStreaming) return;
+      if (!content || isStreaming) return false;
 
       setError(null);
       setOptimisticUser({
@@ -78,6 +84,8 @@ export function useChatConversation({
       const controller = new AbortController();
       abortRef.current = controller;
 
+      // ストリーム/開始前のいずれかでエラーが出たら false を返し、添付選択を保持させる。
+      let succeeded = true;
       let threadId: string | null = null;
       try {
         threadId = await resolveThreadId();
@@ -88,13 +96,21 @@ export function useChatConversation({
           {
             onDelta: (delta) => setStreamingText((prev) => prev + delta),
             onDone: () => {},
-            onError: (err) =>
-              setError(err.message || 'エラーが発生しました'),
+            // vision 非対応コードは専用文言へ差し替える（コードは err.code でのみ判定可能）。
+            onError: (err) => {
+              succeeded = false;
+              setError(
+                err.code === VISION_UNSUPPORTED_CODE
+                  ? VISION_UNSUPPORTED_MESSAGE
+                  : err.message || 'エラーが発生しました',
+              );
+            },
           },
           controller.signal,
           attachmentImageIds,
         );
       } catch {
+        succeeded = false;
         setError('送信に失敗しました');
       } finally {
         // unmount による中断時は state 更新も同期もしない。
@@ -108,6 +124,8 @@ export function useChatConversation({
         }
         if (abortRef.current === controller) abortRef.current = null;
       }
+      // 中断（unmount）時は呼び出し側で後処理させない。
+      return !controller.signal.aborted && succeeded;
     },
     [actions, isStreaming, resolveThreadId, onStreamSettled],
   );
