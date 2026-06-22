@@ -484,22 +484,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/chat/threads/{id}/messages": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["ChatController_findMessages"];
-        put?: never;
-        post: operations["ChatController_sendMessage"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/chat/threads/{id}": {
         parameters: {
             query?: never;
@@ -514,6 +498,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["ChatController_updateThread"];
+        trace?: never;
+    };
+    "/chat/threads/{id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ChatController_findMessages"];
+        put?: never;
+        post: operations["ChatController_sendMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
 }
@@ -766,6 +766,18 @@ export interface components {
             ownerUserId: string;
             title: string | null;
         };
+        UpdateThreadRequestDto: {
+            title?: string | null;
+        };
+        ChatMessageAttachmentDto: {
+            /** @enum {string} */
+            mimeType: "image/jpeg" | "image/png" | "image/gif" | "image/webp";
+            expiresInSeconds: number;
+            imageId: string;
+            position: number;
+            originalFilename: string;
+            downloadUrl: string;
+        };
         ChatMessageResponseDto: {
             /** @enum {string} */
             role: "system" | "user" | "assistant";
@@ -773,16 +785,15 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+            attachments: components["schemas"]["ChatMessageAttachmentDto"][];
             id: string;
             threadId: string;
             seq: number;
             content: string;
         };
         SendMessageRequestDto: {
+            attachmentImageIds?: string[];
             content: string;
-        };
-        UpdateThreadRequestDto: {
-            title?: string | null;
         };
     };
     responses: never;
@@ -1610,50 +1621,6 @@ export interface operations {
             };
         };
     };
-    ChatController_findMessages: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChatMessageResponseDto"][];
-                };
-            };
-        };
-    };
-    ChatController_sendMessage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SendMessageRequestDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     ChatController_removeThread: {
         parameters: {
             query?: never;
@@ -1695,6 +1662,50 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ChatThreadResponseDto"];
                 };
+            };
+        };
+    };
+    ChatController_findMessages: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatMessageResponseDto"][];
+                };
+            };
+        };
+    };
+    ChatController_sendMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendMessageRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
