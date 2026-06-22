@@ -153,6 +153,10 @@ PRJ-17 のフロントタスク。既存ライブラリ（petal.images）から�
 - バックの 422 エラーコード（`LLM_VISION_UNSUPPORTED`）やレスポンス形が本書と違う場合は止めて報告する。
 - 既存の `onSend`/`send` 配線変更で型エラーが連鎖し本書の範囲を超える改修が必要になった場合は止めて報告する。
 
+### 7.5 実装中に判明した追加修正（バック・ローカル限定）
+
+動作確認で画像付き送信が 500 になる事象を確認。原因はフロントではなく、バックの base64 化（`S3StorageClient.getObjectBytes`）がローカル LocalStack の自己署名 HTTPS 証明書をサーバ側 Node から検証できず `UNABLE_TO_VERIFY_LEAF_SIGNATURE` で失敗していたこと（presign は署名計算のみで通信せず顕在化していなかった）。`usesLocalEndpoint` 時のみ `rejectUnauthorized:false` の `https.Agent` を `requestHandler` に設定して解消（本番＝endpoint 未設定では厳格な TLS 検証を維持）。`@smithy/node-http-handler` を依存に追加。ユーザー承認のうえ同 PR に含める。
+
 ### 7.4 完了条件（機械検証）
 
 - `cd frontend && pnpm openapi:gen` 実行後に差分が安定（再生成で壊れない）。
