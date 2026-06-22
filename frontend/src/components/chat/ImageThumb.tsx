@@ -23,25 +23,21 @@ type ImageThumbProps = {
  */
 export function ImageThumb({ imageId, alt, src, className }: ImageThumbProps) {
   const { getDownloadUrl } = useImageDownloadApi();
-  const [url, setUrl] = useState<string | null>(src ?? null);
+  // 呼び出し側が URL を渡した場合は取得 state を持たず直接表示する。
+  const [fetchedUrl, setFetchedUrl] = useState<string | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
-    // 呼び出し側から URL を渡された場合は取得しない。
-    if (src) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setUrl(src);
-      setLoadError(false);
-      return;
-    }
+    // src が渡されている場合は取得しない（履歴の downloadUrl 等）。
+    if (src) return;
     let cancelled = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setUrl(null);
+    setFetchedUrl(null);
     setLoadError(false);
     getDownloadUrl(imageId)
       .then((res) => {
-        if (!cancelled) setUrl(res.url);
+        if (!cancelled) setFetchedUrl(res.url);
       })
       .catch(() => {
         if (!cancelled) setLoadError(true);
@@ -50,6 +46,8 @@ export function ImageThumb({ imageId, alt, src, className }: ImageThumbProps) {
       cancelled = true;
     };
   }, [imageId, src, reloadKey, getDownloadUrl]);
+
+  const url = src ?? fetchedUrl;
 
   if (loadError) {
     return (
