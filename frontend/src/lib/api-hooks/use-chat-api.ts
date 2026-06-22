@@ -77,7 +77,15 @@ export function useChatActionsApi() {
         content: string,
         handlers: ChatStreamHandlers,
         signal?: AbortSignal,
-      ) => streamChatMessage(threadId, content, handlers, signal),
+        attachmentImageIds?: string[],
+      ) =>
+        streamChatMessage(
+          threadId,
+          content,
+          handlers,
+          signal,
+          attachmentImageIds,
+        ),
     }),
     [],
   );
