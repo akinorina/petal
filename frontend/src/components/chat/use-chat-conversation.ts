@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useChatActionsApi } from '@/lib/api-hooks/use-chat-api';
 import type { Schemas } from '@/lib/openapi/client';
+import type { DisplayAttachment } from './MessageAttachments';
 
 type ChatMessage = Schemas['ChatMessageResponseDto'];
 
@@ -10,6 +11,8 @@ type ChatMessage = Schemas['ChatMessageResponseDto'];
 export type OptimisticMessage = {
   role: 'user' | 'assistant';
   content: string;
+  /** 添付画像（ユーザーバブルのサムネ表示用。楽観・履歴の両方で使う）。 */
+  attachments?: DisplayAttachment[];
 };
 
 type UseChatConversationOptions = {
@@ -37,7 +40,9 @@ export function useChatConversation({
   const actions = useChatActionsApi();
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingText, setStreamingText] = useState('');
-  const [optimisticUser, setOptimisticUser] = useState<string | null>(null);
+  const [optimisticUser, setOptimisticUser] = useState<OptimisticMessage | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
@@ -50,12 +55,23 @@ export function useChatConversation({
   }, []);
 
   const send = useCallback(
-    async (rawContent: string) => {
+    async (
+      rawContent: string,
+      attachmentImageIds?: string[],
+      optimisticAttachments?: DisplayAttachment[],
+    ) => {
       const content = rawContent.trim();
       if (!content || isStreaming) return;
 
       setError(null);
-      setOptimisticUser(content);
+      setOptimisticUser({
+        role: 'user',
+        content,
+        attachments:
+          optimisticAttachments && optimisticAttachments.length > 0
+            ? optimisticAttachments
+            : undefined,
+      });
       setStreamingText('');
       setIsStreaming(true);
 
@@ -76,6 +92,7 @@ export function useChatConversation({
               setError(err.message || 'エラーが発生しました'),
           },
           controller.signal,
+          attachmentImageIds,
         );
       } catch {
         setError('送信に失敗しました');
@@ -103,9 +120,18 @@ export function useChatConversation({
         .map((m) => ({
           role: m.role as 'user' | 'assistant',
           content: m.content,
+          // サーバ確定の添付は署名付き downloadUrl をそのまま描画に使う。
+          attachments:
+            m.attachments.length > 0
+              ? m.attachments.map((a) => ({
+                  imageId: a.imageId,
+                  downloadUrl: a.downloadUrl,
+                  label: a.originalFilename,
+                }))
+              : undefined,
         }));
       if (optimisticUser !== null) {
-        base.push({ role: 'user', content: optimisticUser });
+        base.push(optimisticUser);
       }
       return base;
     },
