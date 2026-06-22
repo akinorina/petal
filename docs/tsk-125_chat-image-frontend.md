@@ -129,4 +129,33 @@ PRJ-17 のフロントタスク。既存ライブラリ（petal.images）から�
 
 ## 7. 実装計画
 
-（Phase 4 で追記）
+### 7.1 コミット分割
+
+1. `chore(tsk-125)`: `cd frontend && pnpm openapi:gen` でフロント OpenAPI 型を再生成（`schema.d.ts` に `SendMessageRequestDto.attachmentImageIds` / `ChatMessageResponseDto.attachments` / `ChatMessageAttachmentDto` が入る）。
+2. `feat(tsk-125)`: 送信 API 層に `attachmentImageIds` を透過。`lib/api/chat.ts` の `streamChatMessage`/`sendRequest`（body に `attachmentImageIds` を含める）、`use-chat-api.ts` の `useChatActionsApi.streamMessage`。
+3. `feat(tsk-125)`: 同居フック `components/chat/use-image-attachment.ts` ＋ 共通サムネ部品 `components/chat/ImageThumb.tsx`（`useImageDownloadApi().getDownloadUrl` で取得、`images/page.tsx` の取得・loadError・再読込パターンを踏襲）。
+4. `feat(tsk-125)`: プレゼンテーション部品 `ImageAttachmentPicker.tsx`（Dialog グリッド・複数トグル・上限抑制・空時 EmptyState＋/images 導線）/ `AttachmentPreviewList.tsx`（入力欄上サムネ列・× 取消）/ `MessageAttachments.tsx`（バブル内サムネ列・クリックで Dialog 原寸プレビュー）。
+5. `feat(tsk-125)`: `use-chat-conversation.ts` 拡張。`OptimisticMessage` に `attachments?` を追加、`send(content, attachmentImageIds, optimisticAttachments)`、`buildMessages` でサーバ確定の `attachments` を保持。
+6. `feat(tsk-125)`: `ChatConversation.tsx` 配線。`use-image-attachment` を使い添付ボタン／`AttachmentPreviewList`／`ImageAttachmentPicker` を配置。`handleSend` で `content`＋`selectedIds` を `onSend` に渡し送信後 `clear()`。ユーザーバブルに `MessageAttachments`。vision 422（`LLM_VISION_UNSUPPORTED`）を専用文言で `Alert` 表示。`onSend` シグネチャ変更を `ChatPanel`/`use-chat-panel.ts` まで伝播。
+
+### 7.2 事前解決済みの判断ポイント
+
+- **サムネ描画**: サーバ確定メッセージは `attachments[].downloadUrl` を直接 `<img src>` に使う。楽観バブル（downloadUrl 未取得）のみ `ImageThumb` で `imageId` から取得。`MessageAttachments` は `downloadUrl` があれば直接・なければ id 取得で両対応。
+- **空ライブラリ**: 選択 Dialog でライブラリ 0 件のときは `EmptyState` ＋ `/images`（画像管理）への導線を表示（その場アップロードはスコープ外）。
+- **選択操作**: Dialog 内で複数トグル → 「追加」で確定。`MAX_ATTACHMENTS = 5` 到達で未選択分を抑制。送信後に `clear()`。
+- **送信中**: 添付ボタンは `isStreaming` 中に無効化（既存 Textarea/送信ボタンと同様）。
+- **position**: `attachmentImageIds` は選択順をそのまま渡す（バックが配列順で position 付与）。
+- **vision 422 文言**: 「現在のモデルは画像に対応していません。画像を外すか、対応モデルに切り替えて再送してください。」添付は保持して付け直し可能にする。
+
+### 7.3 想定外時のルール
+
+- 型再生成後に `schema.d.ts` の新フィールド名が本書の想定と異なる場合は実装を止めて報告する。
+- バックの 422 エラーコード（`LLM_VISION_UNSUPPORTED`）やレスポンス形が本書と違う場合は止めて報告する。
+- 既存の `onSend`/`send` 配線変更で型エラーが連鎖し本書の範囲を超える改修が必要になった場合は止めて報告する。
+
+### 7.4 完了条件（機械検証）
+
+- `cd frontend && pnpm openapi:gen` 実行後に差分が安定（再生成で壊れない）。
+- `cd frontend && pnpm build` が通る。
+- `cd frontend && pnpm lint`（あれば）が通る。
+- 受け入れシナリオ（§5）を自主レビューで確認。
