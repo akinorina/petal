@@ -125,6 +125,13 @@ PRJ-17 の仕上げタスク（⑤）。実装（TSK-①〜④ = tsk-122〜125�
 - vision 非対応時に pre-stream で 422 になり、メッセージ保存・LLM 呼び出しが行われないこと。
 - 添付上限・非所有画像の扱い（404）。
 
+**レビュー結論（TSK-126 実施）**: 上記観点はすべて既存 spec でカバー済みのため **テスト追加は不要**。
+
+- 履歴再送 base64: `chat-completion.service.spec.ts`「履歴 content: 各履歴メッセージが toLlmContent 経由…」+ `chat-attachment.service.spec.ts` `toLlmContent`。
+- pre-stream 422・未保存・LLM 未呼び出し: `chat-completion.service.spec.ts`「添付検証: assert が 422…」。
+- 非所有 404: `chat-completion.service.spec.ts`「添付検証: assert が 404…」+ `chat-attachment.service.spec.ts` `assertAttachmentsSendable`。
+- 添付上限（`MAX_ATTACHMENTS=5`）: `SendMessageSchema` の Zod `.max(5)` による宣言的検証（Controller/バリデーションはテスト方針上スコープ外）+ フロント UI の上限抑制。
+
 ## 6. 手動動作確認シナリオ（全 provider E2E チェックリスト）
 
 実機（ローカル）で実施し、結果を PR にチェック転記する。前提: backend / frontend 起動、migration 適用済み、ログイン済み、画像ライブラリに画像が複数ある。
@@ -180,4 +187,46 @@ PRJ-17 の仕上げタスク（⑤）。実装（TSK-①〜④ = tsk-122〜125�
 
 ## 11. 実装計画
 
-（Phase 4 で追記する）
+### 11.1 変更・追加ファイル
+
+- `docs/20_features/09_chat.md`（追記・更新）
+- `docs/20_features/04_image-management.md`（節追加）
+- `docs/tsk-126_chat-image-finishing.md`（本書・テスト結論と完了確認の反映）
+
+新規実装ファイル・migration・環境変数・依存追加は **なし**（コード変更ゼロ）。
+
+### 11.2 作業順序（コミット単位）
+
+- **コミット 1** `docs(tsk-126): 09_chat.md に画像添付（マルチモーダル）仕様を反映`
+  - §4.1 の全項目を反映（原典欄 tsk-122〜126 / chat_message_images テーブル / マルチモーダル content 節 / API の attachmentImageIds・attachments / 送信フローの画像処理・base64 取得経路 / エラー分類表に 422 LLM_VISION_UNSUPPORTED / vision 対応可否 / 環境変数 OPENAI_VISION・LOCALLLM_VISION / テスト節更新）。
+  - 完了確認: `bash .claude/skills/skill-workflow/scripts/verify.sh docs`（markdownlint 緑）。
+- **コミット 2** `docs(tsk-126): 04_image-management.md にチャット添付節を追加`
+  - §4.2 の「チャットでの画像添付」節を追加。
+  - 完了確認: `verify.sh docs` 緑。
+- **コミット 3** `docs(tsk-126): テスト網羅結論と完了条件チェックを設計書へ反映`
+  - §5 に「application 層に穴なし・テスト追加不要」の結論を追記。§7 表の状態を更新。
+  - 完了確認: `verify.sh docs` 緑 + `cd backend && pnpm test`（無変更につき緑のまま）でリグレッション無しを確認。
+
+### 11.3 テスト方針
+
+コード変更がないため新規テストは追加しない（§5 の調査で application 層の穴なしを確認済み）。`cd backend && pnpm test` が緑であることを確認するのみ。
+
+### 11.4 想定外時の判断ルール
+
+- **AI 単独判断 OK**: 既存ドキュメントの文体・章立てに合わせた表現調整、リンク記法の整え、markdownlint 対応。
+- **中断して要相談**:
+  - ドキュメント執筆中に **実コードと設計書（tsk-122〜125）の記述が食い違う**事実を発見した場合（仕様の誤記載を量産しないため停止）。
+  - テスト網羅レビューで **application 層の重大な穴**（完了条件に直結する未テストのフロー）を発見した場合（テスト追加はスコープ拡大のため方針判断が要る）。
+  - 上記いずれも質問せず停止し、最終報告に記録。
+
+### 11.5 事前解決済みの判断ポイント
+
+| 判断ポイント | 解決 |
+| --- | --- |
+| E2E 動作確認の実施主体 | AI は手順書（§6）整備のみ。実機確認はユーザー（判断 1） |
+| テスト補完の範囲 | 不足のみ最小補完 → 調査の結果 **穴なし=追加なし**（判断 2 / §5） |
+| ドキュメント対象 | 09_chat.md + 04_image-management.md 両方（判断 3） |
+| 動作確認手順の配置 | 本設計書 §6（判断 4） |
+| ドキュメント表への登録 | 先行 tsk-122〜125 同様 AGENTS.md には載せず 09_chat.md 原典欄で相互リンク |
+| 実装主体 | コード変更ゼロ・docs 2 ファイルの小規模のためメインスレッドで直接実装（subagent-prompt §4） |
+| 完了確認手段 | `verify.sh docs`（markdownlint）+ `backend pnpm test` 緑維持 |
