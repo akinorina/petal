@@ -6,6 +6,8 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { NodeHttpHandler } from '@smithy/node-http-handler';
+import { Agent } from 'node:https';
 
 const PRESIGN_TTL_SECONDS = 300;
 
@@ -40,6 +42,15 @@ export class S3StorageClient {
         : undefined,
       responseChecksumValidation: usesLocalEndpoint
         ? 'WHEN_REQUIRED'
+        : undefined,
+      // ローカル LocalStack は自己署名の HTTPS 証明書を使うため、サーバから
+      // 実 GET（getObjectBytes 等）すると Node が検証に失敗する。presign は署名
+      // 計算のみで通信しないため顕在化しない。ローカル限定で TLS 検証を緩める。
+      // 本番（endpoint 未設定）では既定の厳格な TLS 検証を維持する。
+      requestHandler: usesLocalEndpoint
+        ? new NodeHttpHandler({
+            httpsAgent: new Agent({ rejectUnauthorized: false }),
+          })
         : undefined,
     });
   }
