@@ -119,3 +119,36 @@ async getOwnedAudioView(
 ## 10. 未確定事項
 
 なし。
+
+## 11. 実装計画
+
+### 変更・追加ファイル
+
+- 変更: `backend/src/audio/application/audio.service.ts`（`getOwnedAudioBase64` / `getOwnedAudioView` を追記。`AudioMimeType` を `../domain/audio` から import）
+- 追加: `backend/src/audio/application/audio.service.spec.ts`（新規）
+
+### migration・環境変数・依存追加
+
+- いずれも不要（DB スキーマ・env・依存パッケージ変更なし）。
+
+### 作業順序（コミット単位 + 完了確認）
+
+1. `feat(tsk-130): AudioService にチャット連携メソッドを追加` — 2 メソッド追記。確認: `cd backend && pnpm build` が通る。
+2. `test(tsk-130): AudioService チャット連携メソッドのユニットテスト` — spec 新規。確認: `cd backend && pnpm test audio.service` が緑。
+
+### テスト方針
+
+- `audio.service.spec.ts` で `AUDIO_REPOSITORY`（`useValue` でモックの `IAudioRepository`）と `S3StorageClient`（`useValue` で `getObjectBytes` / `createDownloadUrl` を `jest.fn()`、`presignTtlSeconds` をプロパティ値）を DI。
+- 検証: (a) `getOwnedAudioBase64` が所有音声を `{ mediaType, data(base64) }` で返す、(b) `getOwnedAudioView` が `{ audioId, mimeType, originalFilename, downloadUrl, expiresInSeconds }` を返す、(c) `findById` が null（非所有/不在）で両メソッドが `NotFoundException` を投げる。
+- モックの `Audio` は実 `Audio` インスタンスを生成して使う（`isOwnedBy` を本物で通すため）。
+
+### 想定外時の判断ルール
+
+- AI 単独判断 OK: 軽微なリファクタ、設計書スコープ内の追記。
+- 中断して要相談: 既存 `AudioService` 既存メソッド・DB スキーマ・`audio.module.ts` の変更が必要になった場合、画像版と実装パターンが乖離する場合。
+
+### 事前解決済みの判断ポイント
+
+- view を本タスクに含める（判断 1）／戻り値キーは `audioId`（判断 2）。
+- サイズ上限は既存 20MiB を踏襲（25MB 変更はしない）。
+- 規模が小さく文脈完全把握済みのため、Phase 5 はバックグラウンドサブエージェントではなくフォアグラウンドで実装する。
