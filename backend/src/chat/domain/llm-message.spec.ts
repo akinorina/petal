@@ -1,6 +1,7 @@
 import {
   ChatContentPartSchema,
   contentToText,
+  hasAudioContent,
   hasImageContent,
   type ChatContentPart,
 } from './llm-message';
@@ -51,9 +52,18 @@ describe('ChatContentPartSchema', () => {
     expect(parsed.type).toBe('image');
   });
 
+  it('audio part を判別して parse できる', () => {
+    const parsed = ChatContentPartSchema.parse({
+      type: 'audio',
+      mediaType: 'audio/mpeg',
+      data: 'YmFzZTY0',
+    });
+    expect(parsed.type).toBe('audio');
+  });
+
   it('未知の type は parse 失敗', () => {
     expect(() =>
-      ChatContentPartSchema.parse({ type: 'audio', data: 'x' }),
+      ChatContentPartSchema.parse({ type: 'video', data: 'x' }),
     ).toThrow();
   });
 
@@ -62,6 +72,16 @@ describe('ChatContentPartSchema', () => {
       ChatContentPartSchema.parse({
         type: 'image',
         mediaType: 'image/png',
+        data: '',
+      }),
+    ).toThrow();
+  });
+
+  it('audio part の data 空は parse 失敗', () => {
+    expect(() =>
+      ChatContentPartSchema.parse({
+        type: 'audio',
+        mediaType: 'audio/mpeg',
         data: '',
       }),
     ).toThrow();
@@ -89,5 +109,29 @@ describe('hasImageContent', () => {
       { type: 'text', text: 'い' },
     ];
     expect(hasImageContent([{ content }])).toBe(false);
+  });
+});
+
+describe('hasAudioContent', () => {
+  it('string content のみなら false', () => {
+    expect(
+      hasAudioContent([{ content: 'こんにちは' }, { content: 'やあ' }]),
+    ).toBe(false);
+  });
+
+  it('audio part を含む配列があれば true', () => {
+    const content: ChatContentPart[] = [
+      { type: 'text', text: '前' },
+      { type: 'audio', mediaType: 'audio/mpeg', data: 'YmFzZTY0' },
+    ];
+    expect(hasAudioContent([{ content: 'やあ' }, { content }])).toBe(true);
+  });
+
+  it('image part のみの配列なら false', () => {
+    const content: ChatContentPart[] = [
+      { type: 'text', text: 'あ' },
+      { type: 'image', mediaType: 'image/png', data: 'YmFzZTY0' },
+    ];
+    expect(hasAudioContent([{ content }])).toBe(false);
   });
 });
