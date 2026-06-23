@@ -778,6 +778,15 @@ export interface components {
             originalFilename: string;
             downloadUrl: string;
         };
+        ChatMessageAudioAttachmentDto: {
+            /** @enum {string} */
+            mimeType: "audio/mpeg" | "audio/wav" | "audio/webm" | "audio/mp4" | "audio/ogg";
+            expiresInSeconds: number;
+            audioId: string;
+            position: number;
+            originalFilename: string;
+            downloadUrl: string;
+        };
         ChatMessageResponseDto: {
             /** @enum {string} */
             role: "system" | "user" | "assistant";
@@ -786,6 +795,7 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
             attachments: components["schemas"]["ChatMessageAttachmentDto"][];
+            audioAttachments: components["schemas"]["ChatMessageAudioAttachmentDto"][];
             id: string;
             threadId: string;
             seq: number;
@@ -793,6 +803,7 @@ export interface components {
         };
         SendMessageRequestDto: {
             attachmentImageIds?: string[];
+            attachmentAudioIds?: string[];
             content: string;
         };
     };
