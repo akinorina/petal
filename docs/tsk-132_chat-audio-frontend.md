@@ -117,4 +117,58 @@ PRJ-18 のフロント。バックエンド（TSK-131）の音声添付送信 AP
 
 ## 10. 未確定事項
 
-なし（OpenAPI 再生成手順・send シグネチャの細部は Phase 4 のコード調査で確定）。
+なし。
+
+## 11. 実装計画
+
+### 変更・追加ファイル
+
+**新規（components/chat/）**:
+
+- `use-audio-attachment.ts` … `use-image-attachment.ts` と同型。`useAudiosApi()` を使い `selectedIds`/`selectedAudios`/`audios`/`isLoading`/`error`/`reload`/`isPickerOpen`/`openPicker`/`closePicker`/`toggle`/`remove`/`clear`/`canAddMore` を返す。`export const MAX_AUDIO_ATTACHMENTS = 3`（バック `chat.schemas` と一致）。
+- `AudioAttachmentPicker.tsx` … design-system `Dialog`。行リスト（各行: タイトル＝`title || originalFilename`＋`formatDuration(durationSeconds)`＋`formatAudioSize(sizeBytes)`＋インライン `<audio controls preload="metadata">` 試聴＋選択チェック「✓」）。空時は `EmptyState`＋`/audios`（音声管理）への `NextLink`。上限 `MAX_AUDIO_ATTACHMENTS`、未選択かつ上限到達は disable。Footer に「追加（N）」。
+- `AudioAttachmentPreviewList.tsx` … 入力欄上の選択中音声列（各行: タイトル＋`formatDuration`＋「×」個別取り消し、`disabled` で無効化）。0 件で null。
+- `AudioPlayer.tsx` … `ImageThumb` 相当。`audioId`（＋任意 `src` 署名 URL）から、`src` 未指定時は `useAudioDownloadApi().getDownloadUrl(audioId)` で取得し `<audio controls preload="metadata" src>` を描画。読込エラー時は再読込ボタン。
+- `MessageAudioAttachments.tsx` … `DisplayAudioAttachment = { audioId; downloadUrl?; label?; durationSeconds? }` を受け、`<AudioPlayer>` を縦に並べる（タイトル＋`formatDuration` ラベル付き）。原寸 Dialog は持たない。
+
+**既存改修**:
+
+- `ChatConversation.tsx` … `useAudioAttachment()` を併用。入力欄に「音声」ボタン追加（`audioAttachment.openPicker`）、`<AttachmentPreviewList>` の下に `<AudioAttachmentPreviewList>`、末尾に `<AudioAttachmentPicker>`。`onSend` を画像＋音声両対応に拡張し、`handleSend` で音声の楽観メタ（`{ audioId, label, durationSeconds }`）も渡す。成功時は両 attachment を `clear()`。
+- `use-chat-conversation.ts` … `OptimisticMessage` に `audioAttachments?: DisplayAudioAttachment[]` 追加。`send` を `send(rawContent, attachmentImageIds?, optimisticImageAttachments?, attachmentAudioIds?, optimisticAudioAttachments?)` に拡張（後方互換で末尾追加）。`AUDIO_UNSUPPORTED_CODE = 'LLM_AUDIO_UNSUPPORTED'` と専用文言を追加し `onError` で分岐（vision と同型）。`streamMessage` 呼び出しに `attachmentAudioIds` を渡す。`buildMessages` で `m.audioAttachments` を `DisplayAudioAttachment[]`（`audioId`/`downloadUrl`/`label=originalFilename`/`durationSeconds`）へ変換。
+- `use-chat-api.ts` … `streamMessage` に `attachmentAudioIds?: string[]` 引数を追加し透過。
+- `lib/api/chat.ts` … `streamChatMessage` と `sendRequest` に `attachmentAudioIds?: string[]` を追加。body に「音声添付があるときのみ」`attachmentAudioIds` を含める（画像と同条件で OR 結合）。
+
+**生成物（再生成・コミット対象）**:
+
+- `backend/openapi.json` … `cd backend && pnpm openapi:export`（DB 不要・検証済み）で再生成。TSK-131 の `attachmentAudioIds`/`audioAttachments`/`ChatMessageAudioAttachmentDto` が入る。
+- `frontend/src/lib/openapi/schema.d.ts` … `cd frontend && pnpm openapi:gen`（`backend/openapi.json` を入力）で再生成。
+
+### migration・環境変数・依存追加
+
+- いずれも不要（フロントのみ。バック変更は openapi.json 再生成のみで実コード不変）。
+
+### 作業順序（コミット単位 + 完了確認）
+
+1. `chore(tsk-132): OpenAPI 型を音声チャット対応へ再生成` — `pnpm openapi:export`（backend）→ `pnpm openapi:gen`（frontend）。確認: `schema.d.ts` に `attachmentAudioIds`/`audioAttachments` が出る。
+2. `feat(tsk-132): 音声添付の選択フックと Picker/Preview を追加` — `use-audio-attachment.ts`・`AudioAttachmentPicker.tsx`・`AudioAttachmentPreviewList.tsx`・`AudioPlayer.tsx`。確認: `cd frontend && pnpm build`。
+3. `feat(tsk-132): 送信フローと API を音声添付に対応` — `use-chat-conversation.ts`・`use-chat-api.ts`・`lib/api/chat.ts`。確認: `pnpm build`。
+4. `feat(tsk-132): バブル内音声表示と入力欄 UI を統合` — `MessageAudioAttachments.tsx`・`ChatConversation.tsx`。確認: `pnpm build`・`pnpm lint`。
+5. 仕上げ: `cd frontend && pnpm build && pnpm lint`、`bash .claude/skills/skill-workflow/scripts/verify.sh all` が緑。
+
+### テスト方針
+
+- フロントは型・ビルド・lint で担保（チャット UI コンポーネントの単体テストは既存に無く本タスクでも追加しない）。
+- 実機の送信・再生・422 表示は §9 の手動シナリオ／TSK-133 で確認。
+
+### 想定外時の判断ルール
+
+- **AI 単独判断 OK**: 設計書スコープ内の UI 実装、既存パターン踏襲の軽微なリファクタ、Tailwind クラスの調整。
+- **中断して要相談**: `schema.d.ts` 再生成後に期待フィールドが出ない（バック側 dto の不備を疑う）、送信 API のフィールド名がバックと食い違う、画像側コンポーネントの改変が必要になる、design-system に必要部品が無い。
+
+### 事前解決済みの判断ポイント
+
+- 音声専用を画像と並列で新規・画像側は無改変（判断 1）。
+- Picker は行リスト（判断 2）。バブルは `<audio controls>`（判断 3）。
+- 上限 3 件（`MAX_AUDIO_ATTACHMENTS = 3`、バックと一致）。
+- `send` は末尾に音声引数を追加して後方互換維持。
+- OpenAPI は backend `openapi:export` → frontend `openapi:gen` の順で再生成（両方 DB 不要・確認済み）。
