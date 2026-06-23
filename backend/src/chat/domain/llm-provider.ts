@@ -30,4 +30,7 @@ export interface LlmProvider {
   // この provider が画像入力（vision）に対応しているか。
   // application/TSK-③ が送信前に判定し、非対応なら画像付き送信を block する。
   supportsVision(): boolean;
+  // この provider が音声入力に対応しているか（TSK-131）。
+  // application が送信前に判定し、非対応なら音声付き送信を block する。
+  supportsAudio(): boolean;
 }

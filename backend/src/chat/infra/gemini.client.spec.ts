@@ -1,5 +1,5 @@
 import type { ChatContentPart } from '../domain/llm-message';
-import { toGeminiParts } from './gemini.client';
+import { GeminiClient, toGeminiParts } from './gemini.client';
 
 describe('toGeminiParts', () => {
   it('string は単一 text part の配列にする', () => {
@@ -15,5 +15,26 @@ describe('toGeminiParts', () => {
       { text: 'この画像は？' },
       { inlineData: { mimeType: 'image/png', data: 'YmFzZTY0' } },
     ]);
+  });
+
+  it('audio part を inlineData（mimeType=mediaType）へ変換する', () => {
+    const content: ChatContentPart[] = [
+      { type: 'text', text: 'この音声は？' },
+      { type: 'audio', mediaType: 'audio/mpeg', data: 'YXVkaW8=' },
+    ];
+    expect(toGeminiParts(content)).toEqual([
+      { text: 'この音声は？' },
+      { inlineData: { mimeType: 'audio/mpeg', data: 'YXVkaW8=' } },
+    ]);
+  });
+});
+
+describe('GeminiClient.supportsAudio', () => {
+  it('音声入力に対応（true）', () => {
+    const client = new GeminiClient({
+      apiKey: undefined,
+      defaultModel: undefined,
+    });
+    expect(client.supportsAudio()).toBe(true);
   });
 });

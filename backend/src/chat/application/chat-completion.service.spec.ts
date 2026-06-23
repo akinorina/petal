@@ -18,12 +18,14 @@ type MockChatThreadService = {
 type MockChatService = {
   generateStream: jest.Mock;
   supportsVision: jest.Mock;
+  supportsAudio: jest.Mock;
 };
 
 type MockChatAttachmentService = {
   assertAttachmentsSendable: jest.Mock;
   toLlmContent: jest.Mock;
   toAttachmentViews: jest.Mock;
+  toAudioAttachmentViews: jest.Mock;
 };
 
 function buildThreadServiceMock(): MockChatThreadService {
@@ -37,6 +39,7 @@ function buildChatServiceMock(): MockChatService {
   return {
     generateStream: jest.fn(),
     supportsVision: jest.fn().mockReturnValue(true),
+    supportsAudio: jest.fn().mockReturnValue(true),
   };
 }
 
@@ -50,6 +53,7 @@ function buildAttachmentServiceMock(): MockChatAttachmentService {
         Promise.resolve(content),
       ),
     toAttachmentViews: jest.fn().mockResolvedValue([]),
+    toAudioAttachmentViews: jest.fn().mockResolvedValue([]),
   };
 }
 
@@ -438,6 +442,8 @@ describe('ChatCompletionService.streamCompletion', () => {
     expect(attachmentService.assertAttachmentsSendable).toHaveBeenCalledWith(
       currentUser,
       [imageId],
+      [],
+      true,
       true,
     );
     expect(callOrder[0]).toBe('assert');
@@ -506,6 +512,7 @@ describe('ChatCompletionService.streamCompletion', () => {
         role: 'user',
         content: 'こんにちは',
         attachmentImageIds: [imageId],
+        attachmentAudioIds: undefined,
       },
     );
   });
@@ -530,6 +537,7 @@ describe('ChatCompletionService.streamCompletion', () => {
       currentUser,
       '本文',
       historyMessage.attachments,
+      historyMessage.audioAttachments,
     );
     expect(chatService.generateStream).toHaveBeenCalledWith({
       messages: [

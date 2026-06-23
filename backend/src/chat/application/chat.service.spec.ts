@@ -19,6 +19,7 @@ function buildMockProvider(): MockLlmProvider {
     generate: jest.fn(),
     generateStream: jest.fn(),
     supportsVision: jest.fn(),
+    supportsAudio: jest.fn(),
   };
 }
 
@@ -140,6 +141,25 @@ describe('ChatService.supportsVision', () => {
       provider.supportsVision.mockReturnValue(supported);
       expect(service.supportsVision()).toBe(supported);
       expect(provider.supportsVision).toHaveBeenCalledTimes(1);
+    },
+  );
+});
+
+describe('ChatService.supportsAudio', () => {
+  let service: ChatService;
+  let provider: MockLlmProvider;
+
+  beforeEach(async () => {
+    provider = buildMockProvider();
+    service = await buildService(provider);
+  });
+
+  it.each([true, false])(
+    'provider.supportsAudio の結果 %p をそのまま返す',
+    (supported) => {
+      provider.supportsAudio.mockReturnValue(supported);
+      expect(service.supportsAudio()).toBe(supported);
+      expect(provider.supportsAudio).toHaveBeenCalledTimes(1);
     },
   );
 });

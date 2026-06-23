@@ -26,6 +26,8 @@ export const AddMessageInputSchema = z.object({
   content: z.string().min(1),
   // 添付画像 id。配列の並び順が position を意味する（採番は service が担う）。
   attachmentImageIds: z.array(z.uuid()).optional(),
+  // 添付音声 id。配列の並び順が position を意味する（採番は service が担う・TSK-131）。
+  attachmentAudioIds: z.array(z.uuid()).optional(),
 });
 
 export type AddMessageInput = z.infer<typeof AddMessageInputSchema>;

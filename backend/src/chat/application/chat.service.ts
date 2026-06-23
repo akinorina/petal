@@ -30,4 +30,9 @@ export class ChatService {
   supportsVision(): boolean {
     return this.provider.supportsVision();
   }
+
+  // 有効 provider が音声入力に対応しているか（provider 委譲・TSK-131）。
+  supportsAudio(): boolean {
+    return this.provider.supportsAudio();
+  }
 }

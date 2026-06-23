@@ -57,6 +57,10 @@ export class ChatThreadService {
     const attachments = (input.attachmentImageIds ?? []).map(
       (imageId, position) => ({ imageId, position }),
     );
+    // 添付音声 id も配列の並び順を position として採番する（画像と独立・TSK-131）。
+    const audioAttachments = (input.attachmentAudioIds ?? []).map(
+      (audioId, position) => ({ audioId, position }),
+    );
     const message = new ChatMessage({
       id: randomUUID(),
       threadId: thread.id,
@@ -64,6 +68,7 @@ export class ChatThreadService {
       role: input.role,
       content: input.content,
       attachments,
+      audioAttachments,
       createdAt: now,
       updatedAt: now,
       deletedAt: null,

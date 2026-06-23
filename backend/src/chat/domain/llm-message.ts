@@ -19,9 +19,18 @@ export const ChatImagePartSchema = z.object({
 });
 export type ChatImagePart = z.infer<typeof ChatImagePartSchema>;
 
+// audio part は base64 音声データを保持する（image part と対称・TSK-131）。
+export const ChatAudioPartSchema = z.object({
+  type: z.literal('audio'),
+  mediaType: z.string().min(1),
+  data: z.string().min(1),
+});
+export type ChatAudioPart = z.infer<typeof ChatAudioPartSchema>;
+
 export const ChatContentPartSchema = z.discriminatedUnion('type', [
   ChatTextPartSchema,
   ChatImagePartSchema,
+  ChatAudioPartSchema,
 ]);
 export type ChatContentPart = z.infer<typeof ChatContentPartSchema>;
 
@@ -51,5 +60,16 @@ export function hasImageContent(
   return messages.some(
     (m) =>
       Array.isArray(m.content) && m.content.some((p) => p.type === 'image'),
+  );
+}
+
+// メッセージ群のいずれかが audio part を含むか判定する（hasImageContent と同型）。
+// 音声非対応 provider への音声付き送信 block 判定に使う（判断 2）。
+export function hasAudioContent(
+  messages: { content: string | ChatContentPart[] }[],
+): boolean {
+  return messages.some(
+    (m) =>
+      Array.isArray(m.content) && m.content.some((p) => p.type === 'audio'),
   );
 }

@@ -9,6 +9,7 @@ function fakeProvider(): LlmProvider {
     generate: jest.fn(),
     generateStream: jest.fn(),
     supportsVision: jest.fn(),
+    supportsAudio: jest.fn(),
   };
 }
 

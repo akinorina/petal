@@ -24,17 +24,20 @@ export class ChatCompletionService {
     threadId: string,
     input: SendMessageInput,
   ): AsyncGenerator<ChatStreamEvent> {
-    // 送信前検証（pre-stream）。vision 非対応→422 / 非所有画像→404 を伝播。
+    // 送信前検証（pre-stream）。vision/audio 非対応→422 / 非所有添付→404 を伝播。
     await this.attachmentService.assertAttachmentsSendable(
       currentUser,
       input.attachmentImageIds ?? [],
+      input.attachmentAudioIds ?? [],
       this.chatService.supportsVision(),
+      this.chatService.supportsAudio(),
     );
     // try の前に呼ぶ。非所有なら NotFoundException がそのまま伝播する（認可委譲）。
     await this.threadService.addMessage(currentUser, threadId, {
       role: 'user',
       content: input.content,
       attachmentImageIds: input.attachmentImageIds,
+      attachmentAudioIds: input.attachmentAudioIds,
     });
     const history = await this.threadService.findMessages(
       currentUser,
@@ -47,6 +50,7 @@ export class ChatCompletionService {
           currentUser,
           message.content,
           message.attachments,
+          message.audioAttachments,
         ),
       })),
     );
