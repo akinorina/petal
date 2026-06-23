@@ -15,7 +15,8 @@ import { VisionUnsupportedError } from '../domain/vision-unsupported.error';
 import type { GeminiConfig } from './llm.config';
 
 // content を Gemini の Part 配列へ変換する純粋関数（判断 4）。
-// 文字列は単一 text part、配列は text→{text} / image→{inlineData:{mimeType,data}}。
+// 文字列は単一 text part、配列は text→{text} / image・audio→
+// {inlineData:{mimeType,data}}（音声も画像と同形・判断 3・TSK-131）。
 export function toGeminiParts(content: string | ChatContentPart[]): Part[] {
   if (typeof content === 'string') return [{ text: content }];
   return content.map((part) =>
@@ -63,6 +64,10 @@ export class GeminiClient implements LlmProvider {
   }
 
   supportsVision(): boolean {
+    return true;
+  }
+
+  supportsAudio(): boolean {
     return true;
   }
 

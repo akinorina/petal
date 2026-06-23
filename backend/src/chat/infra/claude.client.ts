@@ -4,8 +4,10 @@ import {
   type ChatGenerationInput,
   type ChatResult,
 } from '../domain/llm-generation';
+import { AudioUnsupportedError } from '../domain/audio-unsupported.error';
 import {
   contentToText,
+  hasAudioContent,
   hasImageContent,
   type ChatContentPart,
 } from '../domain/llm-message';
@@ -25,6 +27,11 @@ export function toClaudeContent(
   return content.map((part) => {
     if (part.type === 'text') {
       return { type: 'text', text: part.text };
+    }
+    // Claude（Anthropic API）は音声入力に非対応。到達しない想定だが
+    // 型安全と多層防御のため明示的に弾く（判断 2）。
+    if (part.type === 'audio') {
+      throw new AudioUnsupportedError('Claude');
     }
     return {
       type: 'image',
@@ -74,10 +81,18 @@ export class ClaudeClient implements LlmProvider {
     return true;
   }
 
+  supportsAudio(): boolean {
+    return false;
+  }
+
   async *generateStream(input: ChatGenerationInput): AsyncGenerator<ChatChunk> {
     // vision 非対応 & 画像付き content なら SDK 生成前に block（多層防御・判断 2）。
     if (!this.supportsVision() && hasImageContent(input.messages)) {
       throw new VisionUnsupportedError('Claude');
+    }
+    // 音声非対応 & 音声付き content なら SDK 生成前に block（多層防御・判断 2）。
+    if (!this.supportsAudio() && hasAudioContent(input.messages)) {
+      throw new AudioUnsupportedError('Claude');
     }
     const model = this.resolveModel(input.model);
     const { system, messages } = this.splitMessages(input.messages);

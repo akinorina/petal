@@ -31,6 +31,11 @@ class UnconfiguredProvider implements LlmProvider {
   supportsVision(): boolean {
     return false;
   }
+
+  // 未設定 provider は音声非対応扱い（interface 追従・TSK-131）。
+  supportsAudio(): boolean {
+    return false;
+  }
 }
 
 // 設定済みの provider を id で保持する純粋なレジストリ（application 層・infra 非依存）。

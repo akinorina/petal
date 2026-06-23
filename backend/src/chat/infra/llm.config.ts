@@ -28,12 +28,16 @@ export const LlmEnvSchema = z.object({
   OPENAI_BASE_URL: z.string().url().default('https://api.openai.com/v1'),
   // OpenAI（本家）の画像入力対応可否（既定 true）。
   OPENAI_VISION: BooleanishSchema,
+  // OpenAI（本家）の音声入力対応可否（既定 false・TSK-131）。
+  OPENAI_AUDIO: BooleanishSchema,
   // LocalLLM（LM Studio 等・OpenAI 互換）
   LOCALLLM_BASE_URL: z.string().url().optional(),
   LOCALLLM_API_KEY: z.string().min(1).default('not-needed'),
   LOCALLLM_MODEL: z.string().min(1).optional(),
   // LocalLLM の画像入力対応可否（既定 false・モデルに合わせ運用者が設定）。
   LOCALLLM_VISION: BooleanishSchema,
+  // LocalLLM の音声入力対応可否（既定 false・モデルに合わせ運用者が設定・TSK-131）。
+  LOCALLLM_AUDIO: BooleanishSchema,
 });
 
 export type LlmEnv = z.infer<typeof LlmEnvSchema>;
@@ -47,6 +51,8 @@ export interface OpenAiCompatConfig {
   label: string;
   // この provider が画像入力（vision）に対応しているか。
   supportsVision: boolean;
+  // この provider が音声入力に対応しているか（TSK-131）。
+  supportsAudio: boolean;
 }
 
 export interface ClaudeConfig {
@@ -78,10 +84,12 @@ export class LlmConfig {
       OPENAI_MODEL: config.get<string>('OPENAI_MODEL') || undefined,
       OPENAI_BASE_URL: config.get<string>('OPENAI_BASE_URL') || undefined,
       OPENAI_VISION: config.get<string>('OPENAI_VISION') || undefined,
+      OPENAI_AUDIO: config.get<string>('OPENAI_AUDIO') || undefined,
       LOCALLLM_BASE_URL: config.get<string>('LOCALLLM_BASE_URL') || undefined,
       LOCALLLM_API_KEY: config.get<string>('LOCALLLM_API_KEY') || undefined,
       LOCALLLM_MODEL: config.get<string>('LOCALLLM_MODEL') || undefined,
       LOCALLLM_VISION: config.get<string>('LOCALLLM_VISION') || undefined,
+      LOCALLLM_AUDIO: config.get<string>('LOCALLLM_AUDIO') || undefined,
     });
     this.activeProviderId = this.env.LLM_PROVIDER;
   }
@@ -107,6 +115,7 @@ export class LlmConfig {
       defaultModel: this.env.OPENAI_MODEL,
       label: 'OpenAI',
       supportsVision: this.env.OPENAI_VISION ?? true,
+      supportsAudio: this.env.OPENAI_AUDIO ?? false,
     };
   }
 
@@ -117,6 +126,7 @@ export class LlmConfig {
       defaultModel: this.env.LOCALLLM_MODEL,
       label: 'LocalLLM',
       supportsVision: this.env.LOCALLLM_VISION ?? false,
+      supportsAudio: this.env.LOCALLLM_AUDIO ?? false,
     };
   }
 

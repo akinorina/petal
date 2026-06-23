@@ -8,8 +8,10 @@ import {
   type ChatGenerationInput,
   type ChatResult,
 } from '../domain/llm-generation';
+import { AudioUnsupportedError } from '../domain/audio-unsupported.error';
 import {
   contentToText,
+  hasAudioContent,
   hasImageContent,
   type ChatContentPart,
 } from '../domain/llm-message';
@@ -18,21 +20,41 @@ import type { LlmProvider } from '../domain/llm-provider';
 import { VisionUnsupportedError } from '../domain/vision-unsupported.error';
 import type { OpenAiCompatConfig } from './llm.config';
 
+// 音声 mediaType を OpenAI の input_audio.format へ変換する（判断 3・TSK-131）。
+// audio/mpeg→'mp3'、それ以外は 'audio/' を除いた subtype（wav/webm/mp4/ogg）。
+// SDK の format 型（'wav'|'mp3'）へキャストする（画像の media_type と同方針）。
+function mediaTypeToOpenAiAudioFormat(mediaType: string): 'wav' | 'mp3' {
+  const format =
+    mediaType === 'audio/mpeg' ? 'mp3' : mediaType.replace(/^audio\//, '');
+  return format as 'wav' | 'mp3';
+}
+
 // content を OpenAI 互換の content 形式へ変換する純粋関数（判断 4）。
 // 文字列は後方互換でそのまま、配列は text→{type:'text'} /
-// image→{type:'image_url', image_url:{url:'data:<mediaType>;base64,<data>'}}。
+// image→{type:'image_url', image_url:{url:'data:<mediaType>;base64,<data>'}} /
+// audio→{type:'input_audio', input_audio:{data,format}}（TSK-131）。
 export function toOpenAiContent(
   content: string | ChatContentPart[],
 ): string | ChatCompletionContentPart[] {
   if (typeof content === 'string') return content;
-  return content.map((part) =>
-    part.type === 'text'
-      ? { type: 'text', text: part.text }
-      : {
-          type: 'image_url',
-          image_url: { url: `data:${part.mediaType};base64,${part.data}` },
+  return content.map((part) => {
+    if (part.type === 'text') {
+      return { type: 'text', text: part.text };
+    }
+    if (part.type === 'audio') {
+      return {
+        type: 'input_audio',
+        input_audio: {
+          data: part.data,
+          format: mediaTypeToOpenAiAudioFormat(part.mediaType),
         },
-  );
+      };
+    }
+    return {
+      type: 'image_url',
+      image_url: { url: `data:${part.mediaType};base64,${part.data}` },
+    };
+  });
 }
 
 // OpenAI 互換 API への接続クライアント。OpenAI（本家）と LocalLLM（LM Studio 等）の
@@ -73,10 +95,18 @@ export class OpenAiCompatibleClient implements LlmProvider {
     return this.config.supportsVision;
   }
 
+  supportsAudio(): boolean {
+    return this.config.supportsAudio;
+  }
+
   async *generateStream(input: ChatGenerationInput): AsyncGenerator<ChatChunk> {
     // vision 非対応 & 画像付き content なら SDK 生成前に block（多層防御・判断 2）。
     if (!this.supportsVision() && hasImageContent(input.messages)) {
       throw new VisionUnsupportedError(this.config.label);
+    }
+    // 音声非対応 & 音声付き content なら SDK 生成前に block（多層防御・判断 2）。
+    if (!this.supportsAudio() && hasAudioContent(input.messages)) {
+      throw new AudioUnsupportedError(this.config.label);
     }
     const model = this.resolveModel(input.model);
     const messages: ChatCompletionMessageParam[] = input.messages.map(

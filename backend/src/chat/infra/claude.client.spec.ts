@@ -1,5 +1,6 @@
+import { AudioUnsupportedError } from '../domain/audio-unsupported.error';
 import type { ChatContentPart } from '../domain/llm-message';
-import { toClaudeContent } from './claude.client';
+import { ClaudeClient, toClaudeContent } from './claude.client';
 
 describe('toClaudeContent', () => {
   it('string はそのまま返す', () => {
@@ -22,5 +23,19 @@ describe('toClaudeContent', () => {
         },
       },
     ]);
+  });
+
+  it('audio part は AudioUnsupportedError を投げる（Claude 非対応）', () => {
+    const content: ChatContentPart[] = [
+      { type: 'audio', mediaType: 'audio/mpeg', data: 'YmFzZTY0' },
+    ];
+    expect(() => toClaudeContent(content)).toThrow(AudioUnsupportedError);
+  });
+});
+
+describe('ClaudeClient.supportsAudio', () => {
+  it('音声入力に非対応（false）', () => {
+    const client = new ClaudeClient({ apiKey: undefined, defaultModel: undefined });
+    expect(client.supportsAudio()).toBe(false);
   });
 });
