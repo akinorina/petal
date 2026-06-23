@@ -250,3 +250,63 @@ export function hasAudioContent(messages: { content: string | ChatContentPart[] 
 ## 12. 未確定事項
 
 なし。
+
+## 13. 実装計画
+
+### 変更・追加ファイル
+
+**新規**:
+
+- `backend/src/chat/domain/audio-unsupported.error.ts`（`AudioUnsupportedError`）
+- `backend/src/chat/infra/chat-message-audio.entity.ts`（`ChatMessageAudioEntity`）
+- `backend/database/migrations/1746144009000-CreateChatMessageAudios.ts`
+- 各層の `*.spec.ts` 追加分（下記テスト方針）
+
+**既存改修（domain）**: `llm-message.ts`・`llm-message.spec.ts`・`chat-message.ts`・`llm-provider.ts`
+**既存改修（infra）**: `claude.client.ts`・`gemini.client.ts`・`openai-compatible.client.ts`・各 `*.spec.ts`・`llm.config.ts`・`chat-thread.repository.impl.ts`・`chat.module.ts`
+**既存改修（application）**: `chat.schemas.ts`・`chat-thread.schemas.ts`・`chat-attachment.service.ts`・`chat.service.ts`・`chat-thread.service.ts`・`chat-completion.service.ts`・関連 `*.spec.ts`
+**既存改修（controller）**: `chat.controller.ts`・`chat.dto.ts`
+**既存改修（その他）**:
+
+- `backend/src/audio/audio.module.ts` … **`exports: [AudioService]` を追加**（現状未 export。ChatModule から使うため必須）。
+- `backend/.envs/.env.dev.example` / `.env.local.example` / `.env.prod.example` … `OPENAI_AUDIO=` / `LOCALLLM_AUDIO=` を vision 行の隣に追記（実 `.env` は触らない）。
+
+### migration・環境変数・依存追加
+
+- migration: `1746144009000-CreateChatMessageAudios.ts` 新規（§4 のテーブル）。`pnpm migration:run` で適用。
+- 環境変数: `OPENAI_AUDIO`（既定 false）・`LOCALLLM_AUDIO`（既定 false）追加。
+- 依存追加: なし（既存 SDK の既存型を使用）。
+
+### 作業順序（コミット単位 + 完了確認）
+
+1. `feat(tsk-131): domain に音声 part と添付参照を追加` — `llm-message.ts`/`chat-message.ts`/`audio-unsupported.error.ts`/`llm-provider.ts`(`supportsAudio` を I/F に追加) + domain spec 更新。確認: `pnpm build`（型）・`pnpm test llm-message chat-message`。
+2. `feat(tsk-131): provider clients に音声入力 mapping を追加` — 3 client の `supportsAudio()`・audio 変換分岐・guard、`llm.config.ts`。確認: `pnpm test claude gemini openai`。
+3. `feat(tsk-131): application を音声添付に対応` — schemas・`chat-attachment.service`(AudioService 注入)・`chat.service`・`chat-thread.service`・`chat-completion.service` + spec。確認: `pnpm test chat-attachment chat-completion chat-thread`。
+4. `feat(tsk-131): 音声添付の永続化を追加` — `chat-message-audio.entity.ts`・リポジトリ 3 メソッド・migration・`chat.module.ts`・`audio.module.ts`(export 追加)。確認: `pnpm build`・`pnpm migration:run` → `migration:revert`。
+5. `feat(tsk-131): API に音声添付の入出力を追加` — dto・controller・`.env.*.example`。確認: `pnpm build`・`pnpm lint`。
+6. 仕上げ: `cd backend && pnpm build && pnpm test && pnpm lint` が全て緑。
+
+（コミットは論理単位の目安。サブエージェントは型/テストが通る範囲でまとめてよい。）
+
+### テスト方針
+
+- domain: `llm-message.spec.ts` の「未知 type は parse 失敗」を `video` 等へ変更し、audio part の parse 成功と `hasAudioContent` を追加。
+- provider: 各 client spec に「audio part が正しい SDK 形式へ変換される」「`supportsAudio()` の戻り値」を追加。
+- application: `chat-attachment.service.spec.ts` に AudioService モックを足し、assert（音声非対応 422）・toLlmContent（画像+音声の順序）・toAudioAttachmentViews を検証。シグネチャ変更した既存 spec（chat-completion 等）を更新。
+- infra リポジトリ: テスト戦略上スコープ外（[docs/specs/00_rules.md §8.2](specs/00_rules.md)）。migration は run/revert で確認。
+- モック規約は既存 spec（`chat-attachment.service.spec.ts` 等）に揃える。
+
+### 想定外時の判断ルール
+
+- **AI 単独判断 OK**: 設計書スコープ内の追加実装、既存パターン踏襲の軽微なリファクタ、テスト追加。
+- **中断して要相談**: データモデル変更（テーブル列の増減）、API 仕様変更（フィールド名・上限）、トランザクション境界変更、provider 別 mapping の方針変更、設計判断ログ（判断 1〜4）を覆す変更、SDK 型が想定と異なり `input_audio`/`inlineData` の形が設計と乖離する場合。
+
+### 事前解決済みの判断ポイント
+
+- テーブルは新規 `chat_message_audios`（判断 1）。
+- provider は vision と同枠・全 provider に mapping（判断 2）。
+- 形式は変換せずそのまま送る／OpenAI は format 導出キャスト（判断 3）。
+- `ChatMessage` は `audioAttachments` 別フィールド（判断 4）。
+- 上限は 1 メッセージ 3 件（`MAX_AUDIO_ATTACHMENTS = 3`）。
+- `AudioModule` に `exports: [AudioService]` 追加が必須（確認済み）。
+- env example 3 ファイルのみ更新、実 `.env` は触らない（確認済み）。
