@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AudioModule } from '../audio/audio.module';
 import { ImageModule } from '../image/image.module';
 import { UserModule } from '../user/user.module';
 import { ChatService } from './application/chat.service';
@@ -11,6 +12,7 @@ import { ChatController } from './controller/chat.controller';
 import { CHAT_THREAD_REPOSITORY } from './domain/chat-thread.repository';
 import { LLM_PROVIDER, LLM_PROVIDER_REGISTRY } from './domain/llm-provider';
 import { ChatMessageEntity } from './infra/chat-message.entity';
+import { ChatMessageAudioEntity } from './infra/chat-message-audio.entity';
 import { ChatMessageImageEntity } from './infra/chat-message-image.entity';
 import { ChatThreadEntity } from './infra/chat-thread.entity';
 import { ChatThreadRepositoryImpl } from './infra/chat-thread.repository.impl';
@@ -23,9 +25,11 @@ import { LlmConfig } from './infra/llm.config';
       ChatThreadEntity,
       ChatMessageEntity,
       ChatMessageImageEntity,
+      ChatMessageAudioEntity,
     ]),
     UserModule,
     ImageModule,
+    AudioModule,
   ],
   controllers: [ChatController],
   providers: [

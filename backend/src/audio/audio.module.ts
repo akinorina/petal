@@ -18,5 +18,7 @@ import { AudioRepositoryImpl } from './infra/audio.repository.impl';
     },
     AudioService,
   ],
+  // ChatModule から添付音声の解決に AudioService を使うため export する（TSK-131）。
+  exports: [AudioService],
 })
 export class AudioModule {}

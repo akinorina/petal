@@ -1,11 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
-import { ChatMessage, ChatMessageImageRef } from '../domain/chat-message';
+import {
+  ChatMessage,
+  ChatMessageAudioRef,
+  ChatMessageImageRef,
+} from '../domain/chat-message';
 import { ChatThread } from '../domain/chat-thread';
 import { IChatThreadRepository } from '../domain/chat-thread.repository';
 import { ChatRoleSchema } from '../domain/llm-message';
 import { ChatMessageEntity } from './chat-message.entity';
+import { ChatMessageAudioEntity } from './chat-message-audio.entity';
 import { ChatMessageImageEntity } from './chat-message-image.entity';
 import { ChatThreadEntity } from './chat-thread.entity';
 
@@ -18,6 +23,8 @@ export class ChatThreadRepositoryImpl implements IChatThreadRepository {
     private readonly messageRepo: Repository<ChatMessageEntity>,
     @InjectRepository(ChatMessageImageEntity)
     private readonly messageImageRepo: Repository<ChatMessageImageEntity>,
+    @InjectRepository(ChatMessageAudioEntity)
+    private readonly messageAudioRepo: Repository<ChatMessageAudioEntity>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -73,8 +80,24 @@ export class ChatThreadRepositoryImpl implements IChatThreadRepository {
       attachmentsByMessage.set(row.messageId, list);
     }
 
+    // 音声添付行も同様に一括取得し（N+1 回避）message_id 別に分類する（TSK-131）。
+    const audioRows = await this.messageAudioRepo.find({
+      where: { messageId: In(messageIds) },
+      order: { position: 'ASC' },
+    });
+    const audioByMessage = new Map<string, ChatMessageAudioRef[]>();
+    for (const row of audioRows) {
+      const list = audioByMessage.get(row.messageId) ?? [];
+      list.push({ audioId: row.audioId, position: row.position });
+      audioByMessage.set(row.messageId, list);
+    }
+
     return entities.map((e) =>
-      this.toMessageDomain(e, attachmentsByMessage.get(e.id) ?? []),
+      this.toMessageDomain(
+        e,
+        attachmentsByMessage.get(e.id) ?? [],
+        audioByMessage.get(e.id) ?? [],
+      ),
     );
   }
 
@@ -94,6 +117,9 @@ export class ChatThreadRepositoryImpl implements IChatThreadRepository {
     const attachments = [...message.attachments].sort(
       (a, b) => a.position - b.position,
     );
+    const audioAttachments = [...message.audioAttachments].sort(
+      (a, b) => a.position - b.position,
+    );
     return this.dataSource.transaction(async (manager) => {
       const savedMessage = await manager.save(this.toMessageEntity(message));
       for (const attachment of attachments) {
@@ -103,7 +129,14 @@ export class ChatThreadRepositoryImpl implements IChatThreadRepository {
         imageEntity.position = attachment.position;
         await manager.save(imageEntity);
       }
-      return this.toMessageDomain(savedMessage, attachments);
+      for (const attachment of audioAttachments) {
+        const audioEntity = new ChatMessageAudioEntity();
+        audioEntity.messageId = savedMessage.id;
+        audioEntity.audioId = attachment.audioId;
+        audioEntity.position = attachment.position;
+        await manager.save(audioEntity);
+      }
+      return this.toMessageDomain(savedMessage, attachments, audioAttachments);
     });
   }
 
@@ -119,6 +152,9 @@ export class ChatThreadRepositoryImpl implements IChatThreadRepository {
       ).map((m) => m.id);
       if (messageIds.length > 0) {
         await manager.softDelete(ChatMessageImageEntity, {
+          messageId: In(messageIds),
+        });
+        await manager.softDelete(ChatMessageAudioEntity, {
           messageId: In(messageIds),
         });
       }
@@ -149,6 +185,7 @@ export class ChatThreadRepositoryImpl implements IChatThreadRepository {
   private toMessageDomain(
     entity: ChatMessageEntity,
     attachments: ChatMessageImageRef[],
+    audioAttachments: ChatMessageAudioRef[],
   ): ChatMessage {
     return new ChatMessage({
       id: entity.id,
@@ -157,6 +194,7 @@ export class ChatThreadRepositoryImpl implements IChatThreadRepository {
       role: ChatRoleSchema.parse(entity.role),
       content: entity.content,
       attachments,
+      audioAttachments,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
       deletedAt: entity.deletedAt,
