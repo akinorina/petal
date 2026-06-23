@@ -5,9 +5,13 @@ import { Alert } from '@/design-system/components/Alert';
 import { Button } from '@/design-system/components/Button';
 import { Textarea } from '@/design-system/components/Input';
 import { AttachmentPreviewList } from './AttachmentPreviewList';
+import { AudioAttachmentPicker } from './AudioAttachmentPicker';
+import { AudioAttachmentPreviewList } from './AudioAttachmentPreviewList';
 import { ImageAttachmentPicker } from './ImageAttachmentPicker';
 import { MarkdownContent } from './MarkdownContent';
 import { MessageAttachments } from './MessageAttachments';
+import { MessageAudioAttachments } from './MessageAudioAttachments';
+import { useAudioAttachment } from './use-audio-attachment';
 import { useImageAttachment } from './use-image-attachment';
 import type { OptimisticMessage } from './use-chat-conversation';
 
@@ -17,13 +21,19 @@ type ChatConversationProps = {
   isStreaming: boolean;
   error: string | null;
   /**
-   * content と選択画像 id（選択順）、楽観表示用の添付メタを渡す。
+   * content と選択画像/音声 id（選択順）、楽観表示用の添付メタを渡す。
    * 送信が成功したか（エラーなく完了したか）を解決する。
    */
   onSend: (
     content: string,
     attachmentImageIds: string[],
     optimisticAttachments: { imageId: string; label?: string }[],
+    attachmentAudioIds: string[],
+    optimisticAudioAttachments: {
+      audioId: string;
+      label?: string;
+      durationSeconds?: number;
+    }[],
   ) => Promise<boolean>;
   className?: string;
 };
@@ -44,6 +54,7 @@ export function ChatConversation({
   const [input, setInput] = useState('');
   const listEndRef = useRef<HTMLDivElement>(null);
   const attachment = useImageAttachment();
+  const audioAttachment = useAudioAttachment();
 
   // 新着・ストリーミングに合わせて末尾へスクロールする。
   useEffect(() => {
@@ -58,10 +69,25 @@ export function ChatConversation({
       imageId: img.id,
       label: img.title || img.originalFilename,
     }));
+    // 楽観バブルには選択中音声のローカルメタ（id + ラベル + 再生時間）を渡す。
+    const optimisticAudio = audioAttachment.selectedAudios.map((a) => ({
+      audioId: a.id,
+      label: a.title || a.originalFilename,
+      durationSeconds: a.durationSeconds ?? undefined,
+    }));
     setInput('');
-    // 送信成功時のみ選択をクリアする。失敗（vision 非対応等）時は保持して付け直せるようにする。
-    void onSend(content, attachment.selectedIds, optimistic).then((ok) => {
-      if (ok) attachment.clear();
+    // 送信成功時のみ選択をクリアする。失敗（非対応等）時は保持して付け直せるようにする。
+    void onSend(
+      content,
+      attachment.selectedIds,
+      optimistic,
+      audioAttachment.selectedIds,
+      optimisticAudio,
+    ).then((ok) => {
+      if (ok) {
+        attachment.clear();
+        audioAttachment.clear();
+      }
     });
   }
 
@@ -110,6 +136,11 @@ export function ChatConversation({
           onRemove={attachment.remove}
           disabled={isStreaming}
         />
+        <AudioAttachmentPreviewList
+          audios={audioAttachment.selectedAudios}
+          onRemove={audioAttachment.remove}
+          disabled={isStreaming}
+        />
         <div className="flex items-end gap-2">
           <Button
             type="button"
@@ -118,6 +149,14 @@ export function ChatConversation({
             disabled={isStreaming}
           >
             画像
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={audioAttachment.openPicker}
+            disabled={isStreaming}
+          >
+            音声
           </Button>
           <Textarea
             value={input}
@@ -147,6 +186,19 @@ export function ChatConversation({
         selectedIds={attachment.selectedIds}
         canAddMore={attachment.canAddMore}
         onToggle={attachment.toggle}
+      />
+
+      <AudioAttachmentPicker
+        open={audioAttachment.isPickerOpen}
+        onOpenChange={(o) =>
+          o ? audioAttachment.openPicker() : audioAttachment.closePicker()
+        }
+        audios={audioAttachment.audios}
+        isLoading={audioAttachment.isLoading}
+        error={audioAttachment.error}
+        selectedIds={audioAttachment.selectedIds}
+        canAddMore={audioAttachment.canAddMore}
+        onToggle={audioAttachment.toggle}
       />
     </div>
   );
@@ -178,6 +230,11 @@ function MessageBubble({
         {isUser && message.attachments && message.attachments.length > 0 && (
           <MessageAttachments attachments={message.attachments} />
         )}
+        {isUser &&
+          message.audioAttachments &&
+          message.audioAttachments.length > 0 && (
+            <MessageAudioAttachments attachments={message.audioAttachments} />
+          )}
         {pending && (
           <span className="ml-1 inline-block animate-pulse text-zinc-400">
             …
