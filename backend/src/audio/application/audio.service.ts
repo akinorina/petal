@@ -2,7 +2,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { S3StorageClient } from '../../common/storage/s3.client';
 import { User } from '../../user/domain/user';
-import { Audio } from '../domain/audio';
+import { Audio, AudioMimeType } from '../domain/audio';
 import { IAudioRepository, AUDIO_REPOSITORY } from '../domain/audio.repository';
 import { CreateAudioInput } from './audio.schemas';
 
@@ -91,5 +91,40 @@ export class AudioService {
   async remove(currentUser: User, id: string): Promise<void> {
     const audio = await this.findOneForOwner(currentUser, id);
     await this.audioRepository.softDelete(audio.id);
+  }
+
+  // 所有者本人の音声本体を S3 から取得し base64 として返す（LLM への音声送信用）。
+  async getOwnedAudioBase64(
+    currentUser: User,
+    id: string,
+  ): Promise<{ mediaType: AudioMimeType; data: string }> {
+    const audio = await this.findOneForOwner(currentUser, id);
+    const bytes = await this.s3.getObjectBytes(audio.s3Key);
+    return {
+      mediaType: audio.mimeType,
+      data: Buffer.from(bytes).toString('base64'),
+    };
+  }
+
+  // 所有者本人の音声の表示用 view（署名付き URL＋メタ）を返す（履歴応答用）。
+  async getOwnedAudioView(
+    currentUser: User,
+    id: string,
+  ): Promise<{
+    audioId: string;
+    mimeType: AudioMimeType;
+    originalFilename: string;
+    downloadUrl: string;
+    expiresInSeconds: number;
+  }> {
+    const audio = await this.findOneForOwner(currentUser, id);
+    const downloadUrl = await this.s3.createDownloadUrl(audio.s3Key);
+    return {
+      audioId: audio.id,
+      mimeType: audio.mimeType,
+      originalFilename: audio.originalFilename,
+      downloadUrl,
+      expiresInSeconds: this.s3.presignTtlSeconds,
+    };
   }
 }
