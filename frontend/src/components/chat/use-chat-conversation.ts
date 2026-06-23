@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useChatActionsApi } from '@/lib/api-hooks/use-chat-api';
 import type { Schemas } from '@/lib/openapi/client';
 import type { DisplayAttachment } from './MessageAttachments';
+import type { DisplayAudioAttachment } from './MessageAudioAttachments';
 
 type ChatMessage = Schemas['ChatMessageResponseDto'];
 
@@ -13,12 +14,20 @@ const VISION_UNSUPPORTED_CODE = 'LLM_VISION_UNSUPPORTED';
 const VISION_UNSUPPORTED_MESSAGE =
   '現在のモデルは画像に対応していません。画像を外すか、対応モデルに切り替えて再送してください。';
 
+/** 音声非対応 provider のエラーコード（バック TSK-131）。 */
+const AUDIO_UNSUPPORTED_CODE = 'LLM_AUDIO_UNSUPPORTED';
+/** 上記コードを受けたときに表示する専用文言（添付は保持して付け直し可能）。 */
+const AUDIO_UNSUPPORTED_MESSAGE =
+  '現在のモデルは音声に対応していません。音声を外すか、対応モデルに切り替えて再送してください。';
+
 /** 楽観表示用のメッセージ（サーバ確定前のローカルバブル）。 */
 export type OptimisticMessage = {
   role: 'user' | 'assistant';
   content: string;
   /** 添付画像（ユーザーバブルのサムネ表示用。楽観・履歴の両方で使う）。 */
   attachments?: DisplayAttachment[];
+  /** 添付音声（ユーザーバブルの再生表示用。楽観・履歴の両方で使う）。 */
+  audioAttachments?: DisplayAudioAttachment[];
 };
 
 type UseChatConversationOptions = {
@@ -65,6 +74,8 @@ export function useChatConversation({
       rawContent: string,
       attachmentImageIds?: string[],
       optimisticAttachments?: DisplayAttachment[],
+      attachmentAudioIds?: string[],
+      optimisticAudioAttachments?: DisplayAudioAttachment[],
     ): Promise<boolean> => {
       const content = rawContent.trim();
       if (!content || isStreaming) return false;
@@ -76,6 +87,10 @@ export function useChatConversation({
         attachments:
           optimisticAttachments && optimisticAttachments.length > 0
             ? optimisticAttachments
+            : undefined,
+        audioAttachments:
+          optimisticAudioAttachments && optimisticAudioAttachments.length > 0
+            ? optimisticAudioAttachments
             : undefined,
       });
       setStreamingText('');
@@ -96,18 +111,21 @@ export function useChatConversation({
           {
             onDelta: (delta) => setStreamingText((prev) => prev + delta),
             onDone: () => {},
-            // vision 非対応コードは専用文言へ差し替える（コードは err.code でのみ判定可能）。
+            // vision/audio 非対応コードは専用文言へ差し替える（コードは err.code でのみ判定可能）。
             onError: (err) => {
               succeeded = false;
               setError(
                 err.code === VISION_UNSUPPORTED_CODE
                   ? VISION_UNSUPPORTED_MESSAGE
-                  : err.message || 'エラーが発生しました',
+                  : err.code === AUDIO_UNSUPPORTED_CODE
+                    ? AUDIO_UNSUPPORTED_MESSAGE
+                    : err.message || 'エラーが発生しました',
               );
             },
           },
           controller.signal,
           attachmentImageIds,
+          attachmentAudioIds,
         );
       } catch {
         succeeded = false;
@@ -143,6 +161,14 @@ export function useChatConversation({
             m.attachments.length > 0
               ? m.attachments.map((a) => ({
                   imageId: a.imageId,
+                  downloadUrl: a.downloadUrl,
+                  label: a.originalFilename,
+                }))
+              : undefined,
+          audioAttachments:
+            m.audioAttachments.length > 0
+              ? m.audioAttachments.map((a) => ({
+                  audioId: a.audioId,
                   downloadUrl: a.downloadUrl,
                   label: a.originalFilename,
                 }))

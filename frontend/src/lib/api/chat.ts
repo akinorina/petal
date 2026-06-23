@@ -64,18 +64,33 @@ export async function streamChatMessage(
   handlers: ChatStreamHandlers,
   signal?: AbortSignal,
   attachmentImageIds?: string[],
+  attachmentAudioIds?: string[],
 ): Promise<void> {
   try {
     let token = await getAccessToken();
     if (!token) token = await refreshAccessToken();
 
-    let res = await sendRequest(threadId, content, token, signal, attachmentImageIds);
+    let res = await sendRequest(
+      threadId,
+      content,
+      token,
+      signal,
+      attachmentImageIds,
+      attachmentAudioIds,
+    );
 
     // 401 のときのみ 1 度だけ refresh して再試行。
     if (res.status === 401) {
       const newToken = await refreshAccessToken();
       if (newToken) {
-        res = await sendRequest(threadId, content, newToken, signal, attachmentImageIds);
+        res = await sendRequest(
+          threadId,
+          content,
+          newToken,
+          signal,
+          attachmentImageIds,
+          attachmentAudioIds,
+        );
       }
     }
 
@@ -113,6 +128,7 @@ function sendRequest(
   token: string | null,
   signal?: AbortSignal,
   attachmentImageIds?: string[],
+  attachmentAudioIds?: string[],
 ): Promise<Response> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -120,10 +136,13 @@ function sendRequest(
   };
   if (token) headers.Authorization = `Bearer ${token}`;
   // 添付があるときのみ body に含める（バックは選択順で position 付与）。
-  const body: Schemas['SendMessageRequestDto'] =
-    attachmentImageIds && attachmentImageIds.length > 0
-      ? { content, attachmentImageIds }
-      : { content };
+  const body: Schemas['SendMessageRequestDto'] = { content };
+  if (attachmentImageIds && attachmentImageIds.length > 0) {
+    body.attachmentImageIds = attachmentImageIds;
+  }
+  if (attachmentAudioIds && attachmentAudioIds.length > 0) {
+    body.attachmentAudioIds = attachmentAudioIds;
+  }
   return fetch(`${BASE_URL}${SEND_PATH(threadId)}`, {
     method: 'POST',
     headers,
