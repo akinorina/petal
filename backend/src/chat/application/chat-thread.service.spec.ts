@@ -233,6 +233,39 @@ describe('ChatThreadService.addMessage', () => {
 
     expect(result.attachments).toEqual([]);
   });
+
+  it('attachmentAudioIds を配列順の position 付きで audioAttachments に載せて渡す', async () => {
+    repo.findMaxSeq.mockResolvedValue(null);
+    const audioA = randomUUID();
+    const audioB = randomUUID();
+
+    const result = await service.addMessage(buildUser(OWNER_ID), THREAD_ID, {
+      role: 'user',
+      content: '音声を聞いて',
+      attachmentAudioIds: [audioA, audioB],
+    });
+
+    expect(result.audioAttachments).toEqual([
+      { audioId: audioA, position: 0 },
+      { audioId: audioB, position: 1 },
+    ]);
+    const saved = (repo.addMessage.mock.calls as Array<[ChatMessage]>)[0][0];
+    expect(saved.audioAttachments).toEqual([
+      { audioId: audioA, position: 0 },
+      { audioId: audioB, position: 1 },
+    ]);
+  });
+
+  it('attachmentAudioIds 未指定なら audioAttachments は空配列', async () => {
+    repo.findMaxSeq.mockResolvedValue(null);
+
+    const result = await service.addMessage(buildUser(OWNER_ID), THREAD_ID, {
+      role: 'user',
+      content: 'テキストのみ',
+    });
+
+    expect(result.audioAttachments).toEqual([]);
+  });
 });
 
 describe('ChatThreadService.findMessages', () => {
