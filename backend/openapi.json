@@ -2266,6 +2266,44 @@
           "downloadUrl"
         ]
       },
+      "ChatMessageAudioAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "mimeType": {
+            "enum": [
+              "audio/mpeg",
+              "audio/wav",
+              "audio/webm",
+              "audio/mp4",
+              "audio/ogg"
+            ],
+            "type": "string"
+          },
+          "expiresInSeconds": {
+            "type": "number"
+          },
+          "audioId": {
+            "type": "string"
+          },
+          "position": {
+            "type": "number"
+          },
+          "originalFilename": {
+            "type": "string"
+          },
+          "downloadUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "mimeType",
+          "expiresInSeconds",
+          "audioId",
+          "position",
+          "originalFilename",
+          "downloadUrl"
+        ]
+      },
       "ChatMessageResponseDto": {
         "type": "object",
         "properties": {
@@ -2291,6 +2329,12 @@
               "$ref": "#/components/schemas/ChatMessageAttachmentDto"
             }
           },
+          "audioAttachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatMessageAudioAttachmentDto"
+            }
+          },
           "id": {
             "type": "string"
           },
@@ -2309,6 +2353,7 @@
           "createdAt",
           "updatedAt",
           "attachments",
+          "audioAttachments",
           "id",
           "threadId",
           "seq",
@@ -2319,6 +2364,12 @@
         "type": "object",
         "properties": {
           "attachmentImageIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "attachmentAudioIds": {
             "type": "array",
             "items": {
               "type": "string"
