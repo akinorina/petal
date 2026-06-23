@@ -14,7 +14,12 @@
 [tsk-114](../specs/tsk-114_chat-markdown-rendering.md)（アシスタントメッセージの Markdown 表示） /
 [tsk-115](../specs/tsk-115_chat-ui-layout.md)（会話枠内スクロールのレイアウト） /
 [tsk-116](../specs/tsk-116_multi-llm-provider.md)（複数 LLM provider 対応: Claude/Gemini/OpenAI/Local） /
-[tsk-121](../tsk-121_chat-thread-title-edit.md)（スレッドタイトルのインライン編集）。
+[tsk-121](../tsk-121_chat-thread-title-edit.md)（スレッドタイトルのインライン編集） /
+[tsk-122](../tsk-122_chat-multimodal-persistence.md)（メッセージのマルチモーダル化・添付画像の永続化） /
+[tsk-123](../tsk-123_provider-image-vision.md)（provider の画像変換・vision 対応可否判定） /
+[tsk-124](../tsk-124_chat-image-api.md)（送受信 API の画像添付対応・base64 化） /
+[tsk-125](../tsk-125_chat-image-frontend.md)（フロントの画像添付 UI・会話表示） /
+[tsk-126](../tsk-126_chat-image-finishing.md)（画像対応の仕上げ: ドキュメント整備・動作確認）。
 
 ## アーキテクチャ
 
@@ -64,6 +69,69 @@ factory で束ねる（[chat.module.ts](../../backend/src/chat/chat.module.ts)�
 - migration: [1746144006000-CreateChatTables.ts](../../backend/database/migrations/1746144006000-CreateChatTables.ts)。
 - `seq` は追加時に `findMaxSeq + 1`（無ければ 0）で採番する。
 
+`petal.chat_message_images`（[chat-message-image.entity.ts](../../backend/src/chat/infra/chat-message-image.entity.ts)・[tsk-122](../tsk-122_chat-multimodal-persistence.md)）:
+メッセージに添付された画像（既存ライブラリ `petal.images`）への順序付き参照。
+
+| カラム | 説明 |
+| ------ | ---- |
+| id | UUID（PK） |
+| message_id | 添付先メッセージ（FK → chat_messages, `onDelete: RESTRICT`） |
+| image_id | 参照画像（FK → images, `onDelete: RESTRICT`） |
+| position | メッセージ内の表示・送信順（int・0 始まり） |
+| created_at / updated_at | 日時 |
+| deleted_at | 論理削除（`@DeleteDateColumn`） |
+
+- `UQ(message_id, position)` で同一メッセージ内の順序重複を防ぎ、`IDX(message_id)` でメッセージ別にまとめ取得する。
+- migration: [1746144008000-CreateChatMessageImages.ts](../../backend/database/migrations/1746144008000-CreateChatMessageImages.ts)。
+- `onDelete: RESTRICT` のため、画像が添付に使われている限り元画像は物理削除できない（画像管理側も論理削除）。
+- ドメインでは `ChatMessage.attachments: ChatMessageImageRef[]`（`imageId` + `position`）として保持する
+  （[chat-message.ts](../../backend/src/chat/domain/chat-message.ts)）。`attachments` は既定 `[]` で、
+  テキストのみの既存メッセージと後方互換。
+
+## マルチモーダルメッセージと添付画像
+
+既存ライブラリ（`petal.images`）の画像をメッセージに添付し、vision 対応 provider に画像内容を分析させる
+（原典: [tsk-122](../tsk-122_chat-multimodal-persistence.md)〜[tsk-125](../tsk-125_chat-image-frontend.md)）。
+
+### LLM へ渡す content 表現
+
+LLM に渡すワイヤ表現はマルチモーダルな content parts（[llm-message.ts](../../backend/src/chat/domain/llm-message.ts)）:
+
+- `ChatContentPart` は `type` による discriminated union。
+  - `text`: `{ type: 'text', text }`
+  - `image`: `{ type: 'image', mediaType, data }`（`data` は **base64**）
+- メッセージの `content` は **`string` も許容**（テキストのみ）で、配列はマルチモーダル。既存メッセージと後方互換。
+- `contentToText()` は text part のみ連結（image part は無視）、`hasImageContent()` は image part の有無を判定する純粋関数。
+
+### 画像の取得と base64 化（経路の違い）
+
+`ChatAttachmentService`（application・[chat-attachment.service.ts](../../backend/src/chat/application/chat-attachment.service.ts)）が
+添付の所有者認可・base64 化・表示 view 化を担う。
+
+- 送信・履歴再送時は **バックエンドが S3 から画像バイトを取得して base64 化**し、各 provider 形式へ渡す
+  （Claude image block / Gemini inlineData / OpenAI image_url の data URL。変換は各 infra クライアントに隔離）。
+- これは画像管理の通常のアップロード／ダウンロード（**署名付き URL でブラウザと S3 が直接やり取りし
+  バックエンドはバイトを中継しない**）とは異なる経路である点に注意（[04_image-management.md](04_image-management.md)）。
+- 履歴表示用には `getOwnedImageView` で署名付き表示 URL（`downloadUrl`）＋メタを返す。
+
+### vision 対応可否
+
+provider ごとに画像入力対応可否を持つ（`LlmProvider.supportsVision()`・原典 [tsk-123](../tsk-123_provider-image-vision.md)）:
+
+| provider | supportsVision | 既定 |
+| -------- | -------------- | ---- |
+| Claude | true（固定） | — |
+| Gemini | true（固定） | — |
+| OpenAI（本家） | env `OPENAI_VISION` | true |
+| LocalLLM | env `LOCALLLM_VISION` | false（モデルに合わせ運用者が設定） |
+
+vision 非対応 provider に画像付きで送信した場合、**送信前（pre-stream）に明確なエラーで block** する（後述「送信フロー」「エラー分類」）。
+
+### 添付の上限・認可
+
+- 1 メッセージあたり最大 **5 枚**（`MAX_ATTACHMENTS`・[chat.schemas.ts](../../backend/src/chat/application/chat.schemas.ts)）。
+- 添付できるのは **所有者本人の画像のみ**（非所有/不在は 404）。フロントの選択 UI も自分の画像のみ提示する。
+
 ## 認可
 
 - すべての操作は **所有者本人のみ**。`ChatThreadService.findThreadForOwner` が
@@ -80,11 +148,17 @@ factory で束ねる（[chat.module.ts](../../backend/src/chat/chat.module.ts)�
 | POST | `/chat/threads` | スレッド作成（`title` 任意） |
 | PATCH | `/chat/threads/:id` | スレッドのタイトル更新（更新後 DTO を返す） |
 | GET | `/chat/threads` | 自分のスレッド一覧 |
-| GET | `/chat/threads/:id/messages` | スレッドのメッセージ一覧 |
-| POST | `/chat/threads/:id/messages` | メッセージ送信＋応答ストリーム（SSE） |
+| GET | `/chat/threads/:id/messages` | スレッドのメッセージ一覧（各メッセージの `attachments` 付き） |
+| POST | `/chat/threads/:id/messages` | メッセージ送信＋応答ストリーム（SSE）。`attachmentImageIds` で画像添付 |
 | DELETE | `/chat/threads/:id` | スレッド論理削除（204） |
 
 - 入力は Zod 検証（`CreateThreadInputSchema` / `UpdateThreadInputSchema` / `SendMessageSchema`）。本文は 1〜32768 文字。
+- **画像添付**（[tsk-124](../tsk-124_chat-image-api.md)）:
+  - `POST /chat/threads/:id/messages` の body は `{ content: string, attachmentImageIds?: string[] }`。
+    `attachmentImageIds` は uuid 配列で **最大 5 件**（`SendMessageSchema`）。
+  - `GET /chat/threads/:id/messages` の各メッセージは `attachments: ChatMessageAttachmentDto[]` を返す。
+    各要素は `{ imageId, position, mimeType, originalFilename, downloadUrl, expiresInSeconds }`
+    （`downloadUrl` は署名付き表示 URL・[chat.dto.ts](../../backend/src/chat/controller/chat.dto.ts)）。
 - `PATCH /chat/threads/:id`（[tsk-121](../tsk-121_chat-thread-title-edit.md)）: body `{ title: string | null }`。
   `UpdateThreadInputSchema` が `title` を trim し、空（空白のみ含む）は `null` 化、max 255 は trim 後に適用する。
   `ChatThreadService.updateThreadTitle` が所有者を確認のうえ `IChatThreadRepository.updateThreadTitle`
@@ -95,10 +169,15 @@ factory で束ねる（[chat.module.ts](../../backend/src/chat/chat.module.ts)�
 `POST /chat/threads/:id/messages` は `text/event-stream` を返す。フローは
 `ChatCompletionService.streamCompletion`（[chat-completion.service.ts](../../backend/src/chat/application/chat-completion.service.ts)）:
 
-1. ユーザーメッセージを保存（非所有なら `NotFoundException` が伝播し SSE 開始前に 404）。
-2. スレッドの履歴をロードし LLM へ渡す。
-3. プロバイダのストリームを `delta` イベントとして逐次転送。
-4. 完了時にアシスタント全文を保存し `done` イベント（messageId / seq / finishReason）を送出。
+1. **添付の送信前検証**（pre-stream・`ChatAttachmentService.assertAttachmentsSendable`）。
+   vision 非対応 provider に画像付きなら 422 `LLM_VISION_UNSUPPORTED` で即 block（I/O なしで fail fast）、
+   続けて各添付画像の所有者認可（非所有/不在は 404）。SSE 開始前なので HTTP ステータスで応答する。
+2. ユーザーメッセージを保存（添付があれば `chat_message_images` も同一トランザクションで保存。
+   非所有スレッドなら `NotFoundException` が伝播し SSE 開始前に 404）。
+3. スレッドの履歴をロードし、各メッセージの添付を `toLlmContent` で **base64 の image part に変換**して
+   LLM へ渡す。これにより**過去の添付画像も毎回再送され**、マルチターンで画像の文脈が維持される。
+4. プロバイダのストリームを `delta` イベントとして逐次転送。
+5. 完了時にアシスタント全文を保存し `done` イベント（messageId / seq / finishReason）を送出。
    生成が空文字なら保存せず messageId / seq は `null`。
 
 SSE イベント（[chat-stream.ts](../../backend/src/chat/application/chat-stream.ts)）:
@@ -121,11 +200,15 @@ SSE イベント（[chat-stream.ts](../../backend/src/chat/application/chat-stre
 
 | 条件 | code | retryable | HTTP |
 | ---- | ---- | --------- | ---- |
+| vision 非対応 provider に画像添付（pre-stream） | `LLM_VISION_UNSUPPORTED` | false | 422 |
 | status 429 | `LLM_RATE_LIMITED` | true | 429 |
 | status ≥ 500 | `LLM_UPSTREAM_UNAVAILABLE` | true | 502 |
 | status 4xx（429 以外） | `LLM_BAD_REQUEST` | false | 502 |
 | 接続エラー（ECONNREFUSED 等） | `LLM_UPSTREAM_UNAVAILABLE` | true | 502 |
 | その他 | `LLM_GENERATION_FAILED` | true | 502 |
+
+- `LLM_VISION_UNSUPPORTED` は送信前（delta 未送出）に判定する固定エラーで、`classifyLlmError` ではなく
+  `ChatAttachmentService` が直接 422 `HttpException` を投げる。生成は開始されずメッセージも保存されない。
 
 - **ストリーム開始前**（delta 未送出）のエラーは `HttpException` 化し、Nest の例外フィルタが
   HTTP ステータスで応答する（ヘッダー未送出のため）。
@@ -149,9 +232,13 @@ Claude / Gemini / OpenAI（本家）/ LocalLLM の 4 provider を provider 別�
 | `CLAUDE_API_KEY` / `CLAUDE_MODEL` | claude 時 ○ / — | Claude（Anthropic Messages API）のキーと既定モデル |
 | `GEMINI_API_KEY` / `GEMINI_MODEL` | gemini 時 ○ / — | Gemini（@google/genai）のキーと既定モデル |
 | `OPENAI_API_KEY` / `OPENAI_MODEL` / `OPENAI_BASE_URL` | openai 時 ○ / — / — | OpenAI（本家）のキー・既定モデル・接続先（既定 `https://api.openai.com/v1`） |
+| `OPENAI_VISION` | — | OpenAI（本家）の画像入力対応可否（既定 `true`） |
 | `LOCALLLM_BASE_URL` / `LOCALLLM_API_KEY` / `LOCALLLM_MODEL` | local 時 ○ / — / — | LocalLLM（OpenAI 互換）の接続先・キー（既定 `not-needed`）・既定モデル |
+| `LOCALLLM_VISION` | — | LocalLLM の画像入力対応可否（既定 `false`・vision 対応モデル利用時に設定） |
 
 - 各 `*_API_KEY` は秘密情報のため `NEXT_PUBLIC_*` に置かない（backend のみ保持）。
+- `OPENAI_VISION` / `LOCALLLM_VISION` は boolean-ish（`true`/`false`/`1`/`0`）。未設定時は既定値（OpenAI=true / Local=false）。
+  Claude / Gemini は常に vision 対応のため env は持たない（[tsk-123](../tsk-123_provider-image-vision.md)）。
 - 未設定でもアプリ起動は妨げず、active provider の env 不足時は利用時に明確なエラーを返す。
 
 ## フロントエンド
@@ -205,6 +292,14 @@ chat UI 自体は「会話コンテンツ + 入力欄」の 2 部構成。
 Application 層をユニットテストで担保（[testing-strategy](../40_processes/02_testing-strategy.md)）。
 `ChatThreadService` / `ChatService` / `ChatCompletionService` / `classifyLlmError` の
 spec を同居配置。送信フローは正常系・空生成・pre/mid-stream エラー・切断・finishReason 欠落を網羅。
+
+画像添付（[tsk-126](../tsk-126_chat-image-finishing.md)）も同方針で担保する。
+
+- domain: `llm-message`（parts 判別・`contentToText` / `hasImageContent`）・`chat-message`（`attachments` の既定/不変条件）・`vision-unsupported.error`。
+- application: `ChatAttachmentService`（vision 422 / 所有者認可 404 / base64 化・position 昇順 / 表示 view 化）・
+  `ChatCompletionService`（pre-stream 422 と未保存・`attachmentImageIds` 伝播・履歴の `toLlmContent` 経由再送）。
+- infra（provider）: 各クライアントの content マッピングと vision guard を spec で確認。
+- 実機での全 provider E2E 動作確認の手順は [tsk-126 §6](../tsk-126_chat-image-finishing.md) を参照。
 
 ## 関連ドキュメント
 

@@ -42,9 +42,20 @@
 - S3 オブジェクトキー（`s3_key`）は DB で一意。
 - バケット/IAM/CORS の構築は [30_operations/04_storage-setup.md](../30_operations/04_storage-setup.md)。
 
+## チャットでの画像添付
+
+所有ライブラリの画像は LLM チャットのメッセージに添付できる（PRJ-17・[09_chat.md](09_chat.md)）。
+
+- 入力欄から自分の画像を **最大 5 枚** 選び、本文テキストと共に送信する（添付できるのは所有者本人の画像のみ）。
+- 送信時はバックエンドが S3 から画像を取得して **base64 化** し、vision 対応 provider（Claude / Gemini / OpenAI）へ渡す。
+  vision 非対応 provider（既定の LocalLLM 等）には送信前にエラーで block する。
+- 添付はメッセージに紐付いて永続化（`petal.chat_message_images`）され、履歴では署名付き表示 URL として返る。
+- このチャット添付は、通常のアップロード／ダウンロード（署名付き URL でブラウザと S3 が直接やり取り）とは異なり、
+  **バックエンドが画像バイトを取得する**経路を使う。詳細は [09_chat.md](09_chat.md) を参照。
+
 ## 削除
 
-論理削除（`deleted_at`）。S3 オブジェクトの扱いは設計ドキュメント参照。所有者ユーザーは画像が残る限り物理削除できない（`onDelete: RESTRICT`）。
+論理削除（`deleted_at`）。S3 オブジェクトの扱いは設計ドキュメント参照。所有者ユーザーは画像が残る限り物理削除できない（`onDelete: RESTRICT`）。チャット添付に使われている画像も `onDelete: RESTRICT`（`chat_message_images`）により残存する限り物理削除されない。
 
 ## 関連ドキュメント
 
