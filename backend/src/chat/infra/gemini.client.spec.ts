@@ -31,7 +31,10 @@ describe('toGeminiParts', () => {
 
 describe('GeminiClient.supportsAudio', () => {
   it('音声入力に対応（true）', () => {
-    const client = new GeminiClient({ apiKey: undefined, defaultModel: undefined });
+    const client = new GeminiClient({
+      apiKey: undefined,
+      defaultModel: undefined,
+    });
     expect(client.supportsAudio()).toBe(true);
   });
 });

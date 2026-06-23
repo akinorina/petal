@@ -99,6 +99,10 @@ export class ChatController {
           currentUser,
           message.attachments,
         ),
+        audioAttachments: await this.attachmentService.toAudioAttachmentViews(
+          currentUser,
+          message.audioAttachments,
+        ),
       })),
     );
   }
@@ -179,10 +183,11 @@ function toThreadResponse(thread: ChatThread): ChatThreadResponseDto {
   };
 }
 
-// attachments を除く基本フィールドのみを返す（attachments は呼び出し側で解決）。
+// attachments / audioAttachments を除く基本フィールドのみを返す
+// （添付は呼び出し側で解決）。
 function toMessageResponse(
   message: ChatMessage,
-): Omit<ChatMessageResponseDto, 'attachments'> {
+): Omit<ChatMessageResponseDto, 'attachments' | 'audioAttachments'> {
   return {
     id: message.id,
     threadId: message.threadId,

@@ -35,7 +35,10 @@ describe('toClaudeContent', () => {
 
 describe('ClaudeClient.supportsAudio', () => {
   it('音声入力に非対応（false）', () => {
-    const client = new ClaudeClient({ apiKey: undefined, defaultModel: undefined });
+    const client = new ClaudeClient({
+      apiKey: undefined,
+      defaultModel: undefined,
+    });
     expect(client.supportsAudio()).toBe(false);
   });
 });
