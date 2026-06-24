@@ -19,7 +19,11 @@
 [tsk-123](../tsk-123_provider-image-vision.md)（provider の画像変換・vision 対応可否判定） /
 [tsk-124](../tsk-124_chat-image-api.md)（送受信 API の画像添付対応・base64 化） /
 [tsk-125](../tsk-125_chat-image-frontend.md)（フロントの画像添付 UI・会話表示） /
-[tsk-126](../tsk-126_chat-image-finishing.md)（画像対応の仕上げ: ドキュメント整備・動作確認）。
+[tsk-126](../tsk-126_chat-image-finishing.md)（画像対応の仕上げ: ドキュメント整備・動作確認） /
+[tsk-130](../tsk-130_audio-chat-methods.md)（音声ライブラリのチャット連携メソッド追加） /
+[tsk-131](../tsk-131_chat-audio-backend.md)（送受信 API の音声添付対応・base64 化・provider 別 mapping） /
+[tsk-132](../tsk-132_chat-audio-frontend.md)（フロントの音声添付 UI・会話表示） /
+[tsk-133](../tsk-133_chat-audio-finishing.md)（音声対応の仕上げ: 実機検証・ドキュメント整備）。
 
 ## アーキテクチャ
 
@@ -88,10 +92,27 @@ factory で束ねる（[chat.module.ts](../../backend/src/chat/chat.module.ts)�
   （[chat-message.ts](../../backend/src/chat/domain/chat-message.ts)）。`attachments` は既定 `[]` で、
   テキストのみの既存メッセージと後方互換。
 
-## マルチモーダルメッセージと添付画像
+`petal.chat_message_audios`（[chat-message-audio.entity.ts](../../backend/src/chat/infra/chat-message-audio.entity.ts)・[tsk-131](../tsk-131_chat-audio-backend.md)）:
+メッセージに添付された音声（既存ライブラリ `petal.audios`）への順序付き参照。`chat_message_images` と対称。
 
-既存ライブラリ（`petal.images`）の画像をメッセージに添付し、vision 対応 provider に画像内容を分析させる
-（原典: [tsk-122](../tsk-122_chat-multimodal-persistence.md)〜[tsk-125](../tsk-125_chat-image-frontend.md)）。
+| カラム | 説明 |
+| ------ | ---- |
+| id | UUID（PK） |
+| message_id | 添付先メッセージ（FK → chat_messages, `onDelete: RESTRICT`） |
+| audio_id | 参照音声（FK → audios, `onDelete: RESTRICT`） |
+| position | メッセージ内の表示・送信順（int・0 始まり） |
+| created_at / updated_at | 日時 |
+| deleted_at | 論理削除（`@DeleteDateColumn`） |
+
+- `UQ(message_id, position)` / `IDX(message_id)`。migration: [1746144009000-CreateChatMessageAudios.ts](../../backend/database/migrations/1746144009000-CreateChatMessageAudios.ts)。
+- ドメインでは `ChatMessage.audioAttachments: ChatMessageAudioRef[]`（`audioId` + `position`）として画像（`attachments`）と別フィールドで保持する。両者とも既定 `[]`。
+
+## マルチモーダルメッセージと添付（画像・音声）
+
+既存ライブラリ（`petal.images` / `petal.audios`）の画像・音声をメッセージに添付し、対応 provider に内容を分析させる
+（画像の原典: [tsk-122](../tsk-122_chat-multimodal-persistence.md)〜[tsk-125](../tsk-125_chat-image-frontend.md)。
+音声の原典: [tsk-130](../tsk-130_audio-chat-methods.md)〜[tsk-133](../tsk-133_chat-audio-finishing.md)）。
+音声は文字起こしせず **base64 のまま LLM へネイティブ送信**する（provider の音声入力を直接使う）。
 
 ### LLM へ渡す content 表現
 
@@ -100,8 +121,9 @@ LLM に渡すワイヤ表現はマルチモーダルな content parts（[llm-mes
 - `ChatContentPart` は `type` による discriminated union。
   - `text`: `{ type: 'text', text }`
   - `image`: `{ type: 'image', mediaType, data }`（`data` は **base64**）
+  - `audio`: `{ type: 'audio', mediaType, data }`（`data` は **base64**）
 - メッセージの `content` は **`string` も許容**（テキストのみ）で、配列はマルチモーダル。既存メッセージと後方互換。
-- `contentToText()` は text part のみ連結（image part は無視）、`hasImageContent()` は image part の有無を判定する純粋関数。
+- `contentToText()` は text part のみ連結（image/audio part は無視）、`hasImageContent()` / `hasAudioContent()` はそれぞれの part 有無を判定する純粋関数。
 
 ### 画像の取得と base64 化（経路の違い）
 
@@ -113,6 +135,9 @@ LLM に渡すワイヤ表現はマルチモーダルな content parts（[llm-mes
 - これは画像管理の通常のアップロード／ダウンロード（**署名付き URL でブラウザと S3 が直接やり取りし
   バックエンドはバイトを中継しない**）とは異なる経路である点に注意（[04_image-management.md](04_image-management.md)）。
 - 履歴表示用には `getOwnedImageView` で署名付き表示 URL（`downloadUrl`）＋メタを返す。
+- **音声も同経路**: `AudioService.getOwnedAudioBase64`（送信用・S3→base64）/ `getOwnedAudioView`（履歴用・署名 URL＋メタ）を
+  `ChatAttachmentService` が呼び、各 provider 形式へ変換する（Gemini inlineData / OpenAI `input_audio`。Claude は音声非対応）。
+  `toLlmContent` は text → 画像 part → 音声 part の順（各 `position` 昇順）で parts を組み立てる。
 
 ### vision 対応可否
 
@@ -127,10 +152,25 @@ provider ごとに画像入力対応可否を持つ（`LlmProvider.supportsVisio
 
 vision 非対応 provider に画像付きで送信した場合、**送信前（pre-stream）に明確なエラーで block** する（後述「送信フロー」「エラー分類」）。
 
+### audio 対応可否
+
+provider ごとに音声入力対応可否を持つ（`LlmProvider.supportsAudio()`・原典 [tsk-131](../tsk-131_chat-audio-backend.md)）:
+
+| provider | supportsAudio | 既定 |
+| -------- | ------------- | ---- |
+| Claude | false（固定・Anthropic API が音声入力非対応） | — |
+| Gemini | true（固定） | — |
+| OpenAI（本家） | env `OPENAI_AUDIO` | false |
+| LocalLLM | env `LOCALLLM_AUDIO` | false（モデルに合わせ運用者が設定） |
+
+audio 非対応 provider に音声付きで送信した場合、**送信前（pre-stream）に 422 `LLM_AUDIO_UNSUPPORTED` で block** する（vision と対称）。
+`LOCALLLM_AUDIO=true` は **音声入力を受けるモデル**（`input_audio` content type 対応）が前提で、vision のみのモデル（例: gemma）では LLM 側が拒否する。
+
 ### 添付の上限・認可
 
-- 1 メッセージあたり最大 **5 枚**（`MAX_ATTACHMENTS`・[chat.schemas.ts](../../backend/src/chat/application/chat.schemas.ts)）。
-- 添付できるのは **所有者本人の画像のみ**（非所有/不在は 404）。フロントの選択 UI も自分の画像のみ提示する。
+- 1 メッセージあたり最大 **画像 5 枚**（`MAX_ATTACHMENTS`）/ **音声 3 件**（`MAX_AUDIO_ATTACHMENTS`）
+  （[chat.schemas.ts](../../backend/src/chat/application/chat.schemas.ts)）。
+- 添付できるのは **所有者本人の画像・音声のみ**（非所有/不在は 404）。フロントの選択 UI も自分のものだけ提示する。
 
 ## 認可
 
@@ -149,7 +189,7 @@ vision 非対応 provider に画像付きで送信した場合、**送信前（p
 | PATCH | `/chat/threads/:id` | スレッドのタイトル更新（更新後 DTO を返す） |
 | GET | `/chat/threads` | 自分のスレッド一覧 |
 | GET | `/chat/threads/:id/messages` | スレッドのメッセージ一覧（各メッセージの `attachments` 付き） |
-| POST | `/chat/threads/:id/messages` | メッセージ送信＋応答ストリーム（SSE）。`attachmentImageIds` で画像添付 |
+| POST | `/chat/threads/:id/messages` | メッセージ送信＋応答ストリーム（SSE）。`attachmentImageIds`・`attachmentAudioIds` で添付 |
 | DELETE | `/chat/threads/:id` | スレッド論理削除（204） |
 
 - 入力は Zod 検証（`CreateThreadInputSchema` / `UpdateThreadInputSchema` / `SendMessageSchema`）。本文は 1〜32768 文字。
@@ -159,6 +199,10 @@ vision 非対応 provider に画像付きで送信した場合、**送信前（p
   - `GET /chat/threads/:id/messages` の各メッセージは `attachments: ChatMessageAttachmentDto[]` を返す。
     各要素は `{ imageId, position, mimeType, originalFilename, downloadUrl, expiresInSeconds }`
     （`downloadUrl` は署名付き表示 URL・[chat.dto.ts](../../backend/src/chat/controller/chat.dto.ts)）。
+- **音声添付**（[tsk-131](../tsk-131_chat-audio-backend.md) / [tsk-132](../tsk-132_chat-audio-frontend.md)）:
+  - `POST` の body に `attachmentAudioIds?: string[]`（uuid・**最大 3 件**）を追加（`SendMessageSchema`）。画像と独立に指定できる。
+  - `GET` の各メッセージは `audioAttachments: ChatMessageAudioAttachmentDto[]` を返す。
+    各要素は `{ audioId, position, mimeType, originalFilename, downloadUrl, expiresInSeconds }`。フロントは `<audio>` で再生する。
 - `PATCH /chat/threads/:id`（[tsk-121](../tsk-121_chat-thread-title-edit.md)）: body `{ title: string | null }`。
   `UpdateThreadInputSchema` が `title` を trim し、空（空白のみ含む）は `null` 化、max 255 は trim 後に適用する。
   `ChatThreadService.updateThreadTitle` が所有者を確認のうえ `IChatThreadRepository.updateThreadTitle`
@@ -170,12 +214,13 @@ vision 非対応 provider に画像付きで送信した場合、**送信前（p
 `ChatCompletionService.streamCompletion`（[chat-completion.service.ts](../../backend/src/chat/application/chat-completion.service.ts)）:
 
 1. **添付の送信前検証**（pre-stream・`ChatAttachmentService.assertAttachmentsSendable`）。
-   vision 非対応 provider に画像付きなら 422 `LLM_VISION_UNSUPPORTED` で即 block（I/O なしで fail fast）、
-   続けて各添付画像の所有者認可（非所有/不在は 404）。SSE 開始前なので HTTP ステータスで応答する。
-2. ユーザーメッセージを保存（添付があれば `chat_message_images` も同一トランザクションで保存。
+   vision 非対応 provider に画像付きなら 422 `LLM_VISION_UNSUPPORTED`、audio 非対応 provider に音声付きなら
+   422 `LLM_AUDIO_UNSUPPORTED` で即 block（I/O なしで fail fast）、続けて各添付画像・音声の所有者認可（非所有/不在は 404）。
+   SSE 開始前なので HTTP ステータスで応答する。
+2. ユーザーメッセージを保存（添付があれば `chat_message_images` / `chat_message_audios` も同一トランザクションで保存。
    非所有スレッドなら `NotFoundException` が伝播し SSE 開始前に 404）。
-3. スレッドの履歴をロードし、各メッセージの添付を `toLlmContent` で **base64 の image part に変換**して
-   LLM へ渡す。これにより**過去の添付画像も毎回再送され**、マルチターンで画像の文脈が維持される。
+3. スレッドの履歴をロードし、各メッセージの添付を `toLlmContent` で **base64 の image/audio part に変換**して
+   LLM へ渡す。これにより**過去の添付画像・音声も毎回再送され**、マルチターンで添付の文脈が維持される。
 4. プロバイダのストリームを `delta` イベントとして逐次転送。
 5. 完了時にアシスタント全文を保存し `done` イベント（messageId / seq / finishReason）を送出。
    生成が空文字なら保存せず messageId / seq は `null`。
@@ -201,13 +246,14 @@ SSE イベント（[chat-stream.ts](../../backend/src/chat/application/chat-stre
 | 条件 | code | retryable | HTTP |
 | ---- | ---- | --------- | ---- |
 | vision 非対応 provider に画像添付（pre-stream） | `LLM_VISION_UNSUPPORTED` | false | 422 |
+| audio 非対応 provider に音声添付（pre-stream） | `LLM_AUDIO_UNSUPPORTED` | false | 422 |
 | status 429 | `LLM_RATE_LIMITED` | true | 429 |
 | status ≥ 500 | `LLM_UPSTREAM_UNAVAILABLE` | true | 502 |
 | status 4xx（429 以外） | `LLM_BAD_REQUEST` | false | 502 |
 | 接続エラー（ECONNREFUSED 等） | `LLM_UPSTREAM_UNAVAILABLE` | true | 502 |
 | その他 | `LLM_GENERATION_FAILED` | true | 502 |
 
-- `LLM_VISION_UNSUPPORTED` は送信前（delta 未送出）に判定する固定エラーで、`classifyLlmError` ではなく
+- `LLM_VISION_UNSUPPORTED` / `LLM_AUDIO_UNSUPPORTED` は送信前（delta 未送出）に判定する固定エラーで、`classifyLlmError` ではなく
   `ChatAttachmentService` が直接 422 `HttpException` を投げる。生成は開始されずメッセージも保存されない。
 
 - **ストリーム開始前**（delta 未送出）のエラーは `HttpException` 化し、Nest の例外フィルタが
@@ -233,12 +279,15 @@ Claude / Gemini / OpenAI（本家）/ LocalLLM の 4 provider を provider 別�
 | `GEMINI_API_KEY` / `GEMINI_MODEL` | gemini 時 ○ / — | Gemini（@google/genai）のキーと既定モデル |
 | `OPENAI_API_KEY` / `OPENAI_MODEL` / `OPENAI_BASE_URL` | openai 時 ○ / — / — | OpenAI（本家）のキー・既定モデル・接続先（既定 `https://api.openai.com/v1`） |
 | `OPENAI_VISION` | — | OpenAI（本家）の画像入力対応可否（既定 `true`） |
+| `OPENAI_AUDIO` | — | OpenAI（本家）の音声入力対応可否（既定 `false`・audio 対応モデル利用時に設定） |
 | `LOCALLLM_BASE_URL` / `LOCALLLM_API_KEY` / `LOCALLLM_MODEL` | local 時 ○ / — / — | LocalLLM（OpenAI 互換）の接続先・キー（既定 `not-needed`）・既定モデル |
 | `LOCALLLM_VISION` | — | LocalLLM の画像入力対応可否（既定 `false`・vision 対応モデル利用時に設定） |
+| `LOCALLLM_AUDIO` | — | LocalLLM の音声入力対応可否（既定 `false`・`input_audio` 対応モデル利用時に設定） |
 
 - 各 `*_API_KEY` は秘密情報のため `NEXT_PUBLIC_*` に置かない（backend のみ保持）。
-- `OPENAI_VISION` / `LOCALLLM_VISION` は boolean-ish（`true`/`false`/`1`/`0`）。未設定時は既定値（OpenAI=true / Local=false）。
-  Claude / Gemini は常に vision 対応のため env は持たない（[tsk-123](../tsk-123_provider-image-vision.md)）。
+- `OPENAI_VISION` / `LOCALLLM_VISION` / `OPENAI_AUDIO` / `LOCALLLM_AUDIO` は boolean-ish（`true`/`false`/`1`/`0`）。
+  未設定時の既定は vision が OpenAI=true / Local=false、audio が OpenAI=false / Local=false。
+  Claude / Gemini は env を持たず、vision は常に対応・audio は Claude=非対応 / Gemini=対応で固定（[tsk-123](../tsk-123_provider-image-vision.md) / [tsk-131](../tsk-131_chat-audio-backend.md)）。
 - 未設定でもアプリ起動は妨げず、active provider の env 不足時は利用時に明確なエラーを返す。
 
 ## フロントエンド

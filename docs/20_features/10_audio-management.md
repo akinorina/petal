@@ -52,6 +52,16 @@
 
 論理削除（`deleted_at`）。所有者ユーザーは音声が残る限り物理削除できない（`onDelete: RESTRICT`）。
 
+## チャット添付（マルチモーダル）
+
+所有音声を LLM チャットに添付し、音声対応 provider に内容を分析させられる（[tsk-131](../tsk-131_chat-audio-backend.md) / [tsk-132](../tsk-132_chat-audio-frontend.md)）。
+
+- 1 メッセージあたり最大 **3 件**。所有者本人の音声のみ添付可能。
+- 送信時はバックエンドが S3 から音声バイトを取得して **base64 化し、provider へネイティブ送信**する（文字起こしはしない）。
+  履歴では署名付き再生 URL（`downloadUrl`）として返り、ユーザーバブル内で `<audio>` 再生される。
+- 音声非対応 provider（Claude や `LOCALLLM_AUDIO=false` 等）選択時は送信前に 422 `LLM_AUDIO_UNSUPPORTED` で弾く。
+- 詳細・provider 別 mapping・対応可否は [09_chat.md](09_chat.md)（マルチモーダルメッセージと添付）を参照。
+
 ## 関連ドキュメント
 
 - DB スキーマ → [10_architecture/05_database-schema.md](../10_architecture/05_database-schema.md)
