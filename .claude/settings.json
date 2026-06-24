@@ -14,9 +14,32 @@
       "Bash(git switch:*)",
       "Bash(gh pr view:*)",
       "Bash(gh pr list:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./*.key)",
+      "Read(./*.crt)",
+      "Read(./*.pem)",
+      "Read(./credentials.json)",
+      "Read(./secrets/**)",
+      "Read(./private/**)",
+      "Read(./data/customers/**)",
+      "Read(./data/users/**)"
     ]
   },
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/block-dangerous.sh"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
