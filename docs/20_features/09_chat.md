@@ -166,6 +166,10 @@ provider ごとに音声入力対応可否を持つ（`LlmProvider.supportsAudio
 audio 非対応 provider に音声付きで送信した場合、**送信前（pre-stream）に 422 `LLM_AUDIO_UNSUPPORTED` で block** する（vision と対称）。
 `LOCALLLM_AUDIO=true` は **音声入力を受けるモデル**（`input_audio` content type 対応）が前提で、vision のみのモデル（例: gemma）では LLM 側が拒否する。
 
+**形式適合**: バックエンドは添付音声を**形式変換せず**そのまま base64 で渡す（Gemini=inlineData の `mimeType`、OpenAI 互換=`input_audio.format`）。
+形式別の受理可否は **provider・モデル依存**で、確実なのは **wav / mp3**。OpenAI 互換の `input_audio.format` は本来 `wav`/`mp3` 想定で、録音由来の webm/mp4 は弾かれることがある。
+**実機検証（tsk-133・2026-06-24）**: `LLM_PROVIDER=gemini` で音声添付→音声内容に基づく応答を確認済み（PRJ-18 の「最低 1 provider で音声分析が動く」を満足）。
+
 ### 添付の上限・認可
 
 - 1 メッセージあたり最大 **画像 5 枚**（`MAX_ATTACHMENTS`）/ **音声 3 件**（`MAX_AUDIO_ATTACHMENTS`）

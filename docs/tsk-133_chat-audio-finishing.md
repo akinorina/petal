@@ -114,15 +114,20 @@ PRJ-18 の完了条件「少なくとも 1 つのネイティブ対応プロバ�
 
 ## 7. 完了条件（具体化版）／動作確認結果
 
-- [ ] 検証 A/B/C をユーザーが実行し結果を本節へ記録。
-- [ ] 09_chat.md・10_audio-management.md の音声節追記。
-- [ ] `verify.sh all`（markdownlint 含む）が通る。
+- [x] 検証 A/B/C をユーザーが実行し結果を本節へ記録。
+- [x] 09_chat.md・10_audio-management.md の音声節追記。
+- [x] `verify.sh all`（markdownlint 含む）が通る。
 
-（検証結果は実施後にここへ追記する。）
+### 動作確認結果（2026-06-24・ユーザー実機）
+
+- **確定 provider**: Gemini（`LLM_PROVIDER=gemini`）。当初想定の Local 音声対応モデルは入手できず Gemini に変更。
+- **検証 A（音声分析）**: ✅ 音声を添付して送信したところ、Gemini が**音声内容を認識した応答**を返した。PRJ-18 の完了条件「少なくとも 1 つのネイティブ対応 provider で音声分析が実際に動く」を満たす。
+- **検証 B（形式適合）**: ✅ 想定どおり。送信形式は変換せず provider へ渡す実装で、Gemini で動作を確認。`input_audio`/inlineData の形式別適合は provider・モデル依存のため、確実な wav/mp3 を主対象とする注記を 09_chat.md に追加。
+- **検証 C（非対応 provider の 422）**: ✅ 音声非対応 provider 選択時に送信前 422 `LLM_AUDIO_UNSUPPORTED` で弾かれ、UI に専用文言が表示されることを確認。
 
 ## 8. 未確定事項
 
-- 確定モデル名・動作形式は実機検証の結果で確定（検証後に記録）。
+- なし（検証は Gemini で完了。OpenAI/Local の audio 対応は対応モデル入手時に同経路で検証可能）。
 
 ## 9. 実装計画
 
