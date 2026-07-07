@@ -48,7 +48,7 @@ pg_dump / psql はいずれもセッションを跨ぐ処理のため **Direct �
   1. `actions/checkout@v6`
   2. `apt-get install -y postgresql-client`（`pg_dump` を導入）
   3. `pg_dump "$DATABASE_URL_DIRECT" | gzip > backup-$(date -u +%Y-%m-%d).sql.gz`
-  4. `aws s3 cp` で `s3://$BACKUP_S3_BUCKET/backups/` へアップロード
+  4. `aws s3 cp` で `s3://$BACKUP_S3_BUCKET/db_backups/` へアップロード
   5. 古いバックアップの削除は **S3 Lifecycle**（28 日後 expire）に任せる
 - **失敗時**：GitHub Actions の標準通知（Actions タブ・メール）で検知。再実行は `workflow_dispatch` で対応。
 
@@ -75,27 +75,29 @@ pg_dump / psql はいずれもセッションを跨ぐ処理のため **Direct �
 | `AWS_ACCESS_KEY_ID` | AWS IAM アクセスキー | 既存（deploy.yml で利用中） |
 | `AWS_SECRET_ACCESS_KEY` | AWS IAM シークレットキー | 既存 |
 | `DATABASE_URL_DIRECT` | Neon Direct 接続文字列（5432 / SSL 必須） | **新規** |
-| `BACKUP_S3_BUCKET` | バックアップ先 S3 バケット名（例：`petal-db-backup`） | **新規** |
+| `BACKUP_S3_BUCKET` | バックアップ先 S3 バケット名（アプリ共用バケット `petal-prod`） | **新規** |
+
+> バックアップは専用バケットを設けず、アプリ共用バケット `petal-prod` の `db_backups/` プレフィックスに保存する（画像 `images/` / 音声 `audios/` と同一バケット）。バケット統合の経緯は [tsk-127_s3-bucket-consolidation.md](../tsk-127_s3-bucket-consolidation.md)。
 
 ## 5. AWS 側の事前作業（ユーザー手動）
 
-1. S3 バケット作成（`ap-northeast-1` / 推奨名 `petal-db-backup`）
-2. バケットの Lifecycle ルール：`backups/` プレフィックスに対し 28 日後 expire
+1. アプリ共用バケット `petal-prod`（`ap-northeast-1`）を使用（画像・音声と共用。新規作成は不要）
+2. バケットの Lifecycle ルール：`db_backups/` プレフィックスに対し 28 日後 expire
 3. 既存 deploy 用 IAM ユーザーに以下のポリシーを付与
-   - `s3:PutObject` on `arn:aws:s3:::petal-db-backup/backups/*`
+   - `s3:PutObject` on `arn:aws:s3:::petal-prod/db_backups/*`
 4. GitHub Secrets に `DATABASE_URL_DIRECT` と `BACKUP_S3_BUCKET` を登録
 
 ## 6. 完了条件
 
-- [ ] `backup.yml` を `workflow_dispatch` で手動実行し、S3 に `backups/backup-YYYY-MM-DD.sql.gz` が保存される
+- [ ] `backup.yml` を `workflow_dispatch` で手動実行し、S3 に `db_backups/backup-YYYY-MM-DD.sql.gz` が保存される
 - [ ] `keepalive.yml` を `workflow_dispatch` で手動実行し、`SELECT 1` が成功する
 - [ ] 両ワークフローの Scheduled 履歴が Actions タブに表示される（初回スケジュール到達後に確認）
 
 ## 7. 手動動作確認シナリオ
 
 1. main マージ後、Actions タブから `backup.yml` を `Run workflow` で実行 → 成功（緑）を確認
-2. AWS S3 コンソールで `s3://petal-db-backup/backups/backup-YYYY-MM-DD.sql.gz` の存在とサイズ（数百 KB〜数 MB を想定）を確認
-3. ローカルで `aws s3 cp s3://petal-db-backup/backups/backup-YYYY-MM-DD.sql.gz -` → `gunzip` でダンプ内容が読めることを確認
+2. AWS S3 コンソールで `s3://petal-prod/db_backups/backup-YYYY-MM-DD.sql.gz` の存在とサイズ（数百 KB〜数 MB を想定）を確認
+3. ローカルで `aws s3 cp s3://petal-prod/db_backups/backup-YYYY-MM-DD.sql.gz -` → `gunzip` でダンプ内容が読めることを確認
 4. Actions タブから `keepalive.yml` を `Run workflow` で実行 → 成功を確認
 5. 翌週の Scheduled 実行履歴が両ワークフローに記録されることを確認
 

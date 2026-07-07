@@ -169,44 +169,44 @@ Petal では S3 のバケットを複数使っているが、1 つのバケッ�
 
 ### 作業順序（コミット単位 + 完了確認）
 
-**A. Git 変更（本ブランチ）**
+#### A. Git 変更（本ブランチ）
 
 1. `chore(tsk-127): env example と backup.yml を新バケット命名に更新`
    - `.env.*.example` 3 ファイル + `backup.yml`。完了確認: `grep -rn "petal-images\|petal-db" backend/.envs/*.example .github/workflows/backup.yml` が 0 件。
 2. `docs(tsk-127): S3 バケット統合を各ドキュメントへ反映`
    - README.dev/prod, docs/specs/39・42, docs/30_operations/04, docs/tsk-120。完了確認: `grep -rn "petal-images-\|petal-db-\|/backups/" backend/README*.md docs/` が意図しない旧名 0 件（履歴的記述を除く）。markdownlint 通過。
 
-**B. 実 AWS 操作（Akinori・対話実行）**
+#### B. 実 AWS 操作（Akinori・対話実行）
 
-3. **設定取得**: `aws sso login --profile Akinori` 後、旧 4 バケットの `get-bucket-cors` / `get-bucket-lifecycle-configuration` / `get-bucket-encryption` / `get-public-access-block` と各プレフィックスの `ls --recursive --summarize`（オブジェクト数記録）。完了確認: 4 バケット分の設定 JSON とオブジェクト数を取得。
-4. **新バケット作成**: `petal-dev` / `petal-prod` を作成し、手順 3 の設定を適用。`db_backups/` に 28 日 expire Lifecycle 付与。完了確認: `head-bucket` が 200、`get-bucket-cors` 等が期待値。
-5. **初回 sync**: `petal-images-{env}` → `petal-{env}`（images/ audios/ 保持）、`petal-db-{env}/backups` → `petal-{env}/db_backups`。完了確認: 新バケットのオブジェクト数 ≥ 手順 3 記録値。
-6. **切替デプロイ**: ユーザーが local 秘匿 env を更新 → `pnpm deploy:dev` / `pnpm deploy:prod`（petal-deploy）。Secret 更新 `gh secret set BACKUP_S3_BUCKET -b petal-prod`。完了確認: デプロイ成功、Lambda 環境変数 `S3_BUCKET` が新名。
-7. **デルタ再 sync**: 手順 5 の sync を再実行（切替窓の新規アップロード回収）。完了確認: 新規コピー 0〜少数で収束。
-8. **検証**: 手動動作確認シナリオ 1〜5 を実施。完了確認: 全項目パス、新旧オブジェクト数一致。
+1. **設定取得**: `aws sso login --profile Akinori` 後、旧 4 バケットの `get-bucket-cors` / `get-bucket-lifecycle-configuration` / `get-bucket-encryption` / `get-public-access-block` と各プレフィックスの `ls --recursive --summarize`（オブジェクト数記録）。完了確認: 4 バケット分の設定 JSON とオブジェクト数を取得。
+2. **新バケット作成**: `petal-dev` / `petal-prod` を作成し、B-1 の設定を適用。`db_backups/` に 28 日 expire Lifecycle 付与。完了確認: `head-bucket` が 200、`get-bucket-cors` 等が期待値。
+3. **初回 sync**: `petal-images-{env}` → `petal-{env}`（images/ audios/ 保持）、`petal-db-{env}/backups` → `petal-{env}/db_backups`。完了確認: 新バケットのオブジェクト数 ≥ B-1 記録値。
+4. **切替デプロイ**: ユーザーが local 秘匿 env を更新 → `pnpm deploy:dev` / `pnpm deploy:prod`（petal-deploy）。Secret 更新 `gh secret set BACKUP_S3_BUCKET -b petal-prod`。完了確認: デプロイ成功、Lambda 環境変数 `S3_BUCKET` が新名。
+5. **デルタ再 sync**: B-3 の sync を再実行（切替窓の新規アップロード回収）。完了確認: 新規コピー 0〜少数で収束。
+6. **検証**: 手動動作確認シナリオ 1〜5 を実施。完了確認: 全項目パス、新旧オブジェクト数一致。
 
-**C. 旧バケット削除（PR マージ後・ユーザー明示承認後のみ）**
+#### C. 旧バケット削除（PR マージ後・ユーザー明示承認後のみ）
 
-9. 旧 4 バケットを空化 → `delete-bucket`。完了確認: `head-bucket` が 404。**この手順は承認前に実行しない。**
+1. 旧 4 バケットを空化 → `delete-bucket`。完了確認: `head-bucket` が 404。**この手順は承認前に実行しない。**
 
 ### テスト方針
 
 - 自動テスト: 本タスクはアプリコード非変更のため新規ユニット/E2E テストなし。既存テストは変更なしで通過すること（コード無変更のため影響なし）。
-- 手動検証: 上記手順 8 の動作確認シナリオで担保。
+- 手動検証: 上記 B-6 の動作確認シナリオで担保。
 
 ### 想定外時の判断ルール
 
-**標準セット**
+#### 標準セット
 
 - AI 単独判断 OK: 軽微な既存コードリファクタ、設計書スコープ内の追加実装。
 - 中断して要相談: データモデル変更、API 仕様変更、トランザクション境界変更、外部 API 想定差異、設計判断ログを覆す変更。
 
-**本タスク固有の中断条件**
+#### 本タスク固有の中断条件
 
 - 旧バケットの `get-bucket-*` が AccessDenied（`Akinori` 権限不足）→ 中断して相談。
 - sync 後もオブジェクト数が旧 > 新で乖離が残る → 中断、原因調査（削除に進まない）。
 - 旧バケットに設計書想定外のプレフィックス/大量データを発見 → 中断して確認。
-- **旧バケット削除（手順 9）は、移行検証完了 + PR マージ + ユーザー明示承認の 3 点すべてが揃うまで実行しない**（不可逆・破壊的）。
+- **旧バケット削除（C-1）は、移行検証完了 + PR マージ + ユーザー明示承認の 3 点すべてが揃うまで実行しない**（不可逆・破壊的）。
 - デプロイが `petal-deploy` の権限/SSO 失効で失敗 → ユーザーに委ねる。
 
 ### 事前解決済みの判断ポイント

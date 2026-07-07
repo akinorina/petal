@@ -2,7 +2,7 @@
 
 画像・音声ファイルは S3 に保存する。アップロード・ダウンロードとも**署名付き URL** でブラウザと S3 が直接やり取りし、バックエンドはバイトを中継しない（[20_features/04_image-management.md](../20_features/04_image-management.md), [20_features/10_audio-management.md](../20_features/10_audio-management.md)）。
 
-画像と音声は**同一バケットを共用**し、オブジェクトキーのプレフィックス（`images/` / `audios/`）で分離する。専用バケットは設けない。
+画像・音声・DB バックアップは**同一バケットを共用**し、オブジェクトキーのプレフィックス（`images/` / `audios/` / `db_backups/`）で分離する。用途ごとの専用バケットは設けない（[tsk-127_s3-bucket-consolidation.md](../tsk-127_s3-bucket-consolidation.md)）。
 
 ## ローカル（LocalStack）
 
@@ -19,7 +19,7 @@ pnpm s3:logs             # ログ確認
 
 ### バケット
 
-- 環境ごとにバケットを作成（dev は `petal-images-dev` など）。
+- 環境ごとにアプリ共用バケットを 1 つ作成（`petal-dev` / `petal-prod`）。画像 `images/` / 音声 `audios/` / DB バックアップ `db_backups/` をプレフィックスで分離する。
 - 署名付き URL でアクセスするため、バケットは原則非公開。
 
 ### CORS
