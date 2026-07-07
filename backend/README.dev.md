@@ -10,7 +10,7 @@
 | API ランタイム | AWS Lambda (Node.js 22.x) + Amazon API Gateway (HTTP API) | Serverless Framework v4 でデプロイ |
 | DB | Neon (PostgreSQL) | Pooler 接続（アプリ）/ Direct 接続（マイグレーション） |
 | 認証 | AWS Cognito User Pool（PROD 用 `petal-dev`） | |
-| 画像ストレージ | AWS S3（`petal-images-dev`） | |
+| 画像ストレージ | AWS S3（`petal-dev`） | |
 | デプロイ用 IAM | IAM ユーザー `petal-deploy` | `AWS_PROFILE=petal-deploy` で利用 |
 | リージョン | `ap-northeast-1` | |
 
@@ -43,7 +43,7 @@ aws configure --profile petal-deploy
 - IAM: Lambda 実行ロールの作成・削除（`iam:PassRole` 含む）
 - CloudWatch Logs: ロググループの作成・削除
 - Cognito: `serverless.yml` の `iam.role.statements` に列挙された各アクション
-- S3（アプリ用バケット `petal-images-dev`）: `PutObject` / `GetObject` / `DeleteObject` / `HeadObject`
+- S3（アプリ用バケット `petal-dev`）: `PutObject` / `GetObject` / `DeleteObject` / `HeadObject`
 - S3（Serverless Framework デプロイバケット `serverless-framework-deployments-ap-northeast-1-*`）: `ListBucket` / `ListBucketVersions` / `GetObject` / `GetObjectVersion` / `PutObject` / `DeleteObject` / `DeleteObjectVersion`
 
 > **メモ**: `ListBucketVersions` / `DeleteObjectVersion` は `serverless remove` 時に必要。これが無いとスタック撤去がエラーになる。
@@ -179,13 +179,13 @@ aws configure --profile petal-deploy
 }
 ```
 
-### 1.2 S3 バケット `petal-images-dev`
+### 1.2 S3 バケット `petal-dev`
 
-画像アップロード用バケットを `ap-northeast-1` に作成する。
+アプリ共用バケットを `ap-northeast-1` に作成する。画像 `images/` / 音声 `audios/` / DB バックアップ `db_backups/` をプレフィックスで分離して 1 バケットに集約する（[tsk-127_s3-bucket-consolidation.md](../docs/tsk-127_s3-bucket-consolidation.md)）。
 
 ```bash
 aws s3api create-bucket \
-  --bucket petal-images-dev \
+  --bucket petal-dev \
   --region ap-northeast-1 \
   --create-bucket-configuration LocationConstraint=ap-northeast-1 \
   --profile petal-deploy
@@ -230,7 +230,7 @@ cp .envs/.env.dev.example .envs/.env.dev
 | `COGNITO_REGION` / `COGNITO_USER_POOL_ID` / `COGNITO_CLIENT_ID` / `COGNITO_CLIENT_SECRET` | Cognito（DEV） |
 | `SKIP_AUTH` / `SKIP_AUTH_USER_ID` | DEV では `SKIP_AUTH=false` |
 | `CORS_ORIGINS` | Amplify の DEV URL（カンマ区切りで複数指定可。例: `https://main.xxxxxxxxxx.amplifyapp.com`） |
-| `S3_BUCKET` | `petal-images-dev` |
+| `S3_BUCKET` | `petal-dev` |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_NAME` / `ADMIN_NAME_KANA` | 初期 Admin 作成スクリプト用 |
 
 > `.envs/.env.dev` は機密情報を含むためコミット禁止。
@@ -337,7 +337,7 @@ DEV 環境のスタック（Lambda / API Gateway / IAM ロール / CloudWatch Lo
 pnpm deploy:remove:dev
 ```
 
-> S3 バケット（`petal-images-dev`）と Cognito User Pool、Neon のデータは `serverless remove` の対象外。必要に応じて手動で削除する。
+> S3 バケット（`petal-dev`）と Cognito User Pool、Neon のデータは `serverless remove` の対象外。必要に応じて手動で削除する。
 
 ## 7. トラブルシューティング
 
