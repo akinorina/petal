@@ -126,11 +126,11 @@ Petal では S3 のバケットを複数使っているが、1 つのバケッ�
 5. **バックアップ**: Actions から `backup.yml` を `Run workflow` 実行 → 成功 → `petal-prod/db_backups/backup-YYYY-MM-DD.sql.gz` の存在とサイズ確認 → `aws s3 cp ... -` → `gunzip` で中身が読める。
 6. **旧バケット削除後**: 上記 1〜5 が引き続き成立（旧バケット参照が残っていないことの確認）。
 
-## 未確定事項
+## 未確定事項（実施後の解決状況）
 
-- 旧バケットの実 CORS / Lifecycle / 暗号化設定は `Akinori` ログイン後に `get-bucket-*` で確認して移植する（現時点では権限失効で未取得）。
-- `petal-db-dev` にオブジェクトが存在するか未確認（存在すれば移行、無ければ空のまま削除）。
-- deploy 用 IAM ユーザー / `petal-local` IAM ユーザーのポリシーがバケット名をハードコードしている場合は追従更新が必要になり得る（要ログイン後確認。Lambda 実行ロールは serverless.yml で env 追従のため対象外）。
+- ~~旧バケットの実 CORS / Lifecycle / 暗号化設定を移植する~~ → **解決**: `Akinori` で取得し移植。CORS は画像バケットのみ設定あり（旧 prod CORS に残骸オリジン `http://www.example2.com` が混入、忠実にコピー・別途削除推奨）、暗号化は全て AES256、PublicAccessBlock は全て all-true、Lifecycle はどの旧バケットにも未設定だったため新バケットの `db_backups/` に 28 日 expire を新規付与。
+- ~~`petal-db-dev` にオブジェクトが存在するか未確認~~ → **解決**: 空だった（移行対象なし）。
+- ~~IAM ポリシーのバケット名ハードコード追従~~ → **解決**: バックアップ用 IAM ユーザー **`petal-backup`** のアタッチポリシー **`PetalDbBackupProd`** が `s3:PutObject` を旧リソース `arn:aws:s3:::petal-db-prod/backups/*` にのみ許可していたため、`backup.yml` 実行時に AccessDenied が発生。Resource を `arn:aws:s3:::petal-prod/db_backups/*` に更新（`create-policy-version --set-as-default`）して解決。Lambda 実行ロールは serverless.yml で `${S3_BUCKET}` 追従のため対象外。
 
 ## 実装計画（Phase 4）
 
