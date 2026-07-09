@@ -51,7 +51,7 @@ export function ImageThumb({ imageId, alt, src, className }: ImageThumbProps) {
 
   if (loadError) {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-zinc-100 text-[10px] text-zinc-500">
+      <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-surface-sunken text-[10px] text-text-tertiary">
         <span>読み込み失敗</span>
         <button
           type="button"
@@ -68,7 +68,7 @@ export function ImageThumb({ imageId, alt, src, className }: ImageThumbProps) {
   }
 
   if (!url) {
-    return <div className="h-full w-full animate-pulse bg-zinc-200" />;
+    return <div className="h-full w-full animate-pulse bg-surface-sunken" />;
   }
 
   return (
