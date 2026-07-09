@@ -153,6 +153,62 @@
 
 ## 未確定事項
 
-なし（マッピング表で全判断ポイントを確定。Phase 4 実装計画を末尾に追記する）。
-</content>
-</invoke>
+なし（マッピング表で全判断ポイントを確定）。
+
+## 実装計画
+
+### 変更・追加ファイル
+
+追加なし。以下 10 ファイルの**色ユーティリティのクラス文字列のみ**をマッピング表どおり置換する（レイアウト系ユーティリティ・DOM・ロジックは不変）。
+
+- `frontend/src/components/chat/ChatConversation.tsx`
+- `frontend/src/components/chat/MessageAttachments.tsx`
+- `frontend/src/components/chat/MessageAudioAttachments.tsx`
+- `frontend/src/components/chat/ImageThumb.tsx`
+- `frontend/src/components/chat/AudioPlayer.tsx`
+- `frontend/src/components/chat/ChatPanel.tsx`
+- `frontend/src/components/chat/AttachmentPreviewList.tsx`
+- `frontend/src/components/chat/AudioAttachmentPreviewList.tsx`
+- `frontend/src/components/chat/ImageAttachmentPicker.tsx`
+- `frontend/src/components/chat/AudioAttachmentPicker.tsx`
+
+### migration・環境変数・依存追加
+
+- なし。
+
+### 作業順序（コミット単位）
+
+1. **コミット1**: `fix(tsk-134): チャットバブルの配色をDSトークンへ統一`
+   - `ChatConversation.tsx`（:108, :133, :221, :222, :239）、`MessageAttachments.tsx`（:44）、`MessageAudioAttachments.tsx`（:38, :39, :43）。課題の主題（青バブル）＋判断3の再調整。
+   - 完了確認: 該当ファイルに `blue-`/`zinc-`/`bg-white`/`text-white`/`border-white`/`opacity-9`/`opacity-7` の色系残存なし。バブルが淡色チントで表示。
+2. **コミット2**: `fix(tsk-134): 添付プレビュー・プレイヤーの配色をDSトークンへ統一`
+   - `AttachmentPreviewList.tsx`、`AudioAttachmentPreviewList.tsx`、`ImageThumb.tsx`、`AudioPlayer.tsx`、`ChatPanel.tsx`。
+   - 完了確認: 該当ファイルに生色残存なし。
+3. **コミット3**: `fix(tsk-134): 添付選択Dialogの配色をDSトークンへ統一`
+   - `ImageAttachmentPicker.tsx`、`AudioAttachmentPicker.tsx`。
+   - 完了確認: 該当ファイルに生色残存なし。選択/未選択/ホバー状態がアクセント/ニュートラルで表示。
+
+各コミット後および最終に、下記の機械検証を実行する。
+
+### テスト方針
+
+- 自動テストは対象外（表示スタイルのみ・ロジック不変）。
+- **機械検証（全コミット完了後）**:
+  - 生色残存チェック: `frontend/src/components/chat/` の `.tsx`（`MarkdownContent.tsx` 以外）に `-(blue|zinc|gray|slate|red)(-[0-9])?` / `bg-white` / `text-white` / `border-white` / `bg-black` が残っていないこと（grep で 0 件）。
+  - `cd frontend && pnpm lint`。
+  - `cd frontend && pnpm build`（または型チェック）が通ること。
+- 「手動動作確認シナリオ」をユーザー評価（Phase 6）で確認。
+
+### 想定外時の判断ルール
+
+- **AI 単独判断 OK**: マッピング表に沿った色クラス置換、置換に伴う自明なリファクタ（例: 三項演算子のクラス配列の整形）。
+- **中断して要相談**: マッピング表に無い箇所で生色を発見した場合、必要なトークンが `@theme` に存在しない場合、色変更のためにレイアウト/DOM/ロジック変更が必要と判明した場合、設計判断ログ（判断1〜3）を覆す必要が生じた場合。
+- タスク固有: 置換後に淡色チントで著しく視認性が損なわれる箇所を発見した場合は、勝手に別配色へ変えず中断して相談する。
+
+### 事前解決済みの判断ポイント
+
+- ユーザーバブル配色 = `bg-accent-subtle-bg` + `text-accent-subtle-fg`（判断1）。
+- 装飾濃色チップ（×/✓ 削除・選択バッジのうち“削除”系）= `bg-neutral-800` + `text-neutral-50`（判断2）。“選択”系 ✓ バッジ = `bg-accent-default` + `text-accent-on-accent`。
+- バブル内添付装飾の再調整 = 判断3のとおり（サムネ枠 `border-border-default bg-surface-sunken`／音声行 `bg-surface-raised`／文字 `text-text-secondary`・`text-text-tertiary`）。
+- `text-transparent` は据え置き（色トークン対象外）。
+- コミットは領域別 3 分割。
