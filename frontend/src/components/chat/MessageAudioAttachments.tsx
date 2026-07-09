@@ -35,11 +35,11 @@ export function MessageAudioAttachments({ attachments }: MessageAudioAttachments
       {attachments.map((att) => {
         const label = att.label ?? '添付音声';
         return (
-          <li key={att.audioId} className="rounded-md bg-white/10 p-2">
-            <p className="mb-1 truncate text-xs opacity-90">
+          <li key={att.audioId} className="rounded-md bg-surface-raised p-2">
+            <p className="mb-1 truncate text-xs text-text-secondary">
               {label}
               {att.durationSeconds != null && (
-                <span className="ml-2 opacity-75">
+                <span className="ml-2 text-text-tertiary">
                   {formatDuration(att.durationSeconds)}
                 </span>
               )}
