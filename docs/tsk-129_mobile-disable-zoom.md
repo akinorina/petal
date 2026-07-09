@@ -88,4 +88,35 @@
 
 ## 実装計画
 
-（Phase 4 で追記）
+### 変更・追加ファイル
+
+- `frontend/src/app/layout.tsx`: `viewport` export に `initialScale` / `maximumScale` / `userScalable` を追加（`themeColor` は維持）。
+- `frontend/src/app/globals.css`: 末尾に `html { touch-action: manipulation; }`（理由コメント付き）を追加。
+
+### migration・環境変数・依存追加
+
+- なし。
+
+### 作業順序（コミット単位）
+
+1. **コミット1**: `fix(tsk-129): スマフォの拡大縮小を抑止`
+   - `layout.tsx` の `viewport` 更新 + `globals.css` の `touch-action` 追加（1 論理変更のためまとめる）。
+   - 完了確認: `pnpm lint` と型チェックが通る／設計書「完了条件（具体化版）」を満たす。
+
+### テスト方針
+
+- 自動テストは対象外（UI 表示設定のみ）。
+- `pnpm lint` ＋ 型チェックで機械検証。
+- 「手動動作確認シナリオ」を実機/DevTools で確認。
+
+### 想定外時の判断ルール
+
+- **AI 単独判断 OK**: 軽微な既存コードリファクタ、設計書スコープ内の追加実装。
+- **中断して要相談**: データモデル変更、API 仕様変更、トランザクション境界変更、外部 API 想定差異、設計判断ログを覆す変更。
+- タスク固有: `touch-action` / viewport 設定が design-system の既存グローバルと衝突する場合、または viewport 型が想定プロパティを受け付けない場合は中断して相談。
+
+### 事前解決済みの判断ポイント
+
+- viewport のプロパティ名は Next.js `Viewport` 型準拠の camelCase（`initialScale` / `maximumScale` / `userScalable`）。
+- `touch-action` の適用先は `html` 要素（判断 2）。
+- 変更は 1 コミットにまとめる。

@@ -12,3 +12,10 @@
   padding-right: var(--space-4);
   gap: 0;
 }
+
+/* スマホでのダブルタップ拡大を抑止する。ピンチ拡大・入力欄オートズームは
+   layout.tsx の viewport 設定で抑止しており、こちらでダブルタップ由来の
+   拡大をクロスブラウザで確実に止める（TSK-129）。 */
+html {
+  touch-action: manipulation;
+}

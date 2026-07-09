@@ -24,6 +24,11 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: '#D9624A',
+  // スマホ操作中の不用意な拡大・縮小を抑止する（ピンチ拡大・iOS 入力欄タップ時の
+  // 自動ズームを止める）。ダブルタップ拡大は globals.css の touch-action で併せて抑止。
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
