@@ -1,0 +1,64 @@
+/* セレクタは :where() でラップ済み。詳細度 0 で Tailwind utility に負けるようにしている。 */
+
+/* 再生本体（`<audio controls>` を親幅いっぱいに）。 */
+:where(.ds-audio-player) {
+  display: block;
+  width: 100%;
+}
+
+/* 読込中プレースホルダー（高さ 32px・pulse）。 */
+:where(.ds-audio-player__loading) {
+  width: 100%;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  animation: ds-audio-player-pulse 1.6s var(--easing-in-out, ease-in-out) infinite;
+}
+
+/* 失敗表示（読み込み失敗 + 再読込）。 */
+:where(.ds-audio-player__error) {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+}
+
+:where(.ds-audio-player__retry) {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: var(--text-link);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--duration-fast) var(--easing-out);
+}
+:where(.ds-audio-player__retry):hover {
+  text-decoration-color: var(--text-primary);
+}
+:where(.ds-audio-player__retry):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@keyframes ds-audio-player-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(.ds-audio-player__loading) {
+    animation: none;
+  }
+}

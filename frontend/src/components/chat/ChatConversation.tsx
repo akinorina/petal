@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Alert } from '@/design-system/components/Alert';
 import { Button } from '@/design-system/components/Button';
-import { Textarea } from '@/design-system/components/Input';
+import { ChatBubble } from '@/design-system/components/ChatBubble';
+import { ChatComposer } from '@/design-system/components/ChatComposer';
 import { AttachmentPreviewList } from './AttachmentPreviewList';
 import { AudioAttachmentPicker } from './AudioAttachmentPicker';
 import { AudioAttachmentPreviewList } from './AudioAttachmentPreviewList';
@@ -91,14 +92,6 @@ export function ChatConversation({
     });
   }
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    // Enter 送信 / Shift+Enter 改行。IME 変換中（isComposing）は送信しない。
-    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-      e.preventDefault();
-      handleSend();
-    }
-  }
-
   const showEmpty = messages.length === 0 && !isStreaming;
 
   return (
@@ -130,52 +123,47 @@ export function ChatConversation({
         </Alert>
       )}
 
-      <div className="border-t border-border-subtle bg-surface-raised pt-3">
-        <AttachmentPreviewList
-          images={attachment.selectedImages}
-          onRemove={attachment.remove}
-          disabled={isStreaming}
-        />
-        <AudioAttachmentPreviewList
-          audios={audioAttachment.selectedAudios}
-          onRemove={audioAttachment.remove}
-          disabled={isStreaming}
-        />
-        <div className="flex items-end gap-2">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={attachment.openPicker}
-            disabled={isStreaming}
-          >
-            画像
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={audioAttachment.openPicker}
-            disabled={isStreaming}
-          >
-            音声
-          </Button>
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="メッセージを入力（Enter で送信 / Shift+Enter で改行）"
-            rows={2}
-            disabled={isStreaming}
-            className="flex-1"
-          />
-          <Button
-            type="button"
-            onClick={handleSend}
-            disabled={isStreaming || input.trim().length === 0}
-          >
-            送信
-          </Button>
-        </div>
-      </div>
+      <ChatComposer
+        value={input}
+        onChange={setInput}
+        onSubmit={handleSend}
+        disabled={isStreaming}
+        placeholder="メッセージを入力（Enter で送信 / Shift+Enter で改行）"
+        actions={
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={attachment.openPicker}
+              disabled={isStreaming}
+            >
+              画像
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={audioAttachment.openPicker}
+              disabled={isStreaming}
+            >
+              音声
+            </Button>
+          </>
+        }
+        previews={
+          <>
+            <AttachmentPreviewList
+              images={attachment.selectedImages}
+              onRemove={attachment.remove}
+              disabled={isStreaming}
+            />
+            <AudioAttachmentPreviewList
+              audios={audioAttachment.selectedAudios}
+              onRemove={audioAttachment.remove}
+              disabled={isStreaming}
+            />
+          </>
+        }
+      />
 
       <ImageAttachmentPicker
         open={attachment.isPickerOpen}
@@ -213,34 +201,21 @@ function MessageBubble({
 }) {
   const isUser = message.role === 'user';
   return (
-    <div className={isUser ? 'flex justify-end' : 'flex justify-start'}>
-      <div
-        className={[
-          'max-w-[80%] rounded-2xl px-4 py-2 text-sm',
-          isUser
-            ? 'whitespace-pre-wrap bg-accent-subtle-bg text-accent-subtle-fg'
-            : 'bg-surface-sunken text-text-primary',
-        ].join(' ')}
-      >
-        {isUser ? (
-          message.content
-        ) : (
-          <MarkdownContent content={message.content} />
+    <ChatBubble variant={isUser ? 'sent' : 'received'}>
+      {isUser ? message.content : <MarkdownContent content={message.content} />}
+      {isUser && message.attachments && message.attachments.length > 0 && (
+        <MessageAttachments attachments={message.attachments} />
+      )}
+      {isUser &&
+        message.audioAttachments &&
+        message.audioAttachments.length > 0 && (
+          <MessageAudioAttachments attachments={message.audioAttachments} />
         )}
-        {isUser && message.attachments && message.attachments.length > 0 && (
-          <MessageAttachments attachments={message.attachments} />
-        )}
-        {isUser &&
-          message.audioAttachments &&
-          message.audioAttachments.length > 0 && (
-            <MessageAudioAttachments attachments={message.audioAttachments} />
-          )}
-        {pending && (
-          <span className="ml-1 inline-block animate-pulse text-text-tertiary">
-            …
-          </span>
-        )}
-      </div>
-    </div>
+      {pending && (
+        <span className="ml-1 inline-block animate-pulse text-text-tertiary">
+          …
+        </span>
+      )}
+    </ChatBubble>
   );
 }

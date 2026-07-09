@@ -1,0 +1,75 @@
+/* セレクタは :where() でラップ済み。詳細度 0 で Tailwind utility に負けるようにしている。 */
+
+/* 表示成功時のラッパーはレイアウトに透明（親の枠へ img を直接流す）。 */
+:where(.ds-media-thumb) {
+  display: contents;
+}
+
+:where(.ds-media-thumb__img) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 読込中プレースホルダー（親の枠いっぱい・pulse）。 */
+:where(.ds-media-thumb--loading) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--surface-sunken);
+  animation: ds-media-thumb-pulse 1.6s var(--easing-in-out, ease-in-out) infinite;
+}
+
+/* 失敗ボックス（読み込み失敗 + 再読込）。 */
+:where(.ds-media-thumb--error) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  width: 100%;
+  height: 100%;
+  background: var(--surface-sunken);
+  color: var(--text-tertiary);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-xs);
+}
+
+:where(.ds-media-thumb__retry) {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: var(--text-link);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--duration-fast) var(--easing-out);
+}
+:where(.ds-media-thumb__retry):hover {
+  text-decoration-color: var(--text-primary);
+}
+:where(.ds-media-thumb__retry):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@keyframes ds-media-thumb-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(.ds-media-thumb--loading) {
+    animation: none;
+  }
+}
