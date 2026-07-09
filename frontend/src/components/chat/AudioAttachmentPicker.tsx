@@ -47,9 +47,9 @@ export function AudioAttachmentPicker({
         </Dialog.Header>
         <Dialog.Body>
           {isLoading ? (
-            <p className="text-sm text-zinc-500">読み込み中...</p>
+            <p className="text-sm text-text-tertiary">読み込み中...</p>
           ) : error ? (
-            <p className="text-sm text-red-600">{error}</p>
+            <p className="text-sm text-feedback-danger-default">{error}</p>
           ) : audios.length === 0 ? (
             <EmptyState
               title="音声はまだありません"
@@ -62,7 +62,7 @@ export function AudioAttachmentPicker({
             />
           ) : (
             <>
-              <p className="mb-3 text-xs text-zinc-500">
+              <p className="mb-3 text-xs text-text-tertiary">
                 最大 {MAX_AUDIO_ATTACHMENTS} 件まで選択できます（選択済み {selectedIds.length} 件）。
               </p>
               <ul className="space-y-2">
@@ -76,14 +76,14 @@ export function AudioAttachmentPicker({
                       key={audio.id}
                       className={[
                         'flex items-center gap-3 rounded-md border-2 p-2 transition-colors',
-                        isSelected ? 'border-blue-500' : 'border-zinc-200',
+                        isSelected ? 'border-accent-default' : 'border-border-subtle',
                       ].join(' ')}
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-zinc-900">
+                        <p className="truncate text-sm font-medium text-text-primary">
                           {label}
                         </p>
-                        <p className="text-xs text-zinc-500">
+                        <p className="text-xs text-text-tertiary">
                           {formatDuration(audio.durationSeconds)} ・ {formatAudioSize(audio.sizeBytes)}
                         </p>
                         <div className="mt-1">
@@ -99,11 +99,11 @@ export function AudioAttachmentPicker({
                         className={[
                           'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-sm font-bold transition-colors',
                           isSelected
-                            ? 'border-blue-600 bg-blue-600 text-white'
-                            : 'border-zinc-300 text-transparent',
+                            ? 'border-accent-default bg-accent-default text-accent-on-accent'
+                            : 'border-border-strong text-transparent',
                           isDisabled
                             ? 'cursor-not-allowed opacity-40'
-                            : 'hover:border-blue-300',
+                            : 'hover:border-accent-default',
                         ].join(' ')}
                       >
                         ✓
