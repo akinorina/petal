@@ -32,7 +32,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ja" className="h-full">
+    // Chrome for iOS 等が `<html>` に注入する属性（例: __gcrremoteframetoken）による
+    // hydration mismatch 警告を抑止する。属性差分のみ 1 階層抑止し、他の hydration バグは検知したまま。
+    <html lang="ja" className="h-full" suppressHydrationWarning>
       <body className="min-h-full bg-surface-page text-text-primary antialiased">
         <SerwistProvider
           swUrl="/sw.js"
