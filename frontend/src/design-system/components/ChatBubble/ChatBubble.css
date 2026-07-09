@@ -1,0 +1,30 @@
+/* セレクタは :where() でラップ済み。詳細度 0 で Tailwind utility に負けるようにしている。 */
+
+:where(.ds-chat-bubble) {
+  display: flex;
+}
+:where(.ds-chat-bubble--sent) {
+  justify-content: flex-end;
+}
+:where(.ds-chat-bubble--received) {
+  justify-content: flex-start;
+}
+
+:where(.ds-chat-bubble__body) {
+  max-width: 80%;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-xl);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+}
+
+:where(.ds-chat-bubble--sent) :where(.ds-chat-bubble__body) {
+  background: var(--accent-subtle-bg);
+  color: var(--accent-subtle-fg);
+  white-space: pre-wrap;
+}
+
+:where(.ds-chat-bubble--received) :where(.ds-chat-bubble__body) {
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+}

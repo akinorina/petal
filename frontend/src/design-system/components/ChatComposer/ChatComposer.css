@@ -1,0 +1,99 @@
+/* セレクタは :where() でラップ済み。詳細度 0 で Tailwind utility に負けるようにしている。 */
+
+/* 外枠（上枠線 + surface-raised 背景 + 上パディング）。 */
+:where(.ds-chat-composer) {
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+  padding-top: var(--space-3);
+  font-family: var(--font-sans);
+}
+
+/* 入力行（左アクション + textarea + 送信ボタン）。 */
+:where(.ds-chat-composer__row) {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+/* textarea（DS Input/Textarea と同トークンで見た目を再現）。 */
+:where(.ds-chat-composer__textarea) {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  line-height: var(--line-height-relaxed);
+  resize: vertical;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    border-color var(--duration-fast) var(--easing-out),
+    background var(--duration-fast) var(--easing-out);
+}
+:where(.ds-chat-composer__textarea)::placeholder {
+  color: var(--text-tertiary);
+}
+:where(.ds-chat-composer__textarea):hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+:where(.ds-chat-composer__textarea):focus {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-color: var(--border-strong);
+}
+:where(.ds-chat-composer__textarea):disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--surface-sunken);
+}
+
+/* 送信ボタン（DS Button primary/md をトークンで再現）。 */
+:where(.ds-chat-composer__submit) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: 40px;
+  padding: 0 var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: var(--accent-default);
+  color: var(--accent-on-accent);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  appearance: none;
+  transition:
+    background var(--duration-instant) var(--easing-out),
+    transform var(--duration-instant) var(--easing-out);
+}
+:where(.ds-chat-composer__submit):hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+:where(.ds-chat-composer__submit):active:not(:disabled) {
+  background: var(--accent-active);
+  transform: scale(0.97);
+}
+:where(.ds-chat-composer__submit):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+:where(.ds-chat-composer__submit):disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(.ds-chat-composer__submit):active:not(:disabled) {
+    transform: none;
+  }
+}
