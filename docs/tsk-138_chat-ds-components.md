@@ -102,7 +102,7 @@ export interface ChatBubbleProps extends HTMLAttributes<HTMLDivElement> {
 ```
 
 - ルート: `flex`（`sent`→`justify-content: flex-end` / `received`→`flex-start`）。
-- バブル: `max-width: 80%`、`border-radius: var(--radius-2xl)`、`padding: var(--space-2) var(--space-4)`、`font-size: var(--font-size-sm)`。
+- バブル: `max-width: 80%`、`border-radius: var(--radius-xl)`（=16px。現状 `rounded-2xl`=16px と等価。`--radius-2xl` は 20px で不一致のため使わない）、`padding: var(--space-2) var(--space-4)`（8px/16px）、`font-size: var(--font-size-sm)`（14px）。
   - `sent`: `background: var(--accent-subtle-bg)`、`color: var(--accent-subtle-fg)`、`white-space: pre-wrap`。
   - `received`: `background: var(--surface-sunken)`、`color: var(--text-primary)`。
 - 現状 petal クラス（`max-w-[80%] rounded-2xl px-4 py-2 text-sm` / `bg-accent-subtle-bg text-accent-subtle-fg` / `bg-surface-sunken text-text-primary`）と等価。
@@ -224,4 +224,133 @@ export function useSignedImageUrl(imageId: string, src?: string):
 
 ## 未確定事項
 
-なし（抽出 4 点・非同期の層・コンポーザ振る舞い・バブル API を本設計で確定）。実装分解と作業順序は Phase 4「実装計画」で詰める。
+なし（抽出 4 点・非同期の層・コンポーザ振る舞い・バブル API を本設計で確定）。実装分解と作業順序は下記「実装計画」で確定済み。
+
+---
+
+## 実装計画（Phase 4）
+
+本タスクは **2 リポジトリ**にまたがる。design-system 側を先に完成させてから petal 側で sync・再統合する。
+
+### 対象リポジトリ・ブランチ
+
+- **design-system**: `/Users/akinori/develop/design-system`（`akinorina/design-system`）。作業ブランチ **`feat/chat-media-components`**（`main` から作成）。
+- **petal**: `/Users/akinori/develop/petal`。作業ブランチ **`feat/tsk-138-chat-ds-components`**（本設計書コミット済み）。
+
+### 変更・追加ファイル
+
+#### design-system リポ（新規）
+
+- `src/components/MediaThumb/MediaThumb.tsx` / `MediaThumb.css` / `index.ts` / `MediaThumb.stories.tsx`
+- `src/components/AudioPlayer/AudioPlayer.tsx` / `AudioPlayer.css` / `index.ts` / `AudioPlayer.stories.tsx`
+- `src/components/ChatBubble/ChatBubble.tsx` / `ChatBubble.css` / `index.ts` / `ChatBubble.stories.tsx`
+- `src/components/ChatComposer/ChatComposer.tsx` / `ChatComposer.css` / `index.ts` / `ChatComposer.stories.tsx`
+- `components/mediathumb.md` / `audioplayer.md` / `chatbubble.md` / `chatcomposer.md`（仕様書。sync が SPEC.md へコピーするため小文字ファイル名必須）
+- `COMPONENTS.md`（ロードマップに「Chat / Media」グループを追記）
+
+#### petal リポ
+
+- 新規（sync で取込）: `frontend/src/design-system/components/{MediaThumb,AudioPlayer,ChatBubble,ChatComposer}/`（`.tsx` + `.css` + `index.ts` + `SPEC.md`。`.stories.tsx` は sync 仕様で除外）
+- 新規: `frontend/src/components/chat/use-signed-image-url.ts` / `use-signed-audio-url.ts`
+- 変更: `frontend/src/components/chat/ImageThumb.tsx`（アダプタ化）
+- 変更: `frontend/src/components/chat/AudioPlayer.tsx`（アダプタ化・DS を別名 import）
+- 変更: `frontend/src/components/chat/ChatConversation.tsx`（inline MessageBubble → DS `ChatBubble`、入力行 → DS `ChatComposer`）
+
+### migration・環境変数・依存追加
+
+- なし（DB・環境変数・新規 npm 依存いずれも無し。DS/petal とも既存依存で完結）。
+
+### DS 側 CSS トークン移送表（ピクセル等価の正）
+
+現状 petal クラス → DS `.css`（全て `:where()` ラップ）。値は現状と等価。
+
+| 用途 | 現状(Tailwind) | DS CSS |
+| --- | --- | --- |
+| バブル角丸 | `rounded-2xl`(16px) | `border-radius: var(--radius-xl)`(16px。`--radius-2xl`=20px は使わない) |
+| バブル余白 | `px-4 py-2` | `padding: var(--space-2) var(--space-4)` |
+| バブル文字 | `text-sm` | `font-size: var(--font-size-sm)` |
+| sent バブル | `bg-accent-subtle-bg text-accent-subtle-fg` + `whitespace-pre-wrap` | `background:var(--accent-subtle-bg); color:var(--accent-subtle-fg); white-space:pre-wrap` |
+| received バブル | `bg-surface-sunken text-text-primary` | `background:var(--surface-sunken); color:var(--text-primary)` |
+| メディア読込中 | `animate-pulse bg-surface-sunken` | `background:var(--surface-sunken)` + 自前 `@keyframes ds-media-thumb-pulse`（Skeleton 同型・`prefers-reduced-motion` 対応） |
+| メディア失敗面 | `bg-surface-sunken text-text-tertiary` | `background:var(--surface-sunken); color:var(--text-tertiary)` |
+| 失敗ミニラベル | `text-[10px]`（ImageThumb） | `font-size: var(--font-size-xs)`（12px。10px の生値は DS 規約違反のため最寄りトークンへ。稀な失敗表示で許容差 ≤2px） |
+| 再読込リンク | `ds-link ds-link--inline` | 自前 `.ds-media-thumb__retry`/`.ds-audio-player__retry`（`ds-link` 非依存。`color:var(--text-link)` + underline） |
+| コンポーザ外枠 | `border-t border-border-subtle bg-surface-raised pt-3` | `border-top:1px solid var(--border-subtle); background:var(--surface-raised); padding-top:var(--space-3)` |
+| 送信ボタン | DS `Button`(primary) | 自前 `.ds-chat-composer__submit`（primary 相当をトークンで再現） |
+| textarea | DS `Textarea` | 自前 `.ds-chat-composer__textarea`（DS Input と同トークンで再現） |
+
+### 作業順序（コミット単位 + 完了確認）
+
+#### フェーズ 5-A: design-system リポ（`feat/chat-media-components`）
+
+各コミット後に `cd /Users/akinori/develop/design-system && pnpm typecheck && pnpm lint && pnpm build:tokens` を通す。
+
+1. **DS-1** `feat: MediaThumb / AudioPlayer（非同期メディアの純表示 shell）を追加`
+   - MediaThumb・AudioPlayer の 4 ファイル一式。上表どおりトークン移送、controlled props（`src?`/`isLoading?`/`hasError?`/`onRetry?`/`onError?`）。
+   - 完了確認: typecheck/lint 通過。stories が loading/error/ready を表現。
+2. **DS-2** `feat: ChatBubble / ChatComposer を追加`
+   - ChatBubble（`variant` sent/received、上表移送）。ChatComposer（自己完結・Enter/Shift+Enter/IME/空・disabled 抑止、`value/onChange/onSubmit/actions/previews/placeholder/disabled/rows/submitLabel`）。
+   - 完了確認: typecheck/lint 通過。stories で Enter 送信・改行・空時無効を確認可能。
+3. **DS-3** `docs: 4 コンポーネントの仕様書と COMPONENTS.md ロードマップを追加`
+   - `components/*.md` 4 本（既存フォーマット: 目的/Anatomy/Variants/States/Props/使用ルール/A11y/トークン/関連）。`COMPONENTS.md` に追記。
+   - 完了確認: `pnpm build-storybook` が通る（最終）。`npx markdownlint`（DS の `.markdownlint.json`）が通る。
+
+#### フェーズ 5-B: petal リポ（`feat/tsk-138-chat-ds-components`）
+
+各コミット後に `cd frontend && pnpm lint`。最終に `bash .claude/skills/skill-workflow/scripts/verify.sh all`。
+
+1. **P-1** `chore(tsk-138): 新規DSコンポーネントをsyncで取込`
+   - `frontend/` から 4 コンポーネントを**個別 sync**（絶対 DS_PATH・tokens は再syncしない）:
+
+     ```bash
+     DS_PATH=/Users/akinori/develop/design-system DS_TARGET=src/design-system \
+       bash scripts/sync-design-system.sh component ChatBubble   # 以下 ChatComposer / MediaThumb / AudioPlayer
+     ```
+
+   - 完了確認: `frontend/src/design-system/components/{ChatBubble,ChatComposer,MediaThumb,AudioPlayer}/` に `.tsx`+`.css`+`index.ts`+`SPEC.md` があり `.stories.tsx` が無い。`git status` の差分が当該 4 ディレクトリのみ。
+2. **P-2** `refactor(tsk-138): ImageThumb/AudioPlayerを取得フック+DS表示部品へ分離`
+   - `use-signed-image-url.ts`/`use-signed-audio-url.ts` 追加（現 fetch state を移送、`src` 指定時は取得スキップ）。petal `ImageThumb`→`useSignedImageUrl`+DS`MediaThumb`、petal `AudioPlayer`→`useSignedAudioUrl`+DS`AudioPlayer`（`import { AudioPlayer as DsAudioPlayer }`）。
+   - 完了確認: `pnpm lint`。サムネ/プレイヤーの読込中・失敗・再読込・表示が従来どおり（型チェック通過）。
+3. **P-3** `refactor(tsk-138): 会話バブル/入力欄をDS ChatBubble/ChatComposerへ置換`
+   - `ChatConversation.tsx`: inline `MessageBubble` → `<ChatBubble variant={isUser?'sent':'received'}>`（本文・添付・pending「…」は children）。入力行 → `<ChatComposer value onChange onSubmit={handleSend} actions={画像/音声Button} previews={Attachment/AudioAttachmentPreviewList} disabled={isStreaming}>`。Enter/IME 送信ロジックは ChatComposer へ委譲し petal 側の重複を削除。
+   - 完了確認: `pnpm lint` + `pnpm build`。`/chat` の見た目・送信・添付が退行なし。
+4. **最終検証**: `bash .claude/skills/skill-workflow/scripts/verify.sh all` 通過（backend/frontend build + docs markdownlint）。加えて DS リポで `pnpm typecheck && pnpm lint && pnpm build-storybook` 通過。
+
+### テスト方針
+
+- 自動テストは対象外（表示コンポーネント・ロジック等価移送）。
+- 機械検証: 上記各コミットの完了確認 + `verify.sh all`（petal）+ DS リポの typecheck/lint/build-storybook。
+- 手動確認は §手動動作確認シナリオ（Storybook + petal `/chat`）を Phase 6 でユーザー評価。
+
+### Phase 5 実行方式（サブエージェント）
+
+- petal は **worktree 隔離 + バックグラウンド**で実行。DS リポは別リポのため**共有チェックアウト `/Users/akinori/develop/design-system` の `feat/chat-media-components` ブランチ**で作業する（worktree 化しない）。
+- worktree では相対 `../../design-system` が壊れるため、sync は**必ず絶対 `DS_PATH=/Users/akinori/develop/design-system`** で実行する。
+- DS リポ・petal リポとも**コミットのみ**。push / PR 作成は Phase 6 でユーザー承認後にメインスレッドが行う（サブエージェントは push しない）。
+
+### 想定外時の判断ルール
+
+- **AI 単独判断 OK**: 上表どおりのトークン移送、現状ロジックの等価な関数/フック抽出、自明な整形・未使用 import 削除、stories のサンプルデータ作成。
+- **中断して要相談**:
+  - DS に必要トークンが存在せず生値直書きが避けられない（失敗ミニラベルの font-size-xs 代替は除く＝解決済み）。
+  - 現状の見た目をトークンで等価再現できない箇所を発見。
+  - ChatComposer を自己完結で組めず cross-component import が不可避と判明（判断=自己完結を覆す必要）。
+  - prop 契約（§API 仕様）や設計判断ログ（判断1〜4）を変更する必要が生じた。
+  - 既存 DS コンポーネント本体の改変が必要。
+  - `sync` が当該 4 ディレクトリ以外に想定外の大量差分を生む。
+- **タスク固有**: 置換後に `/chat` の見た目が現状（TSK-134 後）から視認できるレベルで変化する場合は、勝手に別値へ調整せず中断して相談。
+
+### 事前解決済みの判断ポイント
+
+- 抽出=セットA 4 点 / 非同期=controlled（petal フック所有）/ Composer=キー処理内包 / Bubble=`variant sent/received`（判断1〜4）。
+- ChatComposer=**自己完結**（独自 `ds-chat-composer__textarea`/`__submit`、cross-import しない）。
+- 非同期 state は petal `useSignedImageUrl`/`useSignedAudioUrl` が所有。DS は取得ロジックを持たない。
+- 再読込リンクは各 DS コンポーネント**独自クラス**（`ds-link` 非依存＝コピー単位自己完結）。
+- pulse は各コンポーネント**自前 keyframe**（Skeleton 同型・`prefers-reduced-motion: reduce` で停止）。
+- sync は 4 コンポーネント**個別**・**絶対 DS_PATH**・tokens 再sync なし（petal 差分を最小化）。
+- 仕様書は `components/<lowercase>.md`（sync が `SPEC.md` へコピー）。
+- petal `AudioPlayer` の名前衝突 → DS を `DsAudioPlayer` として別名 import。
+- 日本語デフォルトラベル（`送信`/`読み込み中`/`読み込み失敗`/`再読込`）は既存 DS（Spinner/Link の日本語）に倣い許容。
+- 失敗ミニラベルの `text-[10px]` → `var(--font-size-xs)`（12px）へ寄せる（許容差 ≤2px）。
+- `MarkdownContent.*` は petal 据え置き（DS へ移さない）。
+- radius は `--radius-xl`(16px) を使用（`--radius-2xl`=20px は不使用）。
