@@ -45,9 +45,9 @@ export function ImageAttachmentPicker({
         </Dialog.Header>
         <Dialog.Body>
           {isLoading ? (
-            <p className="text-sm text-zinc-500">読み込み中...</p>
+            <p className="text-sm text-text-tertiary">読み込み中...</p>
           ) : error ? (
-            <p className="text-sm text-red-600">{error}</p>
+            <p className="text-sm text-feedback-danger-default">{error}</p>
           ) : images.length === 0 ? (
             <EmptyState
               title="画像はまだありません"
@@ -60,7 +60,7 @@ export function ImageAttachmentPicker({
             />
           ) : (
             <>
-              <p className="mb-3 text-xs text-zinc-500">
+              <p className="mb-3 text-xs text-text-tertiary">
                 最大 {MAX_ATTACHMENTS} 枚まで選択できます（選択済み {selectedIds.length} 枚）。
               </p>
               <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4">
@@ -79,14 +79,14 @@ export function ImageAttachmentPicker({
                         aria-label={`${label} を${isSelected ? '選択解除' : '選択'}`}
                         className={[
                           'group relative block w-full overflow-hidden rounded-md border-2 transition-colors',
-                          isSelected ? 'border-blue-500' : 'border-zinc-200',
-                          isDisabled ? 'cursor-not-allowed opacity-40' : 'hover:border-blue-300',
+                          isSelected ? 'border-accent-default' : 'border-border-subtle',
+                          isDisabled ? 'cursor-not-allowed opacity-40' : 'hover:border-accent-default',
                         ].join(' ')}
                       >
-                        <div className="relative aspect-square bg-zinc-100">
+                        <div className="relative aspect-square bg-surface-sunken">
                           <ImageThumb imageId={image.id} alt={label} />
                           {isSelected && (
-                            <span className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[11px] font-bold text-white">
+                            <span className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-accent-default text-[11px] font-bold text-accent-on-accent">
                               ✓
                             </span>
                           )}

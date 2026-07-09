@@ -41,7 +41,7 @@ export function MessageAttachments({ attachments }: MessageAttachmentsProps) {
                 type="button"
                 onClick={() => setPreview(att)}
                 aria-label={`${label} を拡大表示`}
-                className="block h-20 w-20 overflow-hidden rounded-md border border-white/40 bg-zinc-100"
+                className="block h-20 w-20 overflow-hidden rounded-md border border-border-default bg-surface-sunken"
               >
                 <ImageThumb imageId={att.imageId} src={att.downloadUrl} alt={label} />
               </button>

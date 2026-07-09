@@ -27,7 +27,7 @@ export function ChatPanel(props: ChatPanelProps) {
           .filter(Boolean)
           .join(' ')}
       >
-        <p className="text-sm text-zinc-500">読み込み中...</p>
+        <p className="text-sm text-text-tertiary">読み込み中...</p>
       </div>
     );
   }

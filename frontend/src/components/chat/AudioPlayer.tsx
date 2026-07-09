@@ -50,7 +50,7 @@ export function AudioPlayer({ audioId, src, label }: AudioPlayerProps) {
 
   if (loadError) {
     return (
-      <div className="flex items-center gap-2 text-xs text-zinc-500">
+      <div className="flex items-center gap-2 text-xs text-text-tertiary">
         <span>読み込み失敗</span>
         <button
           type="button"
@@ -64,7 +64,7 @@ export function AudioPlayer({ audioId, src, label }: AudioPlayerProps) {
   }
 
   if (!url) {
-    return <div className="h-8 w-full animate-pulse rounded bg-zinc-200" />;
+    return <div className="h-8 w-full animate-pulse rounded bg-surface-sunken" />;
   }
 
   return (

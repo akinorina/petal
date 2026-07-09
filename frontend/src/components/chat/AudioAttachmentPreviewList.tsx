@@ -32,12 +32,12 @@ export function AudioAttachmentPreviewList({
         return (
           <li
             key={audio.id}
-            className="flex items-center gap-2 rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1"
+            className="flex items-center gap-2 rounded-md border border-border-subtle bg-surface-sunken px-2 py-1"
           >
-            <span className="min-w-0 flex-1 truncate text-sm text-zinc-800">
+            <span className="min-w-0 flex-1 truncate text-sm text-text-primary">
               {label}
             </span>
-            <span className="shrink-0 text-xs text-zinc-500">
+            <span className="shrink-0 text-xs text-text-tertiary">
               {formatDuration(audio.durationSeconds)}
             </span>
             <button
@@ -45,7 +45,7 @@ export function AudioAttachmentPreviewList({
               onClick={() => onRemove(audio.id)}
               disabled={disabled}
               aria-label={`${label} を取り消す`}
-              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-xs text-white shadow disabled:opacity-40"
+              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-neutral-800 text-xs text-neutral-50 shadow disabled:opacity-40"
             >
               ×
             </button>

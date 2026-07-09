@@ -31,7 +31,7 @@ export function AttachmentPreviewList({
         const label = image.title || image.originalFilename;
         return (
           <li key={image.id} className="relative">
-            <div className="h-16 w-16 overflow-hidden rounded-md border border-zinc-200 bg-zinc-100">
+            <div className="h-16 w-16 overflow-hidden rounded-md border border-border-subtle bg-surface-sunken">
               <ImageThumb imageId={image.id} alt={label} />
             </div>
             <button
@@ -39,7 +39,7 @@ export function AttachmentPreviewList({
               onClick={() => onRemove(image.id)}
               disabled={disabled}
               aria-label={`${label} を取り消す`}
-              className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-zinc-800 text-xs text-white shadow disabled:opacity-40"
+              className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-neutral-800 text-xs text-neutral-50 shadow disabled:opacity-40"
             >
               ×
             </button>

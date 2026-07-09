@@ -105,7 +105,7 @@ export function ChatConversation({
     <div className={['flex h-full flex-col', className].filter(Boolean).join(' ')}>
       <div className="flex-1 min-h-0 space-y-4 overflow-y-auto pb-4">
         {showEmpty ? (
-          <p className="py-12 text-center text-sm text-zinc-400">
+          <p className="py-12 text-center text-sm text-text-tertiary">
             メッセージを送信して会話を始めましょう。
           </p>
         ) : (
@@ -130,7 +130,7 @@ export function ChatConversation({
         </Alert>
       )}
 
-      <div className="border-t border-zinc-200 bg-white pt-3">
+      <div className="border-t border-border-subtle bg-surface-raised pt-3">
         <AttachmentPreviewList
           images={attachment.selectedImages}
           onRemove={attachment.remove}
@@ -218,8 +218,8 @@ function MessageBubble({
         className={[
           'max-w-[80%] rounded-2xl px-4 py-2 text-sm',
           isUser
-            ? 'whitespace-pre-wrap bg-blue-600 text-white'
-            : 'bg-zinc-100 text-zinc-900',
+            ? 'whitespace-pre-wrap bg-accent-subtle-bg text-accent-subtle-fg'
+            : 'bg-surface-sunken text-text-primary',
         ].join(' ')}
       >
         {isUser ? (
@@ -236,7 +236,7 @@ function MessageBubble({
             <MessageAudioAttachments attachments={message.audioAttachments} />
           )}
         {pending && (
-          <span className="ml-1 inline-block animate-pulse text-zinc-400">
+          <span className="ml-1 inline-block animate-pulse text-text-tertiary">
             …
           </span>
         )}
